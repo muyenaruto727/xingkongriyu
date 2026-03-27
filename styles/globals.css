@@ -1,0 +1,52 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary-color: #3B82F6;
+  --secondary-color: #10B981;
+  --accent-color: #8B5CF6;
+  --dark-color: #1E293B;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: #F8FAFC;
+  color: #1E293B;
+}
+
+.card {
+  @apply bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300;
+}
+
+.btn-primary {
+  @apply bg-primary text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors duration-300;
+}
+
+.btn-secondary {
+  @apply bg-secondary text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors duration-300;
+}
+
+.btn-accent {
+  @apply bg-accent text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-colors duration-300;
+}
+
+.input {
+  @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent;
+}
+
+.title {
+  @apply text-2xl md:text-3xl font-bold text-dark mb-4;
+}
+
+.subtitle {
+  @apply text-xl font-semibold text-dark mb-2;
+}
+
+.text-muted {
+  @apply text-gray-600;
+}
+
+.container {
+  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+}
