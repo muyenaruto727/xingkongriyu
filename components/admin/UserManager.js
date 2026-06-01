@@ -19,9 +19,15 @@ const UserManager = ({ showToast }) => {
       }).toString();
       const response = await fetch(`/api/users?${params}`);
       if (response.ok) {
-        const data = await response.json();
-        setUsers(data.data || []);
-        setTotalItems(data.total || 0);
+        const result = await response.json();
+        // API 返回的数据格式是 { success, message, data: { data, total } }
+        if (result.success && result.data) {
+          setUsers(result.data.data || []);
+          setTotalItems(result.data.total || 0);
+        } else {
+          setUsers([]);
+          setTotalItems(0);
+        }
       } else {
         const error = new Error('Failed to fetch users');
         error.response = { status: response.status, data: await response.json() };
