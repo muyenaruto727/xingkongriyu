@@ -21,12 +21,12 @@ const CourseDetail = () => {
           setIsLoading(true);
           // 获取课程信息
           const courseResponse = await api.getCourseById(id);
-          setCourse(courseResponse.data);
+          setCourse(courseResponse);
           
           // 获取课程的章节和小节
           const chaptersResponse = await api.getChapterList({ courseId: id });
           // 按照order字段排序章节
-          const sortedChapters = (chaptersResponse.data || []).sort((a, b) => (a.order || 0) - (b.order || 0));
+          const sortedChapters = (chaptersResponse || []).sort((a, b) => (a.order || 0) - (b.order || 0));
           // 对每个章节的小节也按照order字段排序
           const chaptersWithSortedSections = sortedChapters.map(chapter => ({
             ...chapter,

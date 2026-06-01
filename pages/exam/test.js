@@ -4,7 +4,7 @@ import { useRouter } from 'next/router';
 import Navigation from '../../components/layout/Navigation';
 import Toast from '../../components/common/Toast';
 import Modal from '../../components/common/Modal';
-import { FEEDBACK_TYPES } from '../../config';
+import { FEEDBACK_TYPES } from '../../config/config';
 import { handleApiError, logError, formatTime } from '../../utils.js';
 
 const ExamTest = () => {
@@ -196,7 +196,7 @@ const ExamTest = () => {
       }
 
       const data = await response.json();
-      setQuestions(data.questions || []);
+      setQuestions(data.data?.questions || []);
     } catch (error) {
       console.error('Error fetching questions:', error);
       // 如果API调用失败，使用模拟数据

@@ -32,7 +32,7 @@ const ChapterManager = () => {
     try {
       const response = await api.getCourseList();
       console.log('Course list response:', response);
-      setCourses(Array.isArray(response) ? response : (response.data?.data || []));
+      setCourses(Array.isArray(response) ? response : []);
     } catch (error) {
       console.error('获取课程列表失败:', error);
       message.error('获取课程列表失败');
@@ -49,7 +49,7 @@ const ChapterManager = () => {
     try {
       const response = await api.getChapterList({ courseId });
       console.log('Chapter list response:', response);
-      const chapterData = Array.isArray(response) ? response : (response.data || []);
+      const chapterData = Array.isArray(response) ? response : [];
       setChapters(chapterData);
       // 展开所有节点
       const keys = chapterData.map(chapter => chapter.id.toString());

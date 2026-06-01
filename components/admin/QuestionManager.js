@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../lib/api';
 import Toast from '../common/Toast';
-import { Input, Select } from 'antd';
+import { Input, Select, Upload } from 'antd';
 import QuestionList from './QuestionManager/QuestionList';
 import QuestionForm from './QuestionManager/QuestionForm';
 import Pagination from '../common/Pagination';
 import Filter from './QuestionManager/Filter';
 import Modal from '../common/Modal';
+
+const { Dragger } = Upload;
 
 const QuestionManager = ({ defaultType = '', defaultLevel = '' }) => {
   const [questions, setQuestions] = useState([]);
@@ -20,6 +22,15 @@ const QuestionManager = ({ defaultType = '', defaultLevel = '' }) => {
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [toast, setToast] = useState({ isOpen: false, message: '', type: 'info' });
   const [isLoading, setIsLoading] = useState(false);
+  
+  // 批量导入/导出状态
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const [importFileList, setImportFileList] = useState([]);
+  const [downloadFormat, setDownloadFormat] = useState('json');
+  const [downloadOption, setDownloadOption] = useState('all');
+  const [downloadPageSize, setDownloadPageSize] = useState(1000);
+  const [downloadPageNumber, setDownloadPageNumber] = useState(1);
   
   // 分页状态
   const [page, setPage] = useState(1);
@@ -331,6 +342,213 @@ const QuestionManager = ({ defaultType = '', defaultLevel = '' }) => {
     setToast({ isOpen: true, message, type });
   };
 
+  // 下载题目模板（JSON格式）
+  const downloadQuestionTemplateJSON = () => {
+    const templateData = [
+      {
+        "question_text": "测试题目",
+        "question_type": "vocabulary",
+        "options": ["选项1", "选项2", "选项3", "选项4"],
+        "correct_answer": 0,
+        "explanation": "题目解析",
+        "level": "N3",
+        "is_real_exam": true,
+        "category": "context"
+      },
+      {
+        "question_text": "另一个测试题目",
+        "question_type": "grammar",
+        "options": ["选项A", "选项B", "选项C", "选项D"],
+        "correct_answer": 1,
+        "explanation": "语法题解析",
+        "level": "N2",
+        "is_real_exam": true,
+        "category": "sentence_grammar_1"
+      }
+    ];
+
+    const content = JSON.stringify(templateData, null, 2);
+    const blob = new Blob([content], { type: 'application/json' });
+    const downloadUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = `question_template_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(downloadUrl);
+
+    showToast('模板下载成功', 'success');
+  };
+
+  // 批量导入
+  const handleBatchImport = async (file) => {
+    setIsLoading(true);
+    showToast('开始处理文件...', 'info');
+    try {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          showToast('解析文件中...', 'info');
+          const jsonData = JSON.parse(e.target.result);
+          if (!Array.isArray(jsonData)) {
+            showToast('JSON文件格式错误，应为数组格式', 'error');
+            setIsLoading(false);
+            return;
+          }
+
+          // 验证数据格式
+          showToast(`验证数据格式，共 ${jsonData.length} 条数据...`, 'info');
+          const filteredData = jsonData.filter(item => {
+            return item.question_text && item.question_type && item.options && Array.isArray(item.options) && item.options.length >= 2 && item.correct_answer !== undefined;
+          });
+
+          if (filteredData.length === 0) {
+            showToast('没有有效的题目数据', 'error');
+            setIsLoading(false);
+            return;
+          }
+
+          // 与数据库中已有的题目进行去重
+          try {
+            showToast('与数据库中已有的题目进行去重...', 'info');
+            const existingQuestions = await api.getQuestionList({ limit: 10000 });
+            const existingKeys = new Set();
+            
+            if (existingQuestions.data) {
+              existingQuestions.data.forEach(question => {
+                if (question.question_text && question.question_type) {
+                  const key = `${question.question_text}-${question.question_type}`;
+                  existingKeys.add(key);
+                }
+              });
+            }
+
+            // 过滤掉与数据库中重复的题目
+            const uniqueData = filteredData.filter(item => {
+              const key = `${item.question_text}-${item.question_type}`;
+              return !existingKeys.has(key);
+            });
+
+            if (uniqueData.length === 0) {
+              showToast('所有数据都已存在，没有新数据可导入', 'info');
+              setIsLoading(false);
+              return;
+            } 
+
+            // 发送批量导入请求
+            showToast(`正在导入 ${uniqueData.length} 条新数据...`, 'info');
+            await api.importQuestions({ batch: uniqueData });
+
+            if (uniqueData.length < filteredData.length) {
+              showToast(`已过滤掉 ${filteredData.length - uniqueData.length} 条重复数据，成功导入 ${uniqueData.length} 条新数据`, 'success');
+            } else {
+              showToast(`成功导入 ${uniqueData.length} 条新数据`, 'success');
+            }
+          } catch (error) {
+            console.error('去重失败:', error);
+            // 如果去重失败，仍然尝试导入数据
+            showToast(`直接导入 ${filteredData.length} 条数据...`, 'info');
+            await api.importQuestions({ batch: filteredData });
+            showToast(`成功导入 ${filteredData.length} 条数据`, 'success');
+          }
+
+          showToast('刷新题目列表...', 'info');
+          await fetchQuestions();
+          setShowImportModal(false);
+          setImportFileList([]);
+        } catch (error) {
+          showToast('JSON文件解析失败', 'error');
+          console.error('解析JSON失败:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      reader.onerror = () => {
+        showToast('文件读取失败', 'error');
+        setIsLoading(false);
+      };
+      reader.readAsText(file);
+    } catch (error) {
+      console.error('批量导入失败:', error);
+      showToast('批量导入失败', 'error');
+      setIsLoading(false);
+    }
+  };
+
+  // 批量下载
+  const handleBatchDownload = async () => {
+    setIsLoading(true);
+    try {
+      if (downloadOption === 'all') {
+        // 下载所有数据
+        const allData = await api.exportQuestions({ export: true });
+        const questionsData = Array.isArray(allData) ? allData : (allData.data || []);
+
+        // 转换为JSON字符串
+        const content = JSON.stringify(questionsData, null, 2);
+        const mimeType = 'application/json';
+        const fileName = `questions_${new Date().toISOString().split('T')[0]}_all.json`;
+
+        // 创建下载链接
+        const blob = new Blob([content], { type: mimeType });
+        const downloadUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(downloadUrl);
+
+        showToast('批量下载成功', 'success');
+      } else if (downloadOption === 'paginated') {
+        // 分页下载
+        const pageSize = parseInt(downloadPageSize, 10);
+        const pageNumber = parseInt(downloadPageNumber, 10);
+
+        // 构建查询参数
+        const params = {
+          page: pageNumber,
+          limit: pageSize,
+          ...(filterLevel && { level: filterLevel }),
+          ...(filterType && { type: filterType })
+        };
+
+        // 获取指定页码的数据
+        showToast(`开始下载第 ${pageNumber} 页，每页 ${pageSize} 条数据`, 'info');
+        const pageData = await api.getQuestionList(params);
+        const questionsData = pageData.data || [];
+        const totalItems = pageData.pagination?.total || 0;
+        const totalPages = Math.ceil(totalItems / pageSize);
+
+        // 转换为JSON字符串
+        const content = JSON.stringify(questionsData, null, 2);
+        const mimeType = 'application/json';
+        const fileName = `questions_${new Date().toISOString().split('T')[0]}_page_${pageNumber}_size_${pageSize}.json`;
+
+        // 创建下载链接
+        const blob = new Blob([content], { type: mimeType });
+        const downloadUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(downloadUrl);
+
+        showToast(`分页下载成功，共下载 ${questionsData.length} 条数据（第 ${pageNumber}/${totalPages} 页）`, 'success');
+      }
+      setShowDownloadModal(false);
+    } catch (error) {
+      console.error('批量下载失败:', error);
+      showToast('批量下载失败', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
       {/* 成功提示 */}
@@ -343,16 +561,34 @@ const QuestionManager = ({ defaultType = '', defaultLevel = '' }) => {
       {/* 标题和添加按钮 */}
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold text-dark">题库管理</h3>
-        <button 
-          onClick={() => {
-            resetForm();
-            setIsEditMode(false);
-            setShowModal(true);
-          }}
-          className="btn-primary text-sm px-4 py-2"
-        >
-          添加题目
-        </button>
+        <div className="flex gap-3">
+          <button 
+            onClick={() => {
+              resetForm();
+              setIsEditMode(false);
+              setShowModal(true);
+            }}
+            className="btn-primary text-sm px-4 py-2"
+          >
+            添加题目
+          </button>
+          <button 
+            onClick={() => {
+              setShowImportModal(true);
+            }}
+            className="px-4 py-2 border border-gray-300 rounded-lg text-dark hover:bg-gray-50 transition-colors"
+          >
+            批量导入
+          </button>
+          <button 
+            onClick={() => {
+              setShowDownloadModal(true);
+            }}
+            className="px-4 py-2 border border-gray-300 rounded-lg text-dark hover:bg-gray-50 transition-colors"
+          >
+            批量下载
+          </button>
+        </div>
       </div>
 
       {/* 筛选 */}
@@ -839,6 +1075,105 @@ const QuestionManager = ({ defaultType = '', defaultLevel = '' }) => {
       >
         <div className="p-6">
           <p className="text-gray-700">确定要删除这道题目吗？此操作不可撤销。</p>
+        </div>
+      </Modal>
+
+      {/* 批量导入模态框 */}
+      <Modal
+        isOpen={showImportModal}
+        onClose={() => {
+          setShowImportModal(false);
+          setImportFileList([]);
+        }}
+        title="批量导入题目"
+        size="lg"
+      >
+        <div className="p-6">
+          <div className="mb-6">
+            <h4 className="text-sm font-medium text-dark mb-3">下载模板</h4>
+            <button 
+              onClick={downloadQuestionTemplateJSON}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              下载 JSON 模板
+            </button>
+          </div>
+          
+          <div className="mb-6">
+            <h4 className="text-sm font-medium text-dark mb-3">上传文件</h4>
+            <Dragger
+              name="file"
+              multiple={false}
+              accept=".json"
+              fileList={importFileList}
+              onChange={({ file, fileList }) => {
+                setImportFileList(fileList);
+                if (file.originFileObj) {
+                  handleBatchImport(file.originFileObj);
+                }
+              }}
+            >
+              <p className="ant-upload-drag-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+              </p>
+              <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
+              <p className="ant-upload-hint">
+                支持单个 JSON 文件上传
+              </p>
+            </Dragger>
+          </div>
+        </div>
+      </Modal>
+
+      {/* 批量下载模态框 */}
+      <Modal
+        isOpen={showDownloadModal}
+        onClose={() => setShowDownloadModal(false)}
+        title="批量下载题目"
+        confirmText={isLoading ? '下载中...' : '下载'}
+        onConfirm={handleBatchDownload}
+        size="lg"
+      >
+        <div className="p-6">
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-dark mb-2">下载选项</label>
+            <Select 
+              value={downloadOption}
+              onChange={setDownloadOption}
+              style={{ width: '100%' }}
+            >
+              <Select.Option value="all">下载全部数据</Select.Option>
+              <Select.Option value="paginated">分页下载</Select.Option>
+            </Select>
+          </div>
+          
+          {downloadOption === 'paginated' && (
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-dark mb-2">每页下载条数</label>
+                <Input 
+                  type="number" 
+                  min="1" 
+                  max="5000" 
+                  value={downloadPageSize}
+                  onChange={(e) => setDownloadPageSize(e.target.value)}
+                  placeholder="请输入每页下载条数"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-dark mb-2">下载页码</label>
+                <Input 
+                  type="number" 
+                  min="1" 
+                  value={downloadPageNumber}
+                  onChange={(e) => setDownloadPageNumber(e.target.value)}
+                  placeholder="请输入下载页码"
+                />
+              </div>
+            </div>
+          )}
         </div>
       </Modal>
 

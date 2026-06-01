@@ -1,81 +1,82 @@
 const pool = require('../../../lib/db');
+const { handleError, successResponse } = require('../../../lib/errorHandler');
 
 // 各级别的题目配置
 const examConfig = {
   N1: {
     vocabulary: [
-      { category: 'kanji_reading', count: 2 },
+      { category: 'kanji_reading', count: 6 },
       { category: 'kanji_writing', count: 0 },
       { category: 'word_formation', count: 0 },
-      { category: 'word_relation', count: 2 },
-      { category: 'synonym_replacement', count: 2 },
-      { category: 'usage', count: 2 }
+      { category: 'word_relation', count: 7 },
+      { category: 'synonym_replacement', count: 6 },
+      { category: 'usage', count: 5 }
     ],
     grammar: [
-      { category: 'sentence_grammar1', count: 2 },
-      { category: 'sentence_grammar2', count: 2 },
+      { category: 'sentence_grammar1', count: 10 },
+      { category: 'sentence_grammar2', count: 5 },
       { category: 'text_grammar', count: 1 } // 1篇文章，包含若干小题
     ],
     reading: [
-      { category: 'short_content', count: 2 }, // 2篇，每篇包含若干小题
-      { category: 'medium_content', count: 2 }, // 2篇，每篇包含若干小题
+      { category: 'short_content', count: 4 }, // 4篇，每篇包含若干小题
+      { category: 'medium_content', count: 4 }, // 4篇，每篇包含若干小题
       { category: 'long_content', count: 1 }, // 1篇，包含若干小题
       { category: 'comprehensive', count: 1 }, // 1篇，包含若干小题
       { category: 'argument', count: 1 }, // 1篇，包含若干小题
       { category: 'information_retrieval', count: 1 } // 1篇，包含若干小题
     ],
     listening: [
-      { category: 'problem_understanding', count: 1 },
-      { category: 'point_understanding', count: 1 },
-      { category: 'summary_understanding', count: 1 },
+      { category: 'problem_understanding', count: 5 },
+      { category: 'point_understanding', count: 6 },
+      { category: 'summary_understanding', count: 5 },
       { category: 'language_expression', count: 0 },
-      { category: 'immediate_response', count: 2 },
-      { category: 'comprehensive', count: 2 }
+      { category: 'immediate_response', count: 11 },
+      { category: 'comprehensive', count: 3 }
     ]
   },
   N2: {
     vocabulary: [
-      { category: 'kanji_reading', count: 2 },
-      { category: 'kanji_writing', count: 2 },
-      { category: 'word_formation', count: 2 },
-      { category: 'word_relation', count: 2 },
-      { category: 'synonym_replacement', count: 2 },
-      { category: 'usage', count: 2 }
+      { category: 'kanji_reading', count: 5 },
+      { category: 'kanji_writing', count: 5 },
+      { category: 'word_formation', count: 3 },
+      { category: 'word_relation', count: 7 },
+      { category: 'synonym_replacement', count: 5 },
+      { category: 'usage', count: 5 }
     ],
     grammar: [
-      { category: 'sentence_grammar1', count: 2 },
-      { category: 'sentence_grammar2', count: 2 },
+      { category: 'sentence_grammar1', count: 12 },
+      { category: 'sentence_grammar2', count: 5 },
       { category: 'text_grammar', count: 1 } // 1篇文章，包含若干小题
     ],
     reading: [
-      { category: 'short_content', count: 2 }, // 2篇，每篇包含若干小题
-      { category: 'medium_content', count: 2 }, // 2篇，每篇包含若干小题
+      { category: 'short_content', count: 5 }, // 5篇，每篇包含若干小题
+      { category: 'medium_content', count: 4 }, // 4篇，每篇包含若干小题
       { category: 'long_content', count: 0 }, // 0篇
       { category: 'comprehensive', count: 1 }, // 1篇，包含若干小题
       { category: 'argument', count: 1 }, // 1篇，包含若干小题
       { category: 'information_retrieval', count: 1 } // 1篇，包含若干小题
     ],
     listening: [
-      { category: 'problem_understanding', count: 2 },
-      { category: 'point_understanding', count: 2 },
-      { category: 'summary_understanding', count: 1 },
+      { category: 'problem_understanding', count: 5 },
+      { category: 'point_understanding', count: 6 },
+      { category: 'summary_understanding', count: 5 },
       { category: 'language_expression', count: 0 },
-      { category: 'immediate_response', count: 1 },
-      { category: 'comprehensive', count: 1 }
+      { category: 'immediate_response', count: 11 },
+      { category: 'comprehensive', count: 3 }
     ]
   },
   N3: {
     vocabulary: [
-      { category: 'kanji_reading', count: 1 },
-      { category: 'kanji_writing', count: 1 },
+      { category: 'kanji_reading', count: 10 },
+      { category: 'kanji_writing', count: 5 },
       { category: 'word_formation', count: 0 },
-      { category: 'word_relation', count: 1 },
-      { category: 'synonym_replacement', count: 1 },
-      { category: 'usage', count: 1 }
+      { category: 'word_relation', count: 10 },
+      { category: 'synonym_replacement', count: 5 },
+      { category: 'usage', count: 5 }
     ],
     grammar: [
-      { category: 'sentence_grammar1', count: 1 },
-      { category: 'sentence_grammar2', count: 1 },
+      { category: 'sentence_grammar1', count: 15 },
+      { category: 'sentence_grammar2', count: 5 },
       { category: 'text_grammar', count: 1 } // 1篇文章，包含若干小题
     ],
     reading: [
@@ -87,26 +88,26 @@ const examConfig = {
       { category: 'information_retrieval', count: 1 } // 1篇，包含若干小题
     ],
     listening: [
-      { category: 'problem_understanding', count: 1 },
-      { category: 'point_understanding', count: 1 },
-      { category: 'summary_understanding', count: 1 },
-      { category: 'language_expression', count: 1 },
-      { category: 'immediate_response', count: 1 },
+      { category: 'problem_understanding', count: 6 },
+      { category: 'point_understanding', count: 6 },
+      { category: 'summary_understanding', count: 3 },
+      { category: 'language_expression', count: 4 },
+      { category: 'immediate_response', count: 10 },
       { category: 'comprehensive', count: 0 }
     ]
   },
   N4: {
     vocabulary: [
-      { category: 'kanji_reading', count: 1 },
-      { category: 'kanji_writing', count: 1 },
+      { category: 'kanji_reading', count: 7 },
+      { category: 'kanji_writing', count: 5 },
       { category: 'word_formation', count: 0 },
-      { category: 'word_relation', count: 1 },
-      { category: 'synonym_replacement', count: 1 },
-      { category: 'usage', count: 1 }
+      { category: 'word_relation', count: 8 },
+      { category: 'synonym_replacement', count: 4 },
+      { category: 'usage', count: 4 }
     ],
     grammar: [
-      { category: 'sentence_grammar1', count: 1 },
-      { category: 'sentence_grammar2', count: 1 },
+      { category: 'sentence_grammar1', count: 13 },
+      { category: 'sentence_grammar2', count: 4 },
       { category: 'text_grammar', count: 1 } // 1篇文章，包含若干小题
     ],
     reading: [
@@ -118,26 +119,26 @@ const examConfig = {
       { category: 'information_retrieval', count: 1 } // 1篇，包含若干小题
     ],
     listening: [
-      { category: 'problem_understanding', count: 1 },
-      { category: 'point_understanding', count: 1 },
+      { category: 'problem_understanding', count: 8 },
+      { category: 'point_understanding', count: 7 },
       { category: 'summary_understanding', count: 0 },
-      { category: 'language_expression', count: 1 },
-      { category: 'immediate_response', count: 1 },
+      { category: 'language_expression', count: 5 },
+      { category: 'immediate_response', count: 8 },
       { category: 'comprehensive', count: 0 }
     ]
   },
   N5: {
     vocabulary: [
-      { category: 'kanji_reading', count: 1 },
-      { category: 'kanji_writing', count: 1 },
+      { category: 'kanji_reading', count: 12 },
+      { category: 'kanji_writing', count: 8 },
       { category: 'word_formation', count: 0 },
-      { category: 'word_relation', count: 1 },
-      { category: 'synonym_replacement', count: 1 },
+      { category: 'word_relation', count: 10 },
+      { category: 'synonym_replacement', count: 5 },
       { category: 'usage', count: 0 }
     ],
     grammar: [
-      { category: 'sentence_grammar1', count: 1 },
-      { category: 'sentence_grammar2', count: 1 },
+      { category: 'sentence_grammar1', count: 16 },
+      { category: 'sentence_grammar2', count: 5 },
       { category: 'text_grammar', count: 1 } // 1篇文章，包含若干小题
     ],
     reading: [
@@ -149,11 +150,11 @@ const examConfig = {
       { category: 'information_retrieval', count: 1 } // 1篇，包含若干小题
     ],
     listening: [
-      { category: 'problem_understanding', count: 1 },
-      { category: 'point_understanding', count: 1 },
+      { category: 'problem_understanding', count: 7 },
+      { category: 'point_understanding', count: 6 },
       { category: 'summary_understanding', count: 0 },
-      { category: 'language_expression', count: 1 },
-      { category: 'immediate_response', count: 1 },
+      { category: 'language_expression', count: 5 },
+      { category: 'immediate_response', count: 6 },
       { category: 'comprehensive', count: 0 }
     ]
   }
@@ -167,7 +168,7 @@ function getRandomElements(arr, count) {
 
 // 辅助函数：获取指定类型和级别的题目
 async function getQuestionsByType(questionType, category, level, count) {
-  let sql = 'SELECT * FROM questions WHERE question_type = $1 AND level = $2';
+  let sql = 'SELECT * FROM questions WHERE question_type = $1 AND level = $2 AND is_real_exam = true';
   const params = [questionType, level];
   let paramIndex = 3;
   
@@ -183,7 +184,7 @@ async function getQuestionsByType(questionType, category, level, count) {
     let passageSql = `
       SELECT DISTINCT passage 
       FROM questions 
-      WHERE question_type = $1 AND level = $2
+      WHERE question_type = $1 AND level = $2 AND is_real_exam = true
     `;
     
     if (category) {
@@ -203,7 +204,7 @@ async function getQuestionsByType(questionType, category, level, count) {
       
       let questionSql = `
         SELECT * FROM questions 
-        WHERE question_type = $1 AND level = $2
+        WHERE question_type = $1 AND level = $2 AND is_real_exam = true
       `;
       
       if (category) {
@@ -230,21 +231,21 @@ async function getQuestionsByType(questionType, category, level, count) {
 async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST']);
-    res.status(405).end(`Method ${req.method} Not Allowed`);
+    res.status(405).json({ success: false, error: { code: 'METHOD_NOT_ALLOWED', message: `Method ${req.method} Not Allowed` } });
     return;
   }
   
   const { level, sections } = req.body;
   
   if (!level || !sections || sections.length === 0) {
-    res.status(400).json({ error: 'Missing required parameters' });
+    res.status(400).json({ success: false, error: { code: 'MISSING_PARAMS', message: 'Missing required parameters' } });
     return;
   }
   
   try {
     const levelConfig = examConfig[level];
     if (!levelConfig) {
-      res.status(400).json({ error: 'Invalid level' });
+      res.status(400).json({ success: false, error: { code: 'INVALID_LEVEL', message: 'Invalid level' } });
       return;
     }
     
@@ -284,10 +285,9 @@ async function handler(req, res) {
       }
     }
     
-    res.status(200).json({ questions });
+    return successResponse(res, { questions }, '生成试卷成功');
   } catch (error) {
-    console.error('API Error:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    handleError(error, req, res);
   }
 }
 

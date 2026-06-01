@@ -1,6 +1,7 @@
 const pool = require('../../../lib/db');
 const rateLimit = require('../../../lib/rateLimit');
 const cache = require('../../../lib/cache');
+const { handleError, successResponse } = require('../../../lib/errorHandler');
 
 // 应用速率限制
 const limiter = rateLimit({
@@ -109,10 +110,9 @@ async function handler(req, res) {
         // 存入缓存，缓存时间为5分钟
         cache.set(cacheKey, responseData, 5 * 60 * 1000);
         
-        res.status(200).json(responseData);
+        return successResponse(res, responseData);
       } catch (error) {
-        console.error('Error fetching vocabulary:', error);
-        res.status(500).json({ error: 'Failed to fetch vocabulary' });
+        handleError(error, req, res);
       }
       break;
 
@@ -167,7 +167,7 @@ async function handler(req, res) {
           }
           // 清除缓存
           cache.clear();
-          res.status(201).json({ message: '批量导入成功', data: results });
+          return successResponse(res, results, '批量导入成功');
         } else {
           // 处理单个词汇添加
           // 构建动态SQL查询，根据数据库结构调整
@@ -181,7 +181,7 @@ async function handler(req, res) {
             const result = await pool.query(query, params);
             // 清除缓存
             cache.clear();
-            res.status(201).json(result.rows[0]);
+            return successResponse(res, result.rows[0], '词汇添加成功');
           } catch (e) {
             // 如果失败，尝试不包含textbook和lesson字段
             console.log('Falling back to original schema without textbook and lesson');
@@ -192,12 +192,11 @@ async function handler(req, res) {
             const result = await pool.query(query, params);
             // 清除缓存
             cache.clear();
-            res.status(201).json(result.rows[0]);
+            return successResponse(res, result.rows[0], '词汇添加成功');
           }
         }
       } catch (error) {
-        console.error('Error creating vocabulary:', error);
-        res.status(500).json({ error: 'Failed to create vocabulary' });
+        handleError(error, req, res);
       }
       break;
 
@@ -218,9 +217,9 @@ async function handler(req, res) {
                    RETURNING *`;
           params = [japanese, pronunciation, chinese, level, category, pitch_accent, tag, examples || [], textbook, lesson, id];
           const result = await pool.query(query, params);
-          // 清除缓存
-          cache.clear();
-          res.status(200).json(result.rows[0]);
+            // 清除缓存
+            cache.clear();
+            return successResponse(res, result.rows[0], '词汇更新成功');
         } catch (e) {
           // 如果失败，尝试不包含textbook和lesson字段
           console.log('Falling back to original schema without textbook and lesson');
@@ -232,13 +231,12 @@ async function handler(req, res) {
                    RETURNING *`;
           params = [japanese, pronunciation, chinese, level, category, pitch_accent, tag, examples || [], id];
           const result = await pool.query(query, params);
-          // 清除缓存
-          cache.clear();
-          res.status(200).json(result.rows[0]);
+            // 清除缓存
+            cache.clear();
+            return successResponse(res, result.rows[0], '词汇更新成功');
         }
       } catch (error) {
-        console.error('Error updating vocabulary:', error);
-        res.status(500).json({ error: 'Failed to update vocabulary' });
+        handleError(error, req, res);
       }
       break;
 
@@ -251,15 +249,14 @@ async function handler(req, res) {
         // 清除缓存
         cache.clear();
         
-        res.status(200).json({ message: 'Vocabulary deleted successfully' });
+        return successResponse(res, null, '词汇删除成功');
       } catch (error) {
-        console.error('Error deleting vocabulary:', error);
-        res.status(500).json({ error: 'Failed to delete vocabulary' });
+        handleError(error, req, res);
       }
       break;
 
     default:
-      res.status(405).json({ error: 'Method not allowed' });
+      res.status(405).json({ success: false, error: { code: 'METHOD_NOT_ALLOWED', message: 'Method not allowed' } });
   }
 }
 

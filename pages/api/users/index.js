@@ -1,4 +1,5 @@
 const pool = require('../../../lib/db');
+const { handleError, successResponse } = require('../../../lib/errorHandler');
 
 async function handler(req, res) {
   const { method } = req;
@@ -19,10 +20,10 @@ async function handler(req, res) {
           [parseInt(limit), offset]
         );
         
-        res.status(200).json({ data: result.rows, total });
+        const responseData = { data: result.rows, total };
+        return successResponse(res, responseData);
       } catch (error) {
-        console.error('Error fetching users:', error);
-        res.status(500).json({ error: 'Failed to fetch users' });
+        handleError(error, req, res);
       }
       break;
 
@@ -37,10 +38,9 @@ async function handler(req, res) {
           [username, email, password, role || 'user']
         );
         
-        res.status(201).json(result.rows[0]);
+        return successResponse(res, result.rows[0], '用户添加成功');
       } catch (error) {
-        console.error('Error creating user:', error);
-        res.status(500).json({ error: 'Failed to create user' });
+        handleError(error, req, res);
       }
       break;
 
@@ -78,10 +78,9 @@ async function handler(req, res) {
         params.push(id);
 
         const result = await pool.query(query, params);
-        res.status(200).json(result.rows[0]);
+        return successResponse(res, result.rows[0], '用户更新成功');
       } catch (error) {
-        console.error('Error updating user:', error);
-        res.status(500).json({ error: 'Failed to update user' });
+        handleError(error, req, res);
       }
       break;
 
@@ -91,15 +90,14 @@ async function handler(req, res) {
         
         await pool.query('DELETE FROM users WHERE id = $1', [id]);
         
-        res.status(200).json({ message: 'User deleted successfully' });
+        return successResponse(res, null, '用户删除成功');
       } catch (error) {
-        console.error('Error deleting user:', error);
-        res.status(500).json({ error: 'Failed to delete user' });
+        handleError(error, req, res);
       }
       break;
 
     default:
-      res.status(405).json({ error: 'Method not allowed' });
+      res.status(405).json({ success: false, error: { code: 'METHOD_NOT_ALLOWED', message: 'Method not allowed' } });
   }
 }
 

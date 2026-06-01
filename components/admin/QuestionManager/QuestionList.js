@@ -22,6 +22,7 @@ const QuestionList = ({ questions, onEdit, onDelete }) => {
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">题目</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">类型</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">级别</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">是否真题</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
           </tr>
         </thead>
@@ -37,6 +38,9 @@ const QuestionList = ({ questions, onEdit, onDelete }) => {
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-muted">
                 {question.level || '-'}
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap text-sm text-muted">
+                {question.is_real_exam ? '是' : '否'}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                 <button
@@ -56,7 +60,7 @@ const QuestionList = ({ questions, onEdit, onDelete }) => {
           ))}
           {questions.length === 0 && (
             <tr>
-              <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
+              <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
                 暂无题目数据
               </td>
             </tr>

@@ -1,4 +1,5 @@
 const pool = require('../../../lib/db');
+const { handleError, successResponse } = require('../../../lib/errorHandler');
 
 async function handler(req, res) {
   const { method, query, body } = req;
@@ -35,15 +36,15 @@ async function handler(req, res) {
 
           const total = parseInt(countResult.rows[0].count);
 
-          res.status(200).json({
+          const responseData = {
             data: result.rows,
             total,
             page: parseInt(page),
             limit: parseInt(limit)
-          });
+          };
+          return successResponse(res, responseData);
         } catch (error) {
-          console.error('Error fetching listening:', error);
-          res.status(500).json({ error: 'Failed to fetch listening' });
+          handleError(error, req, res);
         }
         break;
 
@@ -61,10 +62,9 @@ async function handler(req, res) {
           const params = [difficulty, audioUrl, exerciseType, JSON.stringify(groups), explanation];
 
           const result = await pool.query(query, params);
-          res.status(201).json(result.rows[0]);
+          return successResponse(res, result.rows[0], '听力添加成功');
         } catch (error) {
-          console.error('Error adding listening:', error);
-          res.status(500).json({ error: 'Failed to add listening' });
+          handleError(error, req, res);
         }
         break;
 
@@ -85,13 +85,12 @@ async function handler(req, res) {
 
           const result = await pool.query(query, params);
           if (result.rows.length === 0) {
-            res.status(404).json({ error: 'Listening not found' });
+            res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Listening not found' } });
           } else {
-            res.status(200).json(result.rows[0]);
+            return successResponse(res, result.rows[0], '听力更新成功');
           }
         } catch (error) {
-          console.error('Error updating listening:', error);
-          res.status(500).json({ error: 'Failed to update listening' });
+          handleError(error, req, res);
         }
         break;
 
@@ -105,23 +104,21 @@ async function handler(req, res) {
           const result = await pool.query(deleteQuery, [id]);
 
           if (result.rowCount === 0) {
-            res.status(404).json({ error: 'Listening not found' });
+            res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Listening not found' } });
           } else {
-            res.status(200).json({ message: 'Listening deleted successfully' });
+            return successResponse(res, null, '听力删除成功');
           }
         } catch (error) {
-          console.error('Error deleting listening:', error);
-          res.status(500).json({ error: 'Failed to delete listening' });
+          handleError(error, req, res);
         }
         break;
 
       default:
         res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE']);
-        res.status(405).end(`Method ${method} Not Allowed`);
+        res.status(405).json({ success: false, error: { code: 'METHOD_NOT_ALLOWED', message: `Method ${method} Not Allowed` } });
     }
   } catch (error) {
-    console.error('Error in listening API:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    handleError(error, req, res);
   }
 }
 

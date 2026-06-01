@@ -1,4 +1,5 @@
 const pool = require('../../../lib/db');
+const { handleError, successResponse } = require('../../../lib/errorHandler');
 
 async function handler(req, res) {
   const { method } = req;
@@ -23,17 +24,16 @@ async function handler(req, res) {
       const result = await pool.query(query, params);
       
       if (result.rows.length === 0) {
-        res.status(404).json({ error: 'No articles found for the specified level' });
+        res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'No articles found for the specified level' } });
         return;
       }
 
-      res.status(200).json(result.rows[0]);
+      return successResponse(res, result.rows[0]);
     } catch (error) {
-      console.error('Error fetching random article:', error);
-      res.status(500).json({ error: 'Failed to fetch random article' });
+      handleError(error, req, res);
     }
   } else {
-    res.status(405).json({ error: 'Method not allowed' });
+    res.status(405).json({ success: false, error: { code: 'METHOD_NOT_ALLOWED', message: 'Method not allowed' } });
   }
 }
 

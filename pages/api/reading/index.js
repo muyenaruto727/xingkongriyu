@@ -1,4 +1,5 @@
 const pool = require('../../../lib/db');
+const { handleError, successResponse } = require('../../../lib/errorHandler');
 
 async function handler(req, res) {
   const { method, query, body } = req;
@@ -35,15 +36,15 @@ async function handler(req, res) {
 
           const total = parseInt(countResult.rows[0].count);
 
-          res.status(200).json({
+          const responseData = {
             data: result.rows,
             total,
             page: parseInt(page),
             limit: parseInt(limit)
-          });
+          };
+          return successResponse(res, responseData);
         } catch (error) {
-          console.error('Error fetching reading:', error);
-          res.status(500).json({ error: 'Failed to fetch reading' });
+          handleError(error, req, res);
         }
         break;
 
@@ -61,10 +62,9 @@ async function handler(req, res) {
           const params = [difficulty, article, JSON.stringify(groups)];
 
           const result = await pool.query(query, params);
-          res.status(201).json(result.rows[0]);
+          return successResponse(res, result.rows[0], '阅读添加成功');
         } catch (error) {
-          console.error('Error adding reading:', error);
-          res.status(500).json({ error: 'Failed to add reading' });
+          handleError(error, req, res);
         }
         break;
 
@@ -85,13 +85,12 @@ async function handler(req, res) {
 
           const result = await pool.query(updateQuery, params);
           if (result.rows.length === 0) {
-            res.status(404).json({ error: 'Reading not found' });
+            res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Reading not found' } });
           } else {
-            res.status(200).json(result.rows[0]);
+            return successResponse(res, result.rows[0], '阅读更新成功');
           }
         } catch (error) {
-          console.error('Error updating reading:', error);
-          res.status(500).json({ error: 'Failed to update reading' });
+          handleError(error, req, res);
         }
         break;
 
@@ -105,23 +104,21 @@ async function handler(req, res) {
           const result = await pool.query(deleteQuery, [id]);
 
           if (result.rowCount === 0) {
-            res.status(404).json({ error: 'Reading not found' });
+            res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Reading not found' } });
           } else {
-            res.status(200).json({ message: 'Reading deleted successfully' });
+            return successResponse(res, null, '阅读删除成功');
           }
         } catch (error) {
-          console.error('Error deleting reading:', error);
-          res.status(500).json({ error: 'Failed to delete reading' });
+          handleError(error, req, res);
         }
         break;
 
       default:
         res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE']);
-        res.status(405).end(`Method ${method} Not Allowed`);
+        res.status(405).json({ success: false, error: { code: 'METHOD_NOT_ALLOWED', message: `Method ${method} Not Allowed` } });
     }
   } catch (error) {
-    console.error('Error in reading API:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    handleError(error, req, res);
   }
 }
 

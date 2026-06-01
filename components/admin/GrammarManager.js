@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../lib/api';
 import Toast from '../common/Toast';
-import { Select, Input } from 'antd';
+import { Select, Input, Upload } from 'antd';
+import { InboxOutlined } from '@ant-design/icons';
 import Pagination from '../common/Pagination';
 import Modal from '../common/Modal';
 import PaginationTable from '../common/PaginationTable';
+
+const { Dragger } = Upload;
 
 const GrammarManager = ({ showToast }) => {
   const [grammarList, setGrammarList] = useState([]);
@@ -321,56 +324,103 @@ const GrammarManager = ({ showToast }) => {
   };
 
   // 批量导入
-  const handleBatchImport = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
+  const handleBatchImport = async (file) => {
     setIsLoading(true);
+    showToast('开始处理文件...', 'info');
     try {
       const reader = new FileReader();
       reader.onload = async (event) => {
         try {
+          showToast('解析文件中...', 'info');
           const content = event.target.result;
           let data;
 
           // 解析文件内容
           if (file.name.endsWith('.json')) {
             data = JSON.parse(content);
-          } else if (file.name.endsWith('.csv')) {
-            // 简单的 CSV 解析
-            const rows = content.split('\n').filter(row => row.trim());
-            const headers = rows[0].split(',');
-            data = rows.slice(1).map(row => {
-              const values = row.split(',');
-              const obj = {};
-              headers.forEach((header, index) => {
-                obj[header.trim()] = values[index]?.trim();
-              });
-              return obj;
-            });
           } else {
             showToast('不支持的文件格式', 'error');
+            setIsLoading(false);
             return;
           }
 
           // 验证数据格式
           if (!Array.isArray(data)) {
             showToast('文件内容格式错误', 'error');
+            setIsLoading(false);
             return;
           }
 
-          // 发送批量导入请求
-          await api.importGrammar(data);
+          // 过滤无效数据
+          showToast(`验证数据格式，共 ${data.length} 条数据...`, 'info');
+          const filteredData = data.filter(item => {
+            return item.grammarPoint && item.level && item.japaneseMeaning && item.chineseMeaning && item.continuation;
+          });
 
-          showToast('批量导入成功', 'success');
-          fetchGrammarList();
+          if (filteredData.length === 0) {
+            showToast('文件中没有有效的语法数据', 'error');
+            setIsLoading(false);
+            return;
+          }
+
+          // 与数据库中已有的语法进行去重
+          try {
+            showToast('与数据库中已有的语法进行去重...', 'info');
+            const existingGrammar = await api.getGrammarList({ limit: 10000 });
+            const existingKeys = new Set();
+            
+            if (Array.isArray(existingGrammar)) {
+              existingGrammar.forEach(grammar => {
+                if (grammar.grammarPoint && grammar.level) {
+                  const key = `${grammar.grammarPoint}-${grammar.level}`;
+                  existingKeys.add(key);
+                }
+              });
+            } else if (existingGrammar.data) {
+              existingGrammar.data.forEach(grammar => {
+                if (grammar.grammarPoint && grammar.level) {
+                  const key = `${grammar.grammarPoint}-${grammar.level}`;
+                  existingKeys.add(key);
+                }
+              });
+            }
+
+            // 过滤掉与数据库中重复的语法
+            const uniqueData = filteredData.filter(item => {
+              const key = `${item.grammarPoint}-${item.level}`;
+              return !existingKeys.has(key);
+            });
+
+            if (uniqueData.length === 0) {
+              showToast('所有数据都已存在，没有新数据可导入', 'info');
+              setIsLoading(false);
+              return;
+            } 
+
+            // 发送批量导入请求
+            showToast(`正在导入 ${uniqueData.length} 条新数据...`, 'info');
+            await api.importGrammar({ batch: uniqueData });
+
+            if (uniqueData.length < filteredData.length) {
+              showToast(`已过滤掉 ${filteredData.length - uniqueData.length} 条重复数据，成功导入 ${uniqueData.length} 条新数据`, 'success');
+            } else {
+              showToast(`成功导入 ${uniqueData.length} 条新数据`, 'success');
+            }
+          } catch (error) {
+            console.error('去重失败:', error);
+            // 如果去重失败，仍然尝试导入数据
+            showToast(`直接导入 ${filteredData.length} 条数据...`, 'info');
+            await api.importGrammar({ batch: filteredData });
+            showToast(`成功导入 ${filteredData.length} 条数据`, 'success');
+          }
+
+          showToast('刷新语法列表...', 'info');
+          await fetchGrammarList();
         } catch (error) {
           console.error('文件解析失败:', error);
           showToast('文件解析失败', 'error');
         } finally {
           setIsLoading(false);
-          // 重置文件输入
-          e.target.value = '';
         }
       };
       reader.readAsText(file);
@@ -378,8 +428,6 @@ const GrammarManager = ({ showToast }) => {
       console.error('批量导入失败:', error);
       showToast('批量导入失败', 'error');
       setIsLoading(false);
-      // 重置文件输入
-      e.target.value = '';
     }
   };
 
@@ -424,31 +472,7 @@ const GrammarManager = ({ showToast }) => {
     showToast('模板下载成功', 'success');
   };
 
-  // 下载语法模板（CSV格式）
-  const downloadGrammarTemplateCSV = () => {
-    const headers = ['grammarPoint', 'level', 'japaneseMeaning', 'chineseMeaning', 'continuation', 'attentionPoints', 'examples', 'translationExercises', 'referenceAnswers'];
-    const rows = [
-      ['~ている', 'N5', '現在進行中の動作を表す', '表示正在进行的动作', '動詞のて形 + いる', '状態を表す動詞と一緒に使うこともできる', '私は日本語を勉強しています。;彼はテレビを見ています。', '我正在学习日语。;他正在看电视。', '私は日本語を勉強しています。;彼はテレビを見ています。'],
-      ['~たい', 'N5', '希望や欲求を表す', '表示希望或欲望', '動詞の辞書形 + たい', '第一人称でしか使えない', '私は日本に行きたいです。;彼女は寿司を食べたいです。', '我想去日本。;她想吃寿司。', '私は日本に行きたいです。;彼女は寿司を食べたいです。']
-    ];
 
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const downloadUrl = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.download = `grammar_template_${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(downloadUrl);
-
-    showToast('模板下载成功', 'success');
-  };
 
   // 批量下载
   const handleBatchDownload = async () => {
@@ -456,13 +480,10 @@ const GrammarManager = ({ showToast }) => {
     try {
       // 获取用户选择的下载选项
       const downloadOption = document.querySelector('input[name="grammar-download-option"]:checked')?.value || 'all';
-      const downloadFormat = document.querySelector('input[name="grammar-download-format"]:checked')?.value || 'json';
 
       if (downloadOption === 'paginated') {
         // 分页下载逻辑
-        showToast('分页下载功能开发中', 'info');
-        setShowDownloadModal(false);
-        setIsLoading(false);
+        await handlePaginatedDownload();
         return;
       }
 
@@ -488,35 +509,10 @@ const GrammarManager = ({ showToast }) => {
       const response = await api.exportGrammar(params);
       const grammarData = Array.isArray(response) ? response : (response.data || []);
 
-      let content, mimeType, fileName;
-
-      if (downloadFormat === 'json') {
-        // 转换为JSON字符串
-        content = JSON.stringify(grammarData, null, 2);
-        mimeType = 'application/json';
-        fileName = `grammar_${new Date().toISOString().split('T')[0]}.json`;
-      } else {
-        // 转换为CSV格式
-        const headers = ['grammarPoint', 'level', 'japaneseMeaning', 'chineseMeaning', 'continuation', 'attentionPoints', 'examples', 'translationExercises', 'referenceAnswers'];
-        const rows = grammarData.map(item => [
-          item.grammarPoint || '',
-          item.level || '',
-          item.japaneseMeaning || '',
-          item.chineseMeaning || '',
-          item.continuation || '',
-          item.attentionPoints || '',
-          Array.isArray(item.examples) ? item.examples.join(';') : (item.examples || ''),
-          Array.isArray(item.translationExercises) ? item.translationExercises.join(';') : (item.translationExercises || ''),
-          Array.isArray(item.referenceAnswers) ? item.referenceAnswers.join(';') : (item.referenceAnswers || '')
-        ]);
-
-        content = [
-          headers.join(','),
-          ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-        ].join('\n');
-        mimeType = 'text/csv;charset=utf-8;';
-        fileName = `grammar_${new Date().toISOString().split('T')[0]}.csv`;
-      }
+      // 转换为JSON字符串
+      const content = JSON.stringify(grammarData, null, 2);
+      const mimeType = 'application/json';
+      const fileName = `grammar_${new Date().toISOString().split('T')[0]}.json`;
 
       // 创建下载链接
       const blob = new Blob([content], { type: mimeType });
@@ -540,6 +536,59 @@ const GrammarManager = ({ showToast }) => {
     }
   };
 
+  // 分页下载处理
+  const handlePaginatedDownload = async () => {
+    try {
+      // 获取用户自定义的每页大小和页码
+      const pageSize = parseInt(document.getElementById('grammar-page-size')?.value || '1000', 10);
+      const pageNumber = parseInt(document.getElementById('grammar-page-number')?.value || '1', 10);
+
+      // 构建查询参数
+      const params = {
+        page: pageNumber,
+        limit: pageSize
+      };
+
+      // 添加筛选参数
+      if (searchKeyword) {
+        params.search = searchKeyword;
+      }
+      if (selectedLevel) {
+        params.level = selectedLevel;
+      }
+
+      // 获取指定页码的数据
+      showToast(`开始下载第 ${pageNumber} 页，每页 ${pageSize} 条数据`, 'info');
+      const pageData = await api.exportGrammar(params);
+      const grammarData = Array.isArray(pageData) ? pageData : (pageData.data || []);
+      const totalItems = pageData.total || 0;
+      const totalPages = Math.ceil(totalItems / pageSize);
+
+      // 转换为JSON字符串
+      const content = JSON.stringify(grammarData, null, 2);
+      const mimeType = 'application/json';
+      const fileName = `grammar_${new Date().toISOString().split('T')[0]}_page_${pageNumber}_size_${pageSize}.json`;
+
+      // 创建下载链接
+      const blob = new Blob([content], { type: mimeType });
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(downloadUrl);
+
+      showToast(`分页下载成功，共下载 ${grammarData.length} 条数据（第 ${pageNumber}/${totalPages} 页）`, 'success');
+      setShowDownloadModal(false);
+    } catch (error) {
+      console.error('分页下载失败:', error);
+      showToast('分页下载失败', 'error');
+      setShowDownloadModal(false);
+    }
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
       {/* 添加按钮 */}
@@ -556,25 +605,21 @@ const GrammarManager = ({ showToast }) => {
         </button>
         <button 
           onClick={() => {
-            document.getElementById('grammar-import-input').click();
+            setShowImportModal(true);
           }}
           className="px-4 py-2 border border-gray-300 rounded-lg text-dark hover:bg-gray-50 transition-colors"
         >
           批量导入
         </button>
         <button 
-          onClick={handleBatchDownload}
+          onClick={() => {
+            setShowDownloadModal(true);
+          }}
           className="px-4 py-2 border border-gray-300 rounded-lg text-dark hover:bg-gray-50 transition-colors"
         >
           批量下载
         </button>
-        <input 
-          type="file" 
-          id="grammar-import-input" 
-          accept=".json,.csv" 
-          className="hidden"
-          onChange={handleBatchImport}
-        />
+
       </div>
 
       {/* 筛选和搜索 */}
@@ -864,52 +909,34 @@ const GrammarManager = ({ showToast }) => {
       >
         <div className="p-6">
           <div className="mb-6">
-            <h4 className="text-lg font-medium text-dark mb-4">导入说明</h4>
-            <p className="text-gray-600 mb-4">请按照以下步骤进行批量导入：</p>
-            <ol className="list-decimal list-inside space-y-2 text-gray-600 mb-6">
-              <li>下载导入模板文件</li>
-              <li>按照模板格式填写语法数据</li>
-              <li>上传填写好的文件进行导入</li>
-            </ol>
-          </div>
-
-          <div className="mb-6">
             <h4 className="text-lg font-medium text-dark mb-4">下载模板</h4>
-            <div className="flex gap-4">
-              <button 
-                onClick={downloadGrammarTemplate}
-                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                下载 JSON 模板
-              </button>
-              <button 
-                onClick={downloadGrammarTemplateCSV}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-dark hover:bg-gray-50 transition-colors"
-              >
-                下载 CSV 模板
-              </button>
-            </div>
+            <button 
+              onClick={downloadGrammarTemplate}
+              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              下载 JSON 模板
+            </button>
           </div>
 
           <div className="mb-6">
             <h4 className="text-lg font-medium text-dark mb-4">上传文件</h4>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-              <input 
-                type="file" 
-                id="grammar-import-input" 
-                accept=".json,.csv" 
-                className="hidden"
-                onChange={handleBatchImport}
-              />
-              <button 
-                type="button"
-                onClick={() => document.getElementById('grammar-import-input').click()}
-                className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                点击上传文件
-              </button>
-              <p className="mt-2 text-sm text-gray-500">支持 JSON 和 CSV 格式</p>
-            </div>
+            <Dragger
+              name="file"
+              multiple={false}
+              accept=".json"
+              beforeUpload={(file) => {
+                handleBatchImport(file);
+                return false; // 阻止自动上传
+              }}
+            >
+              <p className="ant-upload-drag-icon">
+                <InboxOutlined />
+              </p>
+              <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
+              <p className="ant-upload-hint">
+                支持单个 JSON 文件上传
+              </p>
+            </Dragger>
           </div>
         </div>
       </Modal>
@@ -935,6 +962,12 @@ const GrammarManager = ({ showToast }) => {
                   name="grammar-download-option" 
                   value="all" 
                   defaultChecked
+                  onChange={(e) => {
+                    const paginatedOptions = document.getElementById('grammar-paginated-options');
+                    if (paginatedOptions) {
+                      paginatedOptions.style.display = e.target.value === 'paginated' ? 'block' : 'none';
+                    }
+                  }}
                 />
                 <label htmlFor="grammar-download-all" className="ml-2 text-gray-700">
                   下载所有数据（最多 10,000 条）
@@ -946,6 +979,12 @@ const GrammarManager = ({ showToast }) => {
                   id="grammar-download-filtered" 
                   name="grammar-download-option" 
                   value="filtered"
+                  onChange={(e) => {
+                    const paginatedOptions = document.getElementById('grammar-paginated-options');
+                    if (paginatedOptions) {
+                      paginatedOptions.style.display = e.target.value === 'paginated' ? 'block' : 'none';
+                    }
+                  }}
                 />
                 <label htmlFor="grammar-download-filtered" className="ml-2 text-gray-700">
                   下载当前筛选条件的数据
@@ -957,38 +996,43 @@ const GrammarManager = ({ showToast }) => {
                   id="grammar-download-paginated" 
                   name="grammar-download-option" 
                   value="paginated"
+                  onChange={(e) => {
+                    const paginatedOptions = document.getElementById('grammar-paginated-options');
+                    if (paginatedOptions) {
+                      paginatedOptions.style.display = e.target.value === 'paginated' ? 'block' : 'none';
+                    }
+                  }}
                 />
                 <label htmlFor="grammar-download-paginated" className="ml-2 text-gray-700">
                   分页下载（适合大量数据）
                 </label>
               </div>
-            </div>
-          </div>
-          <div className="mb-6">
-            <h4 className="text-lg font-medium text-dark mb-4">下载格式</h4>
-            <div className="space-y-4">
-              <div className="flex items-center">
-                <input 
-                  type="radio" 
-                  id="grammar-format-json" 
-                  name="grammar-download-format" 
-                  value="json" 
-                  defaultChecked
-                />
-                <label htmlFor="grammar-format-json" className="ml-2 text-gray-700">
-                  JSON 格式（推荐）
-                </label>
-              </div>
-              <div className="flex items-center">
-                <input 
-                  type="radio" 
-                  id="grammar-format-csv" 
-                  name="grammar-download-format" 
-                  value="csv"
-                />
-                <label htmlFor="grammar-format-csv" className="ml-2 text-gray-700">
-                  CSV 格式
-                </label>
+              <div className="ml-8 space-y-4" id="grammar-paginated-options" style={{ display: 'none' }}>
+                <div>
+                  <label htmlFor="grammar-page-size" className="block text-sm font-medium text-gray-700 mb-1">
+                    每页大小
+                  </label>
+                  <input 
+                    type="number" 
+                    id="grammar-page-size" 
+                    min="1" 
+                    max="5000" 
+                    defaultValue="1000" 
+                    className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="grammar-page-number" className="block text-sm font-medium text-gray-700 mb-1">
+                    下载页码
+                  </label>
+                  <input 
+                    type="number" 
+                    id="grammar-page-number" 
+                    min="1" 
+                    defaultValue="1" 
+                    className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
               </div>
             </div>
           </div>

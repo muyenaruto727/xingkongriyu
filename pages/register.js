@@ -13,6 +13,7 @@ const Register = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [redirectCountdown, setRedirectCountdown] = useState(0);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -47,7 +48,6 @@ const Register = () => {
         throw new Error(data.error?.message || '注册失败');
       }
       
-      setSuccess('注册成功，请登录');
       setFormData({
         username: '',
         email: '',
@@ -55,10 +55,18 @@ const Register = () => {
         confirmPassword: ''
       });
       
-      // 3秒后跳转到登录页面
-      setTimeout(() => {
-        router.push('/login');
-      }, 3000);
+      // 设置倒计时
+      setRedirectCountdown(3);
+      const countdownInterval = setInterval(() => {
+        setRedirectCountdown(prev => {
+          if (prev <= 1) {
+            clearInterval(countdownInterval);
+            router.push('/login');
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
     } catch (error) {
       console.error('Registration error:', error);
       setError(error.message || '注册失败，请重试');
@@ -93,13 +101,13 @@ const Register = () => {
           </div>
         )}
         
-        {success && (
+        {redirectCountdown > 0 && (
           <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-lg mb-6" role="alert">
             <div className="flex items-center">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span>{success}</span>
+              <span>注册成功！即将跳转到登录页面... {redirectCountdown}秒</span>
             </div>
           </div>
         )}

@@ -21,11 +21,11 @@ const SectionDetail = () => {
           
           // 获取课程信息
           const courseResponse = await api.getCourseById(id);
-          setCourse(courseResponse.data);
+          setCourse(courseResponse);
           
           // 获取章节和小节信息
           const chaptersResponse = await api.getChapterList({ courseId: id });
-          const allChapters = chaptersResponse.data || [];
+          const allChapters = chaptersResponse || [];
           
           // 遍历所有章节，找到对应的小节
           let foundSection = null;

@@ -1,12 +1,14 @@
 const pool = require('../../../lib/db');
+const { handleError, successResponse } = require('../../../lib/errorHandler');
 
 async function handler(req, res) {
   const { method, query } = req;
-  const { id, level, type, page = 1, limit = 10 } = query;
+  const { id, level, type, is_real_exam, page = 1, limit = 10 } = query;
 
   try {
     switch (method) {
       case 'GET':
+        const { export: isExport } = query;
         let sql = 'SELECT * FROM questions WHERE 1=1';
         const params = [];
         let paramIndex = 1;
@@ -23,15 +25,29 @@ async function handler(req, res) {
           paramIndex++;
         }
 
+        if (is_real_exam !== undefined) {
+          sql += ` AND is_real_exam = $${paramIndex}`;
+          params.push(is_real_exam === 'true' || is_real_exam === true);
+          paramIndex++;
+        }
+
         sql += ' ORDER BY created_at DESC';
         
-        // 添加分页
-        const offset = (parseInt(page) - 1) * parseInt(limit);
-        sql += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
-        params.push(parseInt(limit), offset);
+        // 如果是导出，获取所有数据
+        if (!isExport) {
+          // 添加分页
+          const offset = (parseInt(page) - 1) * parseInt(limit);
+          sql += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+          params.push(parseInt(limit), offset);
+        }
 
         const result = await pool.query(sql, params);
         
+        // 如果是导出，直接返回所有数据
+        if (isExport) {
+          return successResponse(res, result.rows);
+        }
+
         // 获取总数
         let countSql = 'SELECT COUNT(*) as total FROM questions WHERE 1=1';
         const countParams = [];
@@ -46,30 +62,38 @@ async function handler(req, res) {
         if (type) {
           countSql += ` AND question_type = $${countParamIndex}`;
           countParams.push(type);
+          countParamIndex++;
+        }
+
+        if (is_real_exam !== undefined) {
+          countSql += ` AND is_real_exam = $${countParamIndex}`;
+          countParams.push(is_real_exam === 'true' || is_real_exam === true);
         }
         
         const countResult = await pool.query(countSql, countParams);
         const total = parseInt(countResult.rows[0].total);
 
-        res.status(200).json({
+        const responseData = {
           data: result.rows,
           pagination: {
             page: parseInt(page),
             limit: parseInt(limit),
             total
           }
-        });
+        };
+        return successResponse(res, responseData);
         break;
 
       case 'POST':
         const { 
+          batch, 
           question_text, 
           question_type, 
           options, 
           correct_answer, 
           explanation, 
           level: qLevel, 
-          is_real_exam,
+          is_real_exam: reqIsRealExam,
           category,
           passage,
           audio_url,
@@ -77,7 +101,21 @@ async function handler(req, res) {
           questions
         } = req.body;
         
-        if ((question_type === 'reading' || (question_type === 'grammar' && category === 'text_grammar')) && questions && questions.length > 0) {
+        // 处理批量导入
+        if (batch && Array.isArray(batch)) {
+          const results = [];
+          for (const item of batch) {
+            const insertResult = await pool.query(
+              `INSERT INTO questions 
+               (question_text, question_type, options, correct_answer, explanation, level, is_real_exam, category, passage, audio_url) 
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
+               RETURNING *`,
+              [item.question_text, item.question_type, item.options, item.correct_answer, item.explanation, item.level, item.is_real_exam, item.category || '', item.passage || '', item.audio_url || '']
+            );
+            results.push(insertResult.rows[0]);
+          }
+          return successResponse(res, results, '批量导入成功');
+        } else if ((question_type === 'reading' || (question_type === 'grammar' && category === 'text_grammar')) && questions && questions.length > 0) {
           // 处理阅读题和文法题的文章语法类别的多个题目组
           const insertedQuestions = [];
           for (const q of questions) {
@@ -87,11 +125,11 @@ async function handler(req, res) {
                (question_text, question_type, options, correct_answer, explanation, level, is_real_exam, category, passage, audio_url) 
                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
                RETURNING *`,
-              [q.question_text, question_type, q.options, q.correct_answer, q.explanation, qLevel, is_real_exam, category, currentPassage, audio_url]
+              [q.question_text, question_type, q.options, q.correct_answer, q.explanation, qLevel, reqIsRealExam, category, currentPassage, audio_url]
             );
             insertedQuestions.push(insertResult.rows[0]);
           }
-          res.status(201).json({ questions: insertedQuestions });
+          return successResponse(res, { questions: insertedQuestions }, '题目组添加成功');
         } else {
           // 处理其他类型的题目
           const insertResult = await pool.query(
@@ -99,15 +137,15 @@ async function handler(req, res) {
              (question_text, question_type, options, correct_answer, explanation, level, is_real_exam, category, passage, audio_url) 
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
              RETURNING *`,
-            [question_text, question_type, options, correct_answer, explanation, qLevel, is_real_exam, category, passage, audio_url]
+            [question_text, question_type, options, correct_answer, explanation, qLevel, reqIsRealExam, category, passage, audio_url]
           );
-          res.status(201).json(insertResult.rows[0]);
+          return successResponse(res, insertResult.rows[0], '题目添加成功');
         }
         break;
 
       case 'PUT':
         if (!id) {
-          res.status(400).json({ error: 'Missing question ID' });
+          res.status(400).json({ success: false, error: { code: 'MISSING_ID', message: 'Missing question ID' } });
           return;
         }
         
@@ -134,25 +172,24 @@ async function handler(req, res) {
            RETURNING *`,
           [updateText, updateType, updateOptions, updateAnswer, updateExplanation, updateLevel, updateIsRealExam, updateCategory, currentPassage, updateAudioUrl, parseInt(id)]
         );
-        res.status(200).json(updateResult.rows[0]);
+        return successResponse(res, updateResult.rows[0], '题目更新成功');
         break;
 
       case 'DELETE':
         if (!id) {
-          res.status(400).json({ error: 'Missing question ID' });
+          res.status(400).json({ success: false, error: { code: 'MISSING_ID', message: 'Missing question ID' } });
           return;
         }
         await pool.query('DELETE FROM questions WHERE id = $1', [parseInt(id)]);
-        res.status(200).json({ message: 'Question deleted successfully' });
+        return successResponse(res, null, '题目删除成功');
         break;
 
       default:
         res.setHeader('Allow', ['GET', 'POST', 'PUT', 'DELETE']);
-        res.status(405).end(`Method ${method} Not Allowed`);
+        res.status(405).json({ success: false, error: { code: 'METHOD_NOT_ALLOWED', message: `Method ${method} Not Allowed` } });
     }
   } catch (error) {
-    console.error('API Error:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    handleError(error, req, res);
   }
 }
 

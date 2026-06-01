@@ -2,14 +2,13 @@ import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import dynamic from 'next/dynamic';
-import { api } from '../lib/api';
+import { api } from '../../lib/api';
 
 // 动态导入组件，实现懒加载
-const Navigation = dynamic(() => import('../components/layout/Navigation'), {
+const Navigation = dynamic(() => import('../../components/layout/Navigation'), {
   ssr: true
 });
-
-const Toast = dynamic(() => import('../components/common/Toast'), {
+const Footer = dynamic(() => import('../../components/layout/Footer'), {
   ssr: true
 });
 

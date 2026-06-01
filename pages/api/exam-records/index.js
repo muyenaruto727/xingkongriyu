@@ -1,4 +1,5 @@
 const pool = require('../../../lib/db');
+const { handleError, successResponse } = require('../../../lib/errorHandler');
 
 async function handler(req, res) {
   const { method, query } = req;
@@ -39,14 +40,15 @@ async function handler(req, res) {
         const countResult = await pool.query(countSql, countParams);
         const total = parseInt(countResult.rows[0].total);
 
-        res.status(200).json({
+        const responseData = {
           data: result.rows,
           pagination: {
             page: parseInt(page),
             limit: parseInt(limit),
             total
           }
-        });
+        };
+        return successResponse(res, responseData);
         break;
 
       case 'POST':
@@ -69,25 +71,24 @@ async function handler(req, res) {
            RETURNING *`,
           [recordUserId, level, sections, score, correct_count, total_count, duration, JSON.stringify(answers), JSON.stringify(questions)]
         );
-        res.status(201).json(insertResult.rows[0]);
+        return successResponse(res, insertResult.rows[0], '考试记录添加成功');
         break;
 
       case 'DELETE':
         if (!id) {
-          res.status(400).json({ error: 'Missing record ID' });
+          res.status(400).json({ success: false, error: { code: 'MISSING_ID', message: 'Missing record ID' } });
           return;
         }
         await pool.query('DELETE FROM exam_records WHERE id = $1', [parseInt(id)]);
-        res.status(200).json({ message: 'Exam record deleted successfully' });
+        return successResponse(res, null, '考试记录删除成功');
         break;
 
       default:
         res.setHeader('Allow', ['GET', 'POST', 'DELETE']);
-        res.status(405).end(`Method ${method} Not Allowed`);
+        res.status(405).json({ success: false, error: { code: 'METHOD_NOT_ALLOWED', message: `Method ${method} Not Allowed` } });
     }
   } catch (error) {
-    console.error('API Error:', error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    handleError(error, req, res);
   }
 }
 

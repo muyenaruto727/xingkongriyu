@@ -1,4 +1,5 @@
 const pool = require('../../../lib/db');
+const { handleError, successResponse } = require('../../../lib/errorHandler');
 
 async function handler(req, res) {
   if (req.method === 'POST') {
@@ -6,7 +7,7 @@ async function handler(req, res) {
     const { user_id, question_id, exam_record_id, feedback_type, description } = req.body;
     
     if (!user_id || !question_id || !feedback_type) {
-      res.status(400).json({ error: 'Missing required parameters' });
+      res.status(400).json({ success: false, error: { code: 'MISSING_PARAMS', message: 'Missing required parameters' } });
       return;
     }
     
@@ -18,10 +19,9 @@ async function handler(req, res) {
         [user_id, question_id, exam_record_id, feedback_type, description]
       );
       
-      res.status(201).json({ id: result.rows[0].id, message: 'Feedback submitted successfully' });
+      return successResponse(res, { id: result.rows[0].id }, '反馈提交成功');
     } catch (error) {
-      console.error('Error submitting feedback:', error);
-      res.status(500).json({ error: 'Internal Server Error' });
+      handleError(error, req, res);
     }
   } else if (req.method === 'GET') {
     // 处理获取反馈列表（用于后台管理）
@@ -34,17 +34,16 @@ async function handler(req, res) {
          ORDER BY f.created_at DESC`
       );
       
-      res.status(200).json({ data: result.rows });
+      return successResponse(res, { data: result.rows });
     } catch (error) {
-      console.error('Error fetching feedbacks:', error);
-      res.status(500).json({ error: 'Internal Server Error' });
+      handleError(error, req, res);
     }
   } else if (req.method === 'PUT') {
     // 处理更新反馈状态
     const { id, status } = req.body;
     
     if (!id || !status) {
-      res.status(400).json({ error: 'Missing required parameters' });
+      res.status(400).json({ success: false, error: { code: 'MISSING_PARAMS', message: 'Missing required parameters' } });
       return;
     }
     
@@ -55,18 +54,17 @@ async function handler(req, res) {
       );
       
       if (result.rows.length === 0) {
-        res.status(404).json({ error: 'Feedback not found' });
+        res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Feedback not found' } });
         return;
       }
       
-      res.status(200).json({ data: result.rows[0], message: 'Status updated successfully' });
+      return successResponse(res, { data: result.rows[0] }, '状态更新成功');
     } catch (error) {
-      console.error('Error updating feedback status:', error);
-      res.status(500).json({ error: 'Internal Server Error' });
+      handleError(error, req, res);
     }
   } else {
     res.setHeader('Allow', ['POST', 'GET', 'PUT']);
-    res.status(405).end(`Method ${req.method} Not Allowed`);
+    res.status(405).json({ success: false, error: { code: 'METHOD_NOT_ALLOWED', message: `Method ${req.method} Not Allowed` } });
   }
 }
 

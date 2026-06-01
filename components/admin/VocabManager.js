@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { TEXTBOOKS, CATEGORIES, PITCH_ACCENTS, LEVELS, TAGS } from '../../config/config';
 import { api } from '../../lib/api';
 import { handleApiError, logError } from '../../utils.js';
-import { Cascader, Select, Input, Pagination } from 'antd';
+import { Cascader, Select, Input, Pagination, Upload } from 'antd';
+import { InboxOutlined } from '@ant-design/icons';
 import Modal from '../common/Modal';
 import PaginationTable from '../common/PaginationTable';
 
@@ -177,17 +178,13 @@ const VocabManager = ({ showToast }) => {
     try {
       const { pitchAccent, category, ...vocabData } = vocabForm;
       
-      // 处理课程值，提取纯课程名称和教材ID
-      const lessons = [];
+      // 处理教材ID，确保包含所有课程中提到的教材
       const textbooksFromLessons = new Set(vocabForm.textbooks);
       
       vocabForm.lessons.forEach(lessonValue => {
         if (lessonValue.includes(':')) {
-          const [textbookId, lessonName] = lessonValue.split(':');
-          lessons.push(lessonName);
+          const [textbookId] = lessonValue.split(':');
           textbooksFromLessons.add(textbookId);
-        } else {
-          lessons.push(lessonValue);
         }
       });
       
@@ -198,7 +195,7 @@ const VocabManager = ({ showToast }) => {
         category: category.join(','),
         pitch_accent: pitchAccent.join(','),
         textbook: textbooks.length > 0 ? textbooks.join(',') : '',
-        lesson: lessons.length > 0 ? lessons.join(',') : '',
+        lesson: vocabForm.lessons.length > 0 ? vocabForm.lessons.join(',') : '',
         examples: vocabForm.examples.filter(example => example.trim())
       });
       
@@ -240,20 +237,12 @@ const VocabManager = ({ showToast }) => {
     try {
       const { pitchAccent, category, ...vocabData } = vocabForm;
       
-      // 处理课程值，提取纯课程名称
-      const lessons = vocabForm.lessons.map(lessonValue => {
-        if (lessonValue.includes(':')) {
-          return lessonValue.split(':')[1];
-        }
-        return lessonValue;
-      });
-      
       await api.updateVocab(currentEditId, {
         ...vocabData,
         category: category.join(','),
         pitch_accent: pitchAccent.join(','),
         textbook: vocabForm.textbooks.length > 0 ? vocabForm.textbooks.join(',') : '',
-        lesson: lessons.length > 0 ? lessons.join(',') : '',
+        lesson: vocabForm.lessons.length > 0 ? vocabForm.lessons.join(',') : '',
         examples: vocabForm.examples.filter(example => example.trim())
       });
       
@@ -367,10 +356,16 @@ const VocabManager = ({ showToast }) => {
     // 处理课程数据，确保格式为"教材ID:课程名称"
     const lessons = typeof vocab.lesson === 'string' ? 
       vocab.lesson.split(',').map(item => item.trim()).filter(Boolean).map(lesson => {
-        // 尝试找到对应的教材ID
-        let textbookId = textbooks[0]; // 默认使用第一个教材
-        // 这里可以根据实际情况进行更复杂的匹配逻辑
-        return `${textbookId}:${lesson}`;
+        // 检查课程是否已经包含教材ID
+        if (lesson.includes(':')) {
+          // 如果课程已经包含教材ID，直接返回
+          return lesson;
+        } else {
+          // 如果课程不包含教材ID，尝试找到对应的教材ID
+          // 这里简单使用第一个教材，实际应用中可能需要更复杂的匹配逻辑
+          let textbookId = textbooks[0];
+          return textbookId ? `${textbookId}:${lesson}` : lesson;
+        }
       }) : [];
     
     setVocabForm({
@@ -411,16 +406,30 @@ const VocabManager = ({ showToast }) => {
     setCurrentEditId(null);
   };
 
-  // 批量导入
+  // 批量导入（从文件输入）
   const handleBatchImport = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    
+    // 调用通用的批量导入函数
+    await handleBatchImportFromFile(file, e.target);
+  };
 
+  // 批量导入（从拖拽上传）
+  const handleBatchImportFromDragger = async (file) => {
+    // 调用通用的批量导入函数
+    await handleBatchImportFromFile(file);
+  };
+
+  // 通用的批量导入函数
+  const handleBatchImportFromFile = async (file, inputElement = null) => {
     setIsLoading(true);
+    showToast('开始处理文件...', 'info');
     try {
       const reader = new FileReader();
       reader.onload = async (event) => {
         try {
+          showToast('解析文件中...', 'info');
           const content = event.target.result;
           let data;
 
@@ -429,6 +438,7 @@ const VocabManager = ({ showToast }) => {
             data = JSON.parse(content);
           } else if (file.name.endsWith('.csv')) {
             // 简单的 CSV 解析
+            showToast('解析CSV文件...', 'info');
             const rows = content.split('\n').filter(row => row.trim());
             const headers = rows[0].split(',').map(header => header.trim().replace(/"/g, ''));
             data = rows.slice(1).map(row => {
@@ -479,24 +489,32 @@ const VocabManager = ({ showToast }) => {
             });
           } else {
             showToast('不支持的文件格式', 'error');
+            setIsLoading(false);
+            if (inputElement) inputElement.value = '';
             return;
           }
 
           // 验证数据格式
           if (!Array.isArray(data)) {
             showToast('文件内容格式错误', 'error');
+            setIsLoading(false);
+            if (inputElement) inputElement.value = '';
             return;
           }
 
           // 过滤掉模板中的示例数据（日文为空的条目）
+          showToast(`验证数据格式，共 ${data.length} 条数据...`, 'info');
           let filteredData = data.filter(item => item.japanese && item.japanese.trim());
           
           if (filteredData.length === 0) {
             showToast('没有有效的数据可导入', 'error');
+            setIsLoading(false);
+            if (inputElement) inputElement.value = '';
             return;
           }
           
           // 过滤掉重复数据（根据日文和发音的组合判断）
+          showToast('过滤掉重复数据...', 'info');
           const seen = new Set();
           filteredData = filteredData.filter(item => {
             const key = `${item.japanese}-${item.pronunciation}`;
@@ -509,21 +527,72 @@ const VocabManager = ({ showToast }) => {
           
           if (filteredData.length === 0) {
             showToast('没有有效的数据可导入', 'error');
+            setIsLoading(false);
+            if (inputElement) inputElement.value = '';
             return;
           }
 
-          // 发送批量导入请求
-          await api.importVocab({ batch: filteredData });
+          // 与数据库中已有的词汇进行去重
+          try {
+            showToast('与数据库中已有的词汇进行去重...', 'info');
+            const existingVocab = await api.getVocabList({ limit: 10000 });
+            const existingKeys = new Set();
+            
+            if (Array.isArray(existingVocab)) {
+              existingVocab.forEach(vocab => {
+                if (vocab.japanese && vocab.pronunciation) {
+                  const key = `${vocab.japanese}-${vocab.pronunciation}`;
+                  existingKeys.add(key);
+                }
+              });
+            } else if (existingVocab.data) {
+              existingVocab.data.forEach(vocab => {
+                if (vocab.japanese && vocab.pronunciation) {
+                  const key = `${vocab.japanese}-${vocab.pronunciation}`;
+                  existingKeys.add(key);
+                }
+              });
+            }
 
-          showToast('批量导入成功', 'success');
-          fetchVocabList(true);
+            // 过滤掉与数据库中重复的词汇
+            const uniqueData = filteredData.filter(item => {
+              const key = `${item.japanese}-${item.pronunciation}`;
+              return !existingKeys.has(key);
+            });
+
+            if (uniqueData.length === 0) {
+              showToast('所有数据都已存在，没有新数据可导入', 'info');
+              setIsLoading(false);
+              if (inputElement) inputElement.value = '';
+              return;
+            } 
+
+            // 发送批量导入请求
+            showToast(`正在导入 ${uniqueData.length} 条新数据...`, 'info');
+            await api.importVocab({ batch: uniqueData });
+
+            if (uniqueData.length < filteredData.length) {
+              showToast(`已过滤掉 ${filteredData.length - uniqueData.length} 条重复数据，成功导入 ${uniqueData.length} 条新数据`, 'success');
+            } else {
+              showToast(`成功导入 ${uniqueData.length} 条新数据`, 'success');
+            }
+          } catch (error) {
+            logError(error, 'Batch Import Deduplication');
+            // 如果去重失败，仍然尝试导入数据
+            showToast(`直接导入 ${filteredData.length} 条数据...`, 'info');
+            await api.importVocab({ batch: filteredData });
+            showToast(`成功导入 ${filteredData.length} 条数据`, 'success');
+          }
+
+          showToast('刷新词汇列表...', 'info');
+          await fetchVocabList(true);
         } catch (error) {
           logError(error, 'Batch Import');
           showToast('文件解析失败', 'error');
         } finally {
           setIsLoading(false);
           // 重置文件输入
-          e.target.value = '';
+          if (inputElement) inputElement.value = '';
         }
       };
       reader.readAsText(file);
@@ -532,7 +601,7 @@ const VocabManager = ({ showToast }) => {
       showToast('批量导入失败', 'error');
       setIsLoading(false);
       // 重置文件输入
-      e.target.value = '';
+      if (inputElement) inputElement.value = '';
     }
   };
 
@@ -562,6 +631,18 @@ const VocabManager = ({ showToast }) => {
         "examples": ["私は毎日日本語を勉強しています。", "彼は一生懸命勉強しています。"],
         "textbooks": ["综合日语1"],
         "lessons": ["综合日语1:第1课"]
+      },
+      {
+        "japanese": "食べる",
+        "pronunciation": "たべる",
+        "chinese": "吃",
+        "level": "N5",
+        "tag": "日常",
+        "category": ["他I"],
+        "pitchAccent": ["②"],
+        "examples": ["私は毎日三食食べます。", "彼はりんごを食べています。"],
+        "textbooks": ["综合日语1"],
+        "lessons": ["综合日语1:第2课"]
       }
     ];
 
@@ -611,13 +692,10 @@ const VocabManager = ({ showToast }) => {
     try {
       // 获取用户选择的下载选项
       const downloadOption = document.querySelector('input[name="download-option"]:checked')?.value || 'all';
-      const downloadFormat = document.querySelector('input[name="download-format"]:checked')?.value || 'json';
 
       if (downloadOption === 'paginated') {
         // 分页下载逻辑
-        showToast('分页下载功能开发中', 'info');
-        setShowDownloadModal(false);
-        setIsLoading(false);
+        await handlePaginatedDownload();
         return;
       }
 
@@ -653,56 +731,95 @@ const VocabManager = ({ showToast }) => {
       const data = await api.exportVocab(params);
       const vocabData = Array.isArray(data) ? data : (data.data || []);
 
-        let content, mimeType, fileName;
+      // 转换为JSON字符串
+      const content = JSON.stringify(vocabData, null, 2);
+      const mimeType = 'application/json';
+      const fileName = `vocabulary_${new Date().toISOString().split('T')[0]}.json`;
 
-        if (downloadFormat === 'json') {
-          // 转换为JSON字符串
-          content = JSON.stringify(vocabData, null, 2);
-          mimeType = 'application/json';
-          fileName = `vocabulary_${new Date().toISOString().split('T')[0]}.json`;
-        } else {
-          // 转换为CSV格式
-          const headers = ['japanese', 'pronunciation', 'chinese', 'level', 'tag', 'category', 'pitchAccent', 'examples', 'textbooks', 'lessons'];
-          const rows = vocabData.map(item => [
-            item.japanese || '',
-            item.pronunciation || '',
-            item.chinese || '',
-            item.level || '',
-            item.tag || '',
-            Array.isArray(item.category) ? item.category.join(';') : (item.category || ''),
-            Array.isArray(item.pitchAccent) ? item.pitchAccent.join(';') : (item.pitchAccent || (Array.isArray(item.pitch_accent) ? item.pitch_accent.join(';') : (item.pitch_accent || ''))),
-            Array.isArray(item.examples) ? item.examples.join(';') : (item.examples || ''),
-            Array.isArray(item.textbooks) ? item.textbooks.join(';') : (item.textbooks || (Array.isArray(item.textbook) ? item.textbook.join(';') : (item.textbook || ''))),
-            Array.isArray(item.lessons) ? item.lessons.join(';') : (item.lessons || (Array.isArray(item.lesson) ? item.lesson.join(';') : (item.lesson || '')))
-          ]);
+      // 创建下载链接
+      const blob = new Blob([content], { type: mimeType });
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(downloadUrl);
 
-          content = [
-            headers.join(','),
-            ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-          ].join('\n');
-          mimeType = 'text/csv;charset=utf-8;';
-          fileName = `vocabulary_${new Date().toISOString().split('T')[0]}.csv`;
-        }
-
-        // 创建下载链接
-        const blob = new Blob([content], { type: mimeType });
-        const downloadUrl = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = downloadUrl;
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(downloadUrl);
-
-        showToast('批量下载成功', 'success');
-        setShowDownloadModal(false);
+      showToast('批量下载成功', 'success');
+      setShowDownloadModal(false);
     } catch (error) {
       logError(error, 'Batch Download');
       showToast('批量下载失败', 'error');
       setShowDownloadModal(false);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // 分页下载处理
+  const handlePaginatedDownload = async () => {
+    try {
+      // 获取用户自定义的每页大小和页码
+      const pageSize = parseInt(document.getElementById('page-size')?.value || '1000', 10);
+      const pageNumber = parseInt(document.getElementById('page-number')?.value || '1', 10);
+
+      // 构建查询参数
+      const params = {
+        page: pageNumber,
+        limit: pageSize
+      };
+
+      // 添加筛选参数
+      if (searchForm.level && searchForm.level !== '') {
+        params.level = searchForm.level;
+      }
+      if (searchForm.tag && searchForm.tag !== '') {
+        params.tag = searchForm.tag;
+      }
+      if (searchForm.japanese && searchForm.japanese !== '') {
+        params.search = searchForm.japanese;
+      }
+      if (searchForm.pronunciation && searchForm.pronunciation !== '') {
+        params.search = searchForm.pronunciation;
+      }
+      if (searchForm.textbooks && searchForm.textbooks.length > 0) {
+        params.textbooks = searchForm.textbooks;
+      }
+      if (searchForm.lessons && searchForm.lessons.length > 0) {
+        params.lessons = searchForm.lessons;
+      }
+
+      // 获取指定页码的数据
+      showToast(`开始下载第 ${pageNumber} 页，每页 ${pageSize} 条数据`, 'info');
+      const pageData = await api.exportVocab(params);
+      const vocabData = Array.isArray(pageData) ? pageData : (pageData.data || []);
+      const totalItems = pageData.total || 0;
+      const totalPages = Math.ceil(totalItems / pageSize);
+
+      // 转换为JSON字符串
+      const content = JSON.stringify(vocabData, null, 2);
+      const mimeType = 'application/json';
+      const fileName = `vocabulary_${new Date().toISOString().split('T')[0]}_page_${pageNumber}_size_${pageSize}.json`;
+
+      // 创建下载链接
+      const blob = new Blob([content], { type: mimeType });
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(downloadUrl);
+
+      showToast(`分页下载成功，共下载 ${vocabData.length} 条数据（第 ${pageNumber}/${totalPages} 页）`, 'success');
+      setShowDownloadModal(false);
+    } catch (error) {
+      logError(error, 'Paginated Download');
+      showToast('分页下载失败', 'error');
+      setShowDownloadModal(false);
     }
   };
 
@@ -804,6 +921,7 @@ const VocabManager = ({ showToast }) => {
       <div className="flex justify-end gap-4 mb-6">
         <button 
           onClick={() => {
+            // 清空搜索表单
             setSearchForm({
               japanese: '',
               pronunciation: '',
@@ -834,7 +952,7 @@ const VocabManager = ({ showToast }) => {
         data={vocabList}
         columns={[
           {
-            title: 'ID',
+            title: '序号',
             render: (row, index) => index + 1,
             cellClassName: 'text-dark'
           },
@@ -988,14 +1106,31 @@ const VocabManager = ({ showToast }) => {
               <label className="block text-sm font-medium text-dark mb-2">教材/课程 <span className="text-red-500">*</span></label>
               <Cascader
                 options={cascaderOptions}
-                value={[...vocabForm.textbooks, ...vocabForm.lessons]}
+                value={vocabForm.lessons.map(lesson => {
+                  if (lesson.includes(':')) {
+                    const [textbookId, lessonName] = lesson.split(':');
+                    return [textbookId, lesson];
+                  }
+                  return [vocabForm.textbooks[0], lesson];
+                })}
                 onChange={(values) => {
                   console.log('Cascader onChange triggered with values:', values);
-                  // 简化过滤逻辑，只根据值是否包含':'来分离教材和课程
-                  const textbooks = values.filter(value => !value.includes(':'));
-                  const lessons = values.filter(value => value.includes(':'));
+                  // 处理Cascader的多选值格式
+                  const textbooksSet = new Set();
+                  const lessons = [];
+                  
+                  values.forEach(path => {
+                    if (path.length === 2) {
+                      const [textbookId, lessonValue] = path;
+                      textbooksSet.add(textbookId);
+                      lessons.push(lessonValue);
+                    }
+                  });
+                  
+                  const textbooks = Array.from(textbooksSet);
                   console.log('Separated textbooks:', textbooks);
                   console.log('Separated lessons:', lessons);
+                  
                   // 直接更新状态，确保UI能够正确反映选择
                   setVocabForm({
                     ...vocabForm,
@@ -1134,102 +1269,39 @@ const VocabManager = ({ showToast }) => {
       >
         <div className="p-6">
           <div className="mb-6">
-            <h4 className="text-lg font-medium text-dark mb-4">导入说明</h4>
-            <p className="text-gray-600 mb-4">请按照以下步骤进行批量导入：</p>
-            <ol className="list-decimal list-inside space-y-2 text-gray-600 mb-6">
-              <li>下载导入模板文件</li>
-              <li>按照模板格式填写真实词汇数据</li>
-              <li>上传填写好的文件进行导入</li>
-            </ol>
-            <div className="bg-blue-50 p-4 rounded-lg mb-6">
-              <h5 className="font-medium text-blue-800 mb-2">填写说明：</h5>
-              <ul className="list-disc list-inside space-y-1 text-gray-700">
-                <li><strong>多个例句</strong>：在 JSON 模板中使用数组格式，在 CSV 模板中用分号 (;) 分隔</li>
-                <li><strong>多本教材</strong>：在 JSON 模板中使用数组格式，在 CSV 模板中用分号 (;) 分隔</li>
-                <li><strong>多个课程</strong>：在 JSON 模板中使用数组格式，在 CSV 模板中用分号 (;) 分隔</li>
-                <li><strong>多个类别</strong>：在 JSON 模板中使用数组格式，在 CSV 模板中用分号 (;) 分隔</li>
-                <li><strong>多个声调</strong>：在 JSON 模板中使用数组格式，在 CSV 模板中用分号 (;) 分隔</li>
-              </ul>
-            </div>
-            <div className="bg-green-50 p-4 rounded-lg mb-6">
-              <h5 className="font-medium text-green-800 mb-2">温馨提示：</h5>
-              <ul className="list-disc list-inside space-y-1 text-gray-700">
-                <li>模板中的示例数据会被自动过滤，无需手动删除</li>
-                <li>请确保填写的数据符合下拉选项的要求</li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="mb-6">
             <h4 className="text-lg font-medium text-dark mb-4">下载模板</h4>
-            <div className="flex gap-4">
-              <button 
-                onClick={downloadVocabTemplate}
-                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                下载 JSON 模板
-              </button>
-              <button 
-                onClick={downloadVocabTemplateCSV}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-dark hover:bg-gray-50 transition-colors"
-              >
-                下载 CSV 模板
-              </button>
-            </div>
+            <button 
+              onClick={downloadVocabTemplate}
+              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              下载 JSON 模板
+            </button>
           </div>
 
           <div className="mb-6">
             <h4 className="text-lg font-medium text-dark mb-4">上传文件</h4>
-            <div 
-              className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:bg-gray-50 transition-colors"
-              onDragOver={(e) => {
-                e.preventDefault();
-                e.currentTarget.classList.add('border-blue-500');
-              }}
-              onDragLeave={(e) => {
-                e.preventDefault();
-                e.currentTarget.classList.remove('border-blue-500');
-              }}
-              onDrop={(e) => {
-                e.preventDefault();
-                e.currentTarget.classList.remove('border-blue-500');
-                const file = e.dataTransfer.files[0];
-                if (file && (file.name.endsWith('.json') || file.name.endsWith('.csv'))) {
-                  // 创建一个模拟的 input 事件
-                  const inputEvent = {
-                    target: {
-                      files: [file],
-                      value: ''
-                    }
-                  };
-                  handleBatchImport(inputEvent);
-                } else {
-                  showToast('不支持的文件格式', 'error');
+            <Upload.Dragger
+              name="file"
+              accept=".json"
+              multiple={false}
+              beforeUpload={(file) => {
+                if (!file.name.endsWith('.json')) {
+                  showToast('仅支持 JSON 格式文件', 'error');
+                  return false;
                 }
+                // 调用批量导入函数
+                handleBatchImportFromDragger(file);
+                return false; // 阻止自动上传
               }}
-              onClick={() => document.getElementById('vocab-import-input').click()}
             >
-              <input 
-                type="file" 
-                id="vocab-import-input" 
-                accept=".json,.csv" 
-                className="hidden"
-                onChange={handleBatchImport}
-              />
-              <div className="flex flex-col items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                </svg>
-                <button 
-                  type="button"
-                  className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors mb-2"
-                >
-                  点击上传文件
-                </button>
-                <p className="text-sm text-gray-500">或拖拽文件到此处</p>
-                <p className="mt-2 text-sm text-gray-500">支持 JSON 和 CSV 格式</p>
-              </div>
-            </div>
+              <p className="ant-upload-drag-icon">
+                <InboxOutlined />
+              </p>
+              <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
+              <p className="ant-upload-hint">
+                支持单个 JSON 文件上传
+              </p>
+            </Upload.Dragger>
           </div>
         </div>
       </Modal>
@@ -1255,6 +1327,12 @@ const VocabManager = ({ showToast }) => {
                   name="download-option" 
                   value="all" 
                   defaultChecked
+                  onChange={(e) => {
+                    const paginatedOptions = document.getElementById('paginated-options');
+                    if (paginatedOptions) {
+                      paginatedOptions.style.display = e.target.value === 'paginated' ? 'block' : 'none';
+                    }
+                  }}
                 />
                 <label htmlFor="download-all" className="ml-2 text-gray-700">
                   下载所有数据（最多 10,000 条）
@@ -1266,6 +1344,12 @@ const VocabManager = ({ showToast }) => {
                   id="download-filtered" 
                   name="download-option" 
                   value="filtered"
+                  onChange={(e) => {
+                    const paginatedOptions = document.getElementById('paginated-options');
+                    if (paginatedOptions) {
+                      paginatedOptions.style.display = e.target.value === 'paginated' ? 'block' : 'none';
+                    }
+                  }}
                 />
                 <label htmlFor="download-filtered" className="ml-2 text-gray-700">
                   下载当前筛选条件的数据
@@ -1277,38 +1361,43 @@ const VocabManager = ({ showToast }) => {
                   id="download-paginated" 
                   name="download-option" 
                   value="paginated"
+                  onChange={(e) => {
+                    const paginatedOptions = document.getElementById('paginated-options');
+                    if (paginatedOptions) {
+                      paginatedOptions.style.display = e.target.value === 'paginated' ? 'block' : 'none';
+                    }
+                  }}
                 />
                 <label htmlFor="download-paginated" className="ml-2 text-gray-700">
                   分页下载（适合大量数据）
                 </label>
               </div>
-            </div>
-          </div>
-          <div className="mb-6">
-            <h4 className="text-lg font-medium text-dark mb-4">下载格式</h4>
-            <div className="space-y-4">
-              <div className="flex items-center">
-                <input 
-                  type="radio" 
-                  id="format-json" 
-                  name="download-format" 
-                  value="json" 
-                  defaultChecked
-                />
-                <label htmlFor="format-json" className="ml-2 text-gray-700">
-                  JSON 格式（推荐）
-                </label>
-              </div>
-              <div className="flex items-center">
-                <input 
-                  type="radio" 
-                  id="format-csv" 
-                  name="download-format" 
-                  value="csv"
-                />
-                <label htmlFor="format-csv" className="ml-2 text-gray-700">
-                  CSV 格式
-                </label>
+              <div className="ml-8 space-y-4" id="paginated-options" style={{ display: 'none' }}>
+                <div>
+                  <label htmlFor="page-size" className="block text-sm font-medium text-gray-700 mb-1">
+                    每页大小
+                  </label>
+                  <input 
+                    type="number" 
+                    id="page-size" 
+                    min="1" 
+                    max="5000" 
+                    defaultValue="1000" 
+                    className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="page-number" className="block text-sm font-medium text-gray-700 mb-1">
+                    下载页码
+                  </label>
+                  <input 
+                    type="number" 
+                    id="page-number" 
+                    min="1" 
+                    defaultValue="1" 
+                    className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -1326,6 +1415,7 @@ const VocabManager = ({ showToast }) => {
               </div>
             </div>
           </div>
+
         </div>
       </Modal>
     </div>

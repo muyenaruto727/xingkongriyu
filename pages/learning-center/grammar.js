@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import Navigation from '../components/layout/Navigation';
-import Toast from '../components/common/Toast';
-import { api } from '../lib/api';
+import Navigation from '../../components/layout/Navigation';
+import Toast from '../../components/common/Toast';
+import { api } from '../../lib/api';
 
 const Grammar = () => {
   const router = useRouter();

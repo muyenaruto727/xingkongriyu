@@ -125,7 +125,7 @@ const ExamIndex = () => {
         const response = await fetch(`/api/exam-records?user_id=${currentUser.id}`);
         if (response.ok) {
           const data = await response.json();
-          setExamRecords(data.data);
+          setExamRecords(data.data?.data || []);
         }
       } catch (error) {
         console.error('Error fetching exam records:', error);
@@ -242,14 +242,15 @@ const ExamIndex = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-gradient-to-b from-blue-50 to-white">
       <Head>
-        <title>真题考试 - 日语学习网站</title>
+        <title>真题考试 - 星空日语</title>
       </Head>
       
       <Navigation />
       
-      <main className="flex-grow pt-24 pb-12">
+      <main className="flex-grow">
+        <section className="pt-24 pb-12 md:pt-32 md:pb-20">
         <div className="container max-w-4xl">
           
           {/* 选择考试级别 */}
@@ -395,7 +396,7 @@ const ExamIndex = () => {
                         const response = await fetch(`/api/exam-records?user_id=${currentUser.id}`);
                         if (response.ok) {
                           const data = await response.json();
-                          setExamRecords(data.data);
+                          setExamRecords(data.data?.data || []);
                         }
                       } catch (error) {
                         console.error('Error fetching exam records:', error);
@@ -443,7 +444,8 @@ const ExamIndex = () => {
               </div>
             </div>
           )}
-        </div>
+          </div>
+        </section>
       </main>
       
       <Footer />

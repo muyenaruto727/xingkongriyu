@@ -85,20 +85,15 @@ const CourseManager = ({ showToast }) => {
       
       if (typeof setCourseList === 'function') {
         // 处理不同的数据结构
-        if (Array.isArray(data)) {
+        if (data && data.data && Array.isArray(data.data)) {
+          // API 返回的数据结构是 { data: [...], pagination: {...} }
+          console.log('Setting courseList from data.data:', data.data);
+          setCourseList(data.data);
+          setTotalItems(data.pagination?.total || 0);
+        } else if (Array.isArray(data)) {
           console.log('Setting courseList from array:', data);
           setCourseList(data);
           setTotalItems(data.length);
-        } else if (data.data && Array.isArray(data.data.data)) {
-          // API 返回的数据结构是 { success: true, data: { data: [...], total: 1 } }
-          console.log('Setting courseList from data.data.data:', data.data.data);
-          setCourseList(data.data.data);
-          setTotalItems(data.data.total || 0);
-        } else if (data.data && Array.isArray(data.data)) {
-          // 兼容其他可能的数据结构
-          console.log('Setting courseList from data.data:', data.data);
-          setCourseList(data.data);
-          setTotalItems(data.total || 0);
         } else {
           console.log('Setting courseList to empty array');
           setCourseList([]);
@@ -315,7 +310,7 @@ const CourseManager = ({ showToast }) => {
     try {
       const response = await api.getChapterList({ courseId });
       console.log('Chapter list response:', response);
-      const chapterData = Array.isArray(response) ? response : (response.data || []);
+      const chapterData = Array.isArray(response) ? response : [];
       setChapters(chapterData);
       // 展开所有节点
       const keys = chapterData.map(chapter => `chapter-${chapter.id}`);
