@@ -11,6 +11,9 @@ const Navigation = dynamic(() => import('../../components/layout/Navigation'), {
 const Footer = dynamic(() => import('../../components/layout/Footer'), {
   ssr: true
 });
+const Toast = dynamic(() => import('../../components/common/Toast'), {
+  ssr: false
+});
 
 const Vocabulary = () => {
   const router = useRouter();
