@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
+import { Modal } from 'antd';
 import Navigation from '../components/layout/Navigation';
 import Footer from '../components/layout/Footer';
 import Card from '../components/common/Card';
-import Modal from '../components/common/Modal';
 
 const PracticeCenter = () => {
   const [currentUser, setCurrentUser] = useState(null);
@@ -193,10 +193,10 @@ const PracticeCenter = () => {
 
       {/* 级别选择弹窗 */}
       <Modal
-        isOpen={showLevelModal}
-        onClose={() => setShowLevelModal(false)}
+        open={showLevelModal}
+        onCancel={() => setShowLevelModal(false)}
         title="选择级别"
-        size="md"
+        footer={null}
       >
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {levels.map((level) => (
@@ -213,11 +213,11 @@ const PracticeCenter = () => {
 
       {/* 练习弹窗 */}
       <Modal
-        isOpen={showPracticeModal}
-        onClose={() => setShowPracticeModal(false)}
+        open={showPracticeModal}
+        onCancel={() => setShowPracticeModal(false)}
         title={`${practiceType === 'vocabulary' ? '词汇' : '语法'}练习 - ${selectedLevel}`}
-        size="xl"
-        showCancel={false}
+        width={800}
+        footer={null}
       >
         {loading ? (
           <div className="flex justify-center items-center py-12">

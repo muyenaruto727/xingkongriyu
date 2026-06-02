@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../../../contexts/AuthContext';
+import { message } from 'antd';
 import DashboardStats from './DashboardStats';
 import UserManager from '../UserManager';
 import VocabManager from '../VocabManager';
@@ -11,7 +12,6 @@ import ListeningManager from '../ListeningManager';
 import ReadingManager from '../ReadingManager';
 import CourseManager from '../CourseManager';
 import QuestionManager from '../QuestionManager';
-import Toast from '../../common/Toast';
 
 const Dashboard = () => {
   const router = useRouter();
@@ -22,9 +22,6 @@ const Dashboard = () => {
     { id: 'dashboard', name: '仪表板', active: true }
   ]);
   const [activeTab, setActiveTab] = useState('dashboard');
-  
-  // Toast通知状态
-  const [toast, setToast] = useState({ isOpen: false, message: '', type: 'info' });
 
   useEffect(() => {
     if (!loading) {
@@ -45,8 +42,8 @@ const Dashboard = () => {
   }
 
   // 显示Toast通知
-  const showToast = (message, type = 'info') => {
-    setToast({ isOpen: true, message, type });
+  const showToast = (msg, type = 'info') => {
+    message[type](msg);
   };
 
   // 打开标签页
@@ -284,14 +281,6 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-
-      {/* Toast组件 */}
-      <Toast
-        isOpen={toast.isOpen}
-        message={toast.message}
-        type={toast.type}
-        onClose={() => setToast({ ...toast, isOpen: false })}
-      />
     </div>
   );
 };

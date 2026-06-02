@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Input, Select } from 'antd';
-import Modal from '../common/Modal';
+import { Input, Select, Modal } from 'antd';
 import PaginationTable from '../common/PaginationTable';
 import { api } from '../../lib/api';
 import { handleApiError, logError } from '../../utils.js';
@@ -418,15 +417,16 @@ const ListeningManager = ({ showToast }) => {
       
       {/* 听力模态框 */}
       <Modal
-        isOpen={showModal}
-        onClose={() => {
+        open={showModal}
+        onCancel={() => {
           setShowModal(false);
           resetForm();
         }}
         title={isEditMode ? '编辑听力' : '添加听力'}
-        confirmText={isLoading ? (isEditMode ? '更新中...' : '添加中...') : '保存'}
-        onConfirm={isEditMode ? handleSubmitEdit : handleSubmitAdd}
-        size="xl"
+        width={900}
+        onOk={isEditMode ? handleSubmitEdit : handleSubmitAdd}
+        okText="保存"
+        cancelText="取消"
       >
         <form onSubmit={isEditMode ? handleSubmitEdit : handleSubmitAdd} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -571,13 +571,13 @@ const ListeningManager = ({ showToast }) => {
       
       {/* 删除确认模态框 */}
       <Modal
-        isOpen={showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(false)}
+        open={showDeleteConfirm}
+        onCancel={() => setShowDeleteConfirm(false)}
         title="确认删除"
-        confirmText="删除"
-        onConfirm={confirmDelete}
+        onOk={confirmDelete}
+        okText="删除"
+        okButtonProps={{ danger: true }}
         cancelText="取消"
-        size="sm"
       >
         <p className="text-center">确定要删除这个听力项目吗？</p>
       </Modal>

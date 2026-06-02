@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Input, Select } from 'antd';
-import Modal from '../common/Modal';
+import { Input, Select, Modal } from 'antd';
 import PaginationTable from '../common/PaginationTable';
 import { api } from '../../lib/api';
 import { handleApiError, logError } from '../../utils.js';
@@ -384,13 +383,13 @@ const ReadingManager = ({ showToast }) => {
       {/* 添加/编辑模态框 */}
       <Modal
         title={isEditMode ? '编辑阅读' : '添加阅读'}
-        isOpen={showModal}
-        onClose={() => {
+        open={showModal}
+        onCancel={() => {
           setShowModal(false);
           resetForm();
         }}
-        onConfirm={isEditMode ? handleSubmitEdit : handleSubmitAdd}
-        confirmText="保存"
+        onOk={isEditMode ? handleSubmitEdit : handleSubmitAdd}
+        okText="保存"
         cancelText="取消"
       >
         <form onSubmit={isEditMode ? handleSubmitEdit : handleSubmitAdd}>
@@ -529,10 +528,11 @@ const ReadingManager = ({ showToast }) => {
       {/* 删除确认模态框 */}
       <Modal
         title="确认删除"
-        isOpen={showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(false)}
-        onConfirm={confirmDelete}
-        confirmText="删除"
+        open={showDeleteConfirm}
+        onCancel={() => setShowDeleteConfirm(false)}
+        onOk={confirmDelete}
+        okText="删除"
+        okButtonProps={{ danger: true }}
         cancelText="取消"
       >
         <p>确定要删除这个阅读项目吗？</p>

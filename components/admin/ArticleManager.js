@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../../lib/api';
 import { ARTICLE_LEVELS, ARTICLE_CATEGORIES } from '../../config/config';
 import { handleApiError, logError } from '../../utils.js';
-import Modal from '../common/Modal';
-import { Input, Select } from 'antd';
+import { Modal, Input, Select } from 'antd';
 import Pagination from '../common/Pagination';
 
 const ArticleManager = ({ showToast }) => {
@@ -208,130 +207,125 @@ const ArticleManager = ({ showToast }) => {
       />
 
       {/* 添加文章弹窗 */}
-      {showAddArticleDrawer && (
-        <Modal
-          isOpen={showAddArticleDrawer}
-          onClose={() => setShowAddArticleDrawer(false)}
-          title="添加文章"
-          confirmText="保存"
-          onConfirm={handleSubmitAddArticle}
-        >
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-dark mb-2">标题 <span className="text-red-500">*</span></label>
-              <Input 
-                type="text" 
-                name="title" 
-                value={articleForm.title} 
-                onChange={handleArticleFormChange} 
-                placeholder="请输入标题"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-dark mb-2">内容 <span className="text-red-500">*</span></label>
-              <Input.TextArea 
-                name="content" 
-                value={articleForm.content} 
-                onChange={handleArticleFormChange} 
-                placeholder="请输入内容"
-                rows={5}
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-dark mb-2">级别 <span className="text-red-500">*</span></label>
-              <Select
-                options={ARTICLE_LEVELS.map(level => ({ value: level, label: level }))}
-                value={articleForm.level}
-                onChange={(value) => setArticleForm(prev => ({ ...prev, level: value }))}
-                placeholder="请选择级别"
-                style={{ width: '100%' }}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-dark mb-2">教材分类 <span className="text-red-500">*</span></label>
-              <Select
-                options={ARTICLE_CATEGORIES.map(category => ({ value: category, label: category }))}
-                value={articleForm.category}
-                onChange={(value) => setArticleForm(prev => ({ ...prev, category: value }))}
-                placeholder="请选择教材分类"
-                style={{ width: '100%' }}
-              />
-            </div>
+      <Modal
+        open={showAddArticleDrawer}
+        onCancel={() => setShowAddArticleDrawer(false)}
+        title="添加文章"
+        onOk={handleSubmitAddArticle}
+        okText="保存"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-dark mb-2">标题 <span className="text-red-500">*</span></label>
+            <Input 
+              type="text" 
+              name="title" 
+              value={articleForm.title} 
+              onChange={handleArticleFormChange} 
+              placeholder="请输入标题"
+              required
+            />
           </div>
-        </Modal>
-      )}
+          <div>
+            <label className="block text-sm font-medium text-dark mb-2">内容 <span className="text-red-500">*</span></label>
+            <Input.TextArea 
+              name="content" 
+              value={articleForm.content} 
+              onChange={handleArticleFormChange} 
+              placeholder="请输入内容"
+              rows={5}
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-dark mb-2">级别 <span className="text-red-500">*</span></label>
+            <Select
+              options={ARTICLE_LEVELS.map(level => ({ value: level, label: level }))}
+              value={articleForm.level}
+              onChange={(value) => setArticleForm(prev => ({ ...prev, level: value }))}
+              placeholder="请选择级别"
+              style={{ width: '100%' }}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-dark mb-2">教材分类 <span className="text-red-500">*</span></label>
+            <Select
+              options={ARTICLE_CATEGORIES.map(category => ({ value: category, label: category }))}
+              value={articleForm.category}
+              onChange={(value) => setArticleForm(prev => ({ ...prev, category: value }))}
+              placeholder="请选择教材分类"
+              style={{ width: '100%' }}
+            />
+          </div>
+        </div>
+      </Modal>
 
       {/* 编辑文章弹窗 */}
-      {showEditArticleModal && (
-        <Modal
-          isOpen={showEditArticleModal}
-          onClose={() => setShowEditArticleModal(false)}
-          title="编辑文章"
-          confirmText="保存"
-          onConfirm={handleSubmitEditArticle}
-        >
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-dark mb-2">标题 <span className="text-red-500">*</span></label>
-              <Input 
-                type="text" 
-                name="title" 
-                value={articleForm.title} 
-                onChange={handleArticleFormChange} 
-                placeholder="请输入标题"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-dark mb-2">内容 <span className="text-red-500">*</span></label>
-              <Input.TextArea 
-                name="content" 
-                value={articleForm.content} 
-                onChange={handleArticleFormChange} 
-                placeholder="请输入内容"
-                rows={5}
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-dark mb-2">级别 <span className="text-red-500">*</span></label>
-              <Select
-                options={ARTICLE_LEVELS.map(level => ({ value: level, label: level }))}
-                value={articleForm.level}
-                onChange={(value) => setArticleForm(prev => ({ ...prev, level: value }))}
-                placeholder="请选择级别"
-                style={{ width: '100%' }}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-dark mb-2">教材分类 <span className="text-red-500">*</span></label>
-              <Select
-                options={ARTICLE_CATEGORIES.map(category => ({ value: category, label: category }))}
-                value={articleForm.category}
-                onChange={(value) => setArticleForm(prev => ({ ...prev, category: value }))}
-                placeholder="请选择教材分类"
-                style={{ width: '100%' }}
-              />
-            </div>
+      <Modal
+        open={showEditArticleModal}
+        onCancel={() => setShowEditArticleModal(false)}
+        title="编辑文章"
+        onOk={handleSubmitEditArticle}
+        okText="保存"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-dark mb-2">标题 <span className="text-red-500">*</span></label>
+            <Input 
+              type="text" 
+              name="title" 
+              value={articleForm.title} 
+              onChange={handleArticleFormChange} 
+              placeholder="请输入标题"
+              required
+            />
           </div>
-        </Modal>
-      )}
+          <div>
+            <label className="block text-sm font-medium text-dark mb-2">内容 <span className="text-red-500">*</span></label>
+            <Input.TextArea 
+              name="content" 
+              value={articleForm.content} 
+              onChange={handleArticleFormChange} 
+              placeholder="请输入内容"
+              rows={5}
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-dark mb-2">级别 <span className="text-red-500">*</span></label>
+            <Select
+              options={ARTICLE_LEVELS.map(level => ({ value: level, label: level }))}
+              value={articleForm.level}
+              onChange={(value) => setArticleForm(prev => ({ ...prev, level: value }))}
+              placeholder="请选择级别"
+              style={{ width: '100%' }}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-dark mb-2">教材分类 <span className="text-red-500">*</span></label>
+            <Select
+              options={ARTICLE_CATEGORIES.map(category => ({ value: category, label: category }))}
+              value={articleForm.category}
+              onChange={(value) => setArticleForm(prev => ({ ...prev, category: value }))}
+              placeholder="请选择教材分类"
+              style={{ width: '100%' }}
+            />
+          </div>
+        </div>
+      </Modal>
 
       {/* 删除文章确认弹窗 */}
-      {showDeleteArticleConfirm && (
-        <Modal
-          isOpen={showDeleteArticleConfirm}
-          onClose={() => setShowDeleteArticleConfirm(false)}
-          title="确认删除"
-          confirmText="确认删除"
-          cancelText="取消"
-          onConfirm={confirmDeleteArticle}
-        >
-          <p className="text-gray-600">您确定要删除这篇文章吗？此操作不可撤销。</p>
-        </Modal>
-      )}
+      <Modal
+        open={showDeleteArticleConfirm}
+        onCancel={() => setShowDeleteArticleConfirm(false)}
+        title="确认删除"
+        onOk={confirmDeleteArticle}
+        okText="确认删除"
+        okButtonProps={{ danger: true }}
+        cancelText="取消"
+      >
+        <p className="text-gray-600">您确定要删除这篇文章吗？此操作不可撤销。</p>
+      </Modal>
 
 
     </div>

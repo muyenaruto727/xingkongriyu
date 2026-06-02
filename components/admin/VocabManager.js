@@ -2,12 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { TEXTBOOKS, CATEGORIES, PITCH_ACCENTS, LEVELS, TAGS } from '../../config/config';
 import { api } from '../../lib/api';
 import { handleApiError, logError } from '../../utils.js';
-import { Cascader, Select, Input, Pagination, Upload } from 'antd';
+import { message, Cascader, Select, Input, Pagination, Upload, Modal } from 'antd';
 import { InboxOutlined } from '@ant-design/icons';
-import Modal from '../common/Modal';
 import PaginationTable from '../common/PaginationTable';
 
-const VocabManager = ({ showToast }) => {
+const VocabManager = () => {
   const [vocabList, setVocabList] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -126,39 +125,39 @@ const VocabManager = ({ showToast }) => {
   // 表单验证
   const validateForm = () => {
     if (!vocabForm.japanese.trim()) {
-      showToast('请输入日文', 'error');
+      message.error('请输入日文');
       return false;
     }
     if (!vocabForm.pronunciation.trim()) {
-      showToast('请输入发音', 'error');
+      message.error('请输入发音');
       return false;
     }
     if (!vocabForm.chinese.trim()) {
-      showToast('请输入中文', 'error');
+      message.error('请输入中文');
       return false;
     }
     if (!vocabForm.level) {
-      showToast('请选择级别', 'error');
+      message.error('请选择级别');
       return false;
     }
     if (!vocabForm.tag) {
-      showToast('请选择标签', 'error');
+      message.error('请选择标签');
       return false;
     }
     if (vocabForm.category.length === 0) {
-      showToast('请选择类别', 'error');
+      message.error('请选择类别');
       return false;
     }
     if (vocabForm.pitchAccent.length === 0) {
-      showToast('请选择声调', 'error');
+      message.error('请选择声调');
       return false;
     }
     if (vocabForm.textbooks.length === 0 && vocabForm.lessons.length === 0) {
-      showToast('请选择教材和课程', 'error');
+      message.error('请选择教材和课程');
       return false;
     }
     if (vocabForm.examples.length === 0 || !vocabForm.examples.some(example => example.trim())) {
-      showToast('请至少输入一个例句', 'error');
+      message.error('请至少输入一个例句');
       return false;
     }
     return true;
@@ -199,7 +198,7 @@ const VocabManager = ({ showToast }) => {
         examples: vocabForm.examples.filter(example => example.trim())
       });
       
-      showToast('词汇添加成功', 'success');
+      message.success('词汇添加成功');
       // 重置表单
       resetForm();
       // 重置搜索条件
@@ -217,7 +216,7 @@ const VocabManager = ({ showToast }) => {
       setShowModal(false);
     } catch (error) {
       logError(error, 'Add Vocabulary');
-      handleApiError(error, showToast);
+      handleApiError(error, message.error);
     } finally {
       setIsLoading(false);
     }
@@ -246,7 +245,7 @@ const VocabManager = ({ showToast }) => {
         examples: vocabForm.examples.filter(example => example.trim())
       });
       
-      showToast('词汇更新成功', 'success');
+      message.success('词汇更新成功');
       // 重置表单
       resetForm();
       // 重新加载词汇列表，使用空的搜索条件
@@ -255,7 +254,7 @@ const VocabManager = ({ showToast }) => {
       setShowModal(false);
     } catch (error) {
       logError(error, 'Update Vocabulary');
-      handleApiError(error, showToast);
+      handleApiError(error, message.error);
     } finally {
       setIsLoading(false);
     }
@@ -268,14 +267,14 @@ const VocabManager = ({ showToast }) => {
     try {
       await api.deleteVocab(currentEditId);
       
-      showToast('词汇删除成功', 'success');
+      message.success('词汇删除成功');
       setShowDeleteConfirm(false);
       setCurrentEditId(null);
       // 重新加载词汇列表，使用空的搜索条件
       fetchVocabList(true);
     } catch (error) {
       logError(error, 'Delete Vocabulary');
-      handleApiError(error, showToast);
+      handleApiError(error, message.error);
     } finally {
       setIsLoading(false);
     }
@@ -339,7 +338,7 @@ const VocabManager = ({ showToast }) => {
       }
     } catch (error) {
       logError(error, 'Fetch Vocabulary');
-      handleApiError(error, showToast);
+      handleApiError(error, message.error);
     } finally {
       setIsLoading(false);
     }
@@ -424,12 +423,12 @@ const VocabManager = ({ showToast }) => {
   // 通用的批量导入函数
   const handleBatchImportFromFile = async (file, inputElement = null) => {
     setIsLoading(true);
-    showToast('开始处理文件...', 'info');
+    message.info('开始处理文件...');
     try {
       const reader = new FileReader();
       reader.onload = async (event) => {
         try {
-          showToast('解析文件中...', 'info');
+          message.info('解析文件中...');
           const content = event.target.result;
           let data;
 
@@ -438,7 +437,7 @@ const VocabManager = ({ showToast }) => {
             data = JSON.parse(content);
           } else if (file.name.endsWith('.csv')) {
             // 简单的 CSV 解析
-            showToast('解析CSV文件...', 'info');
+            message.info('解析CSV文件...');
             const rows = content.split('\n').filter(row => row.trim());
             const headers = rows[0].split(',').map(header => header.trim().replace(/"/g, ''));
             data = rows.slice(1).map(row => {
@@ -488,7 +487,7 @@ const VocabManager = ({ showToast }) => {
               return obj;
             });
           } else {
-            showToast('不支持的文件格式', 'error');
+            message.error('不支持的文件格式');
             setIsLoading(false);
             if (inputElement) inputElement.value = '';
             return;
@@ -496,25 +495,25 @@ const VocabManager = ({ showToast }) => {
 
           // 验证数据格式
           if (!Array.isArray(data)) {
-            showToast('文件内容格式错误', 'error');
+            message.error('文件内容格式错误');
             setIsLoading(false);
             if (inputElement) inputElement.value = '';
             return;
           }
 
           // 过滤掉模板中的示例数据（日文为空的条目）
-          showToast(`验证数据格式，共 ${data.length} 条数据...`, 'info');
+          message.info(`验证数据格式，共 ${data.length} 条数据...`);
           let filteredData = data.filter(item => item.japanese && item.japanese.trim());
           
           if (filteredData.length === 0) {
-            showToast('没有有效的数据可导入', 'error');
+            message.error('没有有效的数据可导入');
             setIsLoading(false);
             if (inputElement) inputElement.value = '';
             return;
           }
           
           // 过滤掉重复数据（根据日文和发音的组合判断）
-          showToast('过滤掉重复数据...', 'info');
+          message.info('过滤掉重复数据...');
           const seen = new Set();
           filteredData = filteredData.filter(item => {
             const key = `${item.japanese}-${item.pronunciation}`;
@@ -526,7 +525,7 @@ const VocabManager = ({ showToast }) => {
           });
           
           if (filteredData.length === 0) {
-            showToast('没有有效的数据可导入', 'error');
+            message.error('没有有效的数据可导入');
             setIsLoading(false);
             if (inputElement) inputElement.value = '';
             return;
@@ -534,7 +533,7 @@ const VocabManager = ({ showToast }) => {
 
           // 与数据库中已有的词汇进行去重
           try {
-            showToast('与数据库中已有的词汇进行去重...', 'info');
+            message.info('与数据库中已有的词汇进行去重...');
             const existingVocab = await api.getVocabList({ limit: 10000 });
             const existingKeys = new Set();
             
@@ -561,34 +560,34 @@ const VocabManager = ({ showToast }) => {
             });
 
             if (uniqueData.length === 0) {
-              showToast('所有数据都已存在，没有新数据可导入', 'info');
+              message.info('所有数据都已存在，没有新数据可导入');
               setIsLoading(false);
               if (inputElement) inputElement.value = '';
               return;
             } 
 
             // 发送批量导入请求
-            showToast(`正在导入 ${uniqueData.length} 条新数据...`, 'info');
+            message.info(`正在导入 ${uniqueData.length} 条新数据...`);
             await api.importVocab({ batch: uniqueData });
 
             if (uniqueData.length < filteredData.length) {
-              showToast(`已过滤掉 ${filteredData.length - uniqueData.length} 条重复数据，成功导入 ${uniqueData.length} 条新数据`, 'success');
+              message.success(`已过滤掉 ${filteredData.length - uniqueData.length} 条重复数据，成功导入 ${uniqueData.length} 条新数据`);
             } else {
-              showToast(`成功导入 ${uniqueData.length} 条新数据`, 'success');
+              message.success(`成功导入 ${uniqueData.length} 条新数据`);
             }
           } catch (error) {
             logError(error, 'Batch Import Deduplication');
             // 如果去重失败，仍然尝试导入数据
-            showToast(`直接导入 ${filteredData.length} 条数据...`, 'info');
+            message.info(`直接导入 ${filteredData.length} 条数据...`);
             await api.importVocab({ batch: filteredData });
-            showToast(`成功导入 ${filteredData.length} 条数据`, 'success');
+            message.success(`成功导入 ${filteredData.length} 条数据`);
           }
 
-          showToast('刷新词汇列表...', 'info');
+          message.info('刷新词汇列表...');
           await fetchVocabList(true);
         } catch (error) {
           logError(error, 'Batch Import');
-          showToast('文件解析失败', 'error');
+          message.error('文件解析失败');
         } finally {
           setIsLoading(false);
           // 重置文件输入
@@ -598,7 +597,7 @@ const VocabManager = ({ showToast }) => {
       reader.readAsText(file);
     } catch (error) {
       logError(error, 'Batch Import');
-      showToast('批量导入失败', 'error');
+      message.error('批量导入失败');
       setIsLoading(false);
       // 重置文件输入
       if (inputElement) inputElement.value = '';
@@ -657,7 +656,7 @@ const VocabManager = ({ showToast }) => {
     document.body.removeChild(link);
     URL.revokeObjectURL(downloadUrl);
 
-    showToast('模板下载成功', 'success');
+    message.success('模板下载成功');
   };
 
   // 下载词汇模板（CSV格式）
@@ -683,7 +682,7 @@ const VocabManager = ({ showToast }) => {
     document.body.removeChild(link);
     URL.revokeObjectURL(downloadUrl);
 
-    showToast('模板下载成功', 'success');
+    message.success('模板下载成功');
   };
 
   // 批量下载
@@ -747,11 +746,11 @@ const VocabManager = ({ showToast }) => {
       document.body.removeChild(link);
       URL.revokeObjectURL(downloadUrl);
 
-      showToast('批量下载成功', 'success');
+      message.success('批量下载成功');
       setShowDownloadModal(false);
     } catch (error) {
       logError(error, 'Batch Download');
-      showToast('批量下载失败', 'error');
+      message.error('批量下载失败');
       setShowDownloadModal(false);
     } finally {
       setIsLoading(false);
@@ -792,13 +791,13 @@ const VocabManager = ({ showToast }) => {
       }
 
       // 获取指定页码的数据
-      showToast(`开始下载第 ${pageNumber} 页，每页 ${pageSize} 条数据`, 'info');
+      message.info(`开始下载第 ${pageNumber} 页，每页 ${pageSize} 条数据`);
       const pageData = await api.exportVocab(params);
       const vocabData = Array.isArray(pageData) ? pageData : (pageData.data || []);
       const totalItems = pageData.total || 0;
       const totalPages = Math.ceil(totalItems / pageSize);
 
-      // 转换为JSON字符串
+      // 转换为 JSON 字符串
       const content = JSON.stringify(vocabData, null, 2);
       const mimeType = 'application/json';
       const fileName = `vocabulary_${new Date().toISOString().split('T')[0]}_page_${pageNumber}_size_${pageSize}.json`;
@@ -814,11 +813,11 @@ const VocabManager = ({ showToast }) => {
       document.body.removeChild(link);
       URL.revokeObjectURL(downloadUrl);
 
-      showToast(`分页下载成功，共下载 ${vocabData.length} 条数据（第 ${pageNumber}/${totalPages} 页）`, 'success');
+      message.success(`分页下载成功，共下载 ${vocabData.length} 条数据（第 ${pageNumber}/${totalPages} 页）`);
       setShowDownloadModal(false);
     } catch (error) {
       logError(error, 'Paginated Download');
-      showToast('分页下载失败', 'error');
+      message.error('分页下载失败');
       setShowDownloadModal(false);
     }
   };
@@ -1082,15 +1081,16 @@ const VocabManager = ({ showToast }) => {
       
       {/* 词汇模态框 */}
       <Modal
-        isOpen={showModal}
-        onClose={() => {
+        open={showModal}
+        onCancel={() => {
           setShowModal(false);
           resetForm();
         }}
         title={isEditMode ? '编辑词汇' : '添加词汇'}
-        confirmText={isLoading ? (isEditMode ? '更新中...' : '添加中...') : '保存'}
-        onConfirm={isEditMode ? handleSubmitEdit : handleSubmitAdd}
-        size="xl"
+        width={900}
+        onOk={isEditMode ? handleSubmitEdit : handleSubmitAdd}
+        okText="保存"
+        cancelText="取消"
       >
         <form onSubmit={isEditMode ? handleSubmitEdit : handleSubmitAdd} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1245,177 +1245,169 @@ const VocabManager = ({ showToast }) => {
       
       {/* 删除确认模态框 */}
       <Modal
-        isOpen={showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(false)}
+        open={showDeleteConfirm}
+        onCancel={() => setShowDeleteConfirm(false)}
         title="确认删除"
-        confirmText={isLoading ? '删除中...' : '删除'}
+        onOk={confirmDelete}
+        okButtonProps={{ danger: true, loading: isLoading }}
         cancelText="取消"
-        onConfirm={confirmDelete}
-        size="sm"
       >
-        <div className="p-6">
-          <p className="text-gray-700">确定要删除这个词汇吗？此操作不可撤销。</p>
-        </div>
+        <p className="text-gray-700">确定要删除这个词汇吗？此操作不可撤销。</p>
       </Modal>
 
       {/* 批量导入模态框 */}
       <Modal
-        isOpen={showImportModal}
-        onClose={() => setShowImportModal(false)}
+        open={showImportModal}
+        onCancel={() => setShowImportModal(false)}
         title="批量导入词汇"
-        confirmText="关闭"
-        onConfirm={() => setShowImportModal(false)}
-        size="lg"
+        footer={null}
+        width={600}
       >
-        <div className="p-6">
-          <div className="mb-6">
-            <h4 className="text-lg font-medium text-dark mb-4">下载模板</h4>
-            <button 
-              onClick={downloadVocabTemplate}
-              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              下载 JSON 模板
-            </button>
-          </div>
+        <div className="mb-6">
+          <h4 className="text-lg font-medium text-dark mb-4">下载模板</h4>
+          <button 
+            onClick={downloadVocabTemplate}
+            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            下载 JSON 模板
+          </button>
+        </div>
 
-          <div className="mb-6">
-            <h4 className="text-lg font-medium text-dark mb-4">上传文件</h4>
-            <Upload.Dragger
-              name="file"
-              accept=".json"
-              multiple={false}
-              beforeUpload={(file) => {
-                if (!file.name.endsWith('.json')) {
-                  showToast('仅支持 JSON 格式文件', 'error');
-                  return false;
-                }
-                // 调用批量导入函数
-                handleBatchImportFromDragger(file);
-                return false; // 阻止自动上传
-              }}
-            >
-              <p className="ant-upload-drag-icon">
-                <InboxOutlined />
-              </p>
-              <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
-              <p className="ant-upload-hint">
-                支持单个 JSON 文件上传
-              </p>
-            </Upload.Dragger>
-          </div>
+        <div className="mb-6">
+          <h4 className="text-lg font-medium text-dark mb-4">上传文件</h4>
+          <Upload.Dragger
+            name="file"
+            accept=".json"
+            multiple={false}
+            beforeUpload={(file) => {
+              if (!file.name.endsWith('.json')) {
+                message.error('仅支持 JSON 格式文件');
+                return false;
+              }
+              // 调用批量导入函数
+              handleBatchImportFromDragger(file);
+              return false; // 阻止自动上传
+            }}
+          >
+            <p className="ant-upload-drag-icon">
+              <InboxOutlined />
+            </p>
+            <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
+            <p className="ant-upload-hint">
+              支持单个 JSON 文件上传
+            </p>
+          </Upload.Dragger>
         </div>
       </Modal>
 
       {/* 批量下载模态框 */}
       <Modal
-        isOpen={showDownloadModal}
-        onClose={() => setShowDownloadModal(false)}
+        open={showDownloadModal}
+        onCancel={() => setShowDownloadModal(false)}
         title="批量下载词汇"
-        confirmText="下载"
-        onConfirm={handleBatchDownload}
-        size="lg"
+        onOk={handleBatchDownload}
+        okText="下载"
+        okButtonProps={{ loading: isLoading }}
+        width={600}
       >
-        <div className="p-6">
-          <div className="mb-6">
-            <h4 className="text-lg font-medium text-dark mb-4">下载选项</h4>
-            <p className="text-gray-600 mb-4">请选择下载方式：</p>
-            <div className="space-y-4">
-              <div className="flex items-center">
-                <input 
-                  type="radio" 
-                  id="download-all" 
-                  name="download-option" 
-                  value="all" 
-                  defaultChecked
-                  onChange={(e) => {
-                    const paginatedOptions = document.getElementById('paginated-options');
-                    if (paginatedOptions) {
-                      paginatedOptions.style.display = e.target.value === 'paginated' ? 'block' : 'none';
-                    }
-                  }}
-                />
-                <label htmlFor="download-all" className="ml-2 text-gray-700">
-                  下载所有数据（最多 10,000 条）
+        <div className="mb-6">
+          <h4 className="text-lg font-medium text-dark mb-4">下载选项</h4>
+          <p className="text-gray-600 mb-4">请选择下载方式：</p>
+          <div className="space-y-4">
+            <div className="flex items-center">
+              <input 
+                type="radio" 
+                id="download-all" 
+                name="download-option" 
+                value="all" 
+                defaultChecked
+                onChange={(e) => {
+                  const paginatedOptions = document.getElementById('paginated-options');
+                  if (paginatedOptions) {
+                    paginatedOptions.style.display = e.target.value === 'paginated' ? 'block' : 'none';
+                  }
+                }}
+              />
+              <label htmlFor="download-all" className="ml-2 text-gray-700">
+                下载所有数据（最多 10,000 条）
+              </label>
+            </div>
+            <div className="flex items-center">
+              <input 
+                type="radio" 
+                id="download-filtered" 
+                name="download-option" 
+                value="filtered"
+                onChange={(e) => {
+                  const paginatedOptions = document.getElementById('paginated-options');
+                  if (paginatedOptions) {
+                    paginatedOptions.style.display = e.target.value === 'paginated' ? 'block' : 'none';
+                  }
+                }}
+              />
+              <label htmlFor="download-filtered" className="ml-2 text-gray-700">
+                下载当前筛选条件的数据
+              </label>
+            </div>
+            <div className="flex items-center">
+              <input 
+                type="radio" 
+                id="download-paginated" 
+                name="download-option" 
+                value="paginated"
+                onChange={(e) => {
+                  const paginatedOptions = document.getElementById('paginated-options');
+                  if (paginatedOptions) {
+                    paginatedOptions.style.display = e.target.value === 'paginated' ? 'block' : 'none';
+                  }
+                }}
+              />
+              <label htmlFor="download-paginated" className="ml-2 text-gray-700">
+                分页下载（适合大量数据）
+              </label>
+            </div>
+            <div className="ml-8 space-y-4" id="paginated-options" style={{ display: 'none' }}>
+              <div>
+                <label htmlFor="page-size" className="block text-sm font-medium text-gray-700 mb-1">
+                  每页大小
                 </label>
-              </div>
-              <div className="flex items-center">
                 <input 
-                  type="radio" 
-                  id="download-filtered" 
-                  name="download-option" 
-                  value="filtered"
-                  onChange={(e) => {
-                    const paginatedOptions = document.getElementById('paginated-options');
-                    if (paginatedOptions) {
-                      paginatedOptions.style.display = e.target.value === 'paginated' ? 'block' : 'none';
-                    }
-                  }}
+                  type="number" 
+                  id="page-size" 
+                  min="1" 
+                  max="5000" 
+                  defaultValue="1000" 
+                  className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <label htmlFor="download-filtered" className="ml-2 text-gray-700">
-                  下载当前筛选条件的数据
-                </label>
               </div>
-              <div className="flex items-center">
+              <div>
+                <label htmlFor="page-number" className="block text-sm font-medium text-gray-700 mb-1">
+                  下载页码
+                </label>
                 <input 
-                  type="radio" 
-                  id="download-paginated" 
-                  name="download-option" 
-                  value="paginated"
-                  onChange={(e) => {
-                    const paginatedOptions = document.getElementById('paginated-options');
-                    if (paginatedOptions) {
-                      paginatedOptions.style.display = e.target.value === 'paginated' ? 'block' : 'none';
-                    }
-                  }}
+                  type="number" 
+                  id="page-number" 
+                  min="1" 
+                  defaultValue="1" 
+                  className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <label htmlFor="download-paginated" className="ml-2 text-gray-700">
-                  分页下载（适合大量数据）
-                </label>
-              </div>
-              <div className="ml-8 space-y-4" id="paginated-options" style={{ display: 'none' }}>
-                <div>
-                  <label htmlFor="page-size" className="block text-sm font-medium text-gray-700 mb-1">
-                    每页大小
-                  </label>
-                  <input 
-                    type="number" 
-                    id="page-size" 
-                    min="1" 
-                    max="5000" 
-                    defaultValue="1000" 
-                    className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="page-number" className="block text-sm font-medium text-gray-700 mb-1">
-                    下载页码
-                  </label>
-                  <input 
-                    type="number" 
-                    id="page-number" 
-                    min="1" 
-                    defaultValue="1" 
-                    className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
               </div>
             </div>
           </div>
-          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-yellow-700">
-                  提示：如果数据量较大，建议使用分页下载方式，避免浏览器卡顿。
-                </p>
-              </div>
+        </div>
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-yellow-700">
+                提示：如果数据量较大，建议使用分页下载方式，避免浏览器卡顿。
+              </p>
             </div>
           </div>
-
         </div>
       </Modal>
     </div>

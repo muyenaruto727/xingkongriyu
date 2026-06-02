@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
+import { message } from 'antd';
 import Navigation from '../../components/layout/Navigation';
-import Toast from '../../components/common/Toast';
 import { api } from '../../lib/api';
 
 const Grammar = () => {
@@ -13,7 +13,6 @@ const Grammar = () => {
   const [selectedLevel, setSelectedLevel] = useState('全部');
   const [searchKeyword, setSearchKeyword] = useState('');
   const [favorites, setFavorites] = useState([]);
-  const [toast, setToast] = useState({ isOpen: false, message: '', type: 'info' });
   const itemsPerPage = 20;
 
   const levels = ['全部', 'N1', 'N2', 'N3', 'N4', 'N5'];
@@ -107,8 +106,8 @@ const Grammar = () => {
   };
 
   // 显示Toast通知
-  const showToast = (message, type = 'info') => {
-    setToast({ isOpen: true, message, type });
+  const showToast = (msg, type = 'info') => {
+    message[type](msg);
   };
 
   return (
@@ -201,13 +200,7 @@ const Grammar = () => {
         </div>
       </main>
 
-      {/* Toast组件 */}
-      <Toast
-        isOpen={toast.isOpen}
-        message={toast.message}
-        type={toast.type}
-        onClose={() => setToast({ ...toast, isOpen: false })}
-      />
+
     </div>
   );
 };

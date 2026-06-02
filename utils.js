@@ -1,12 +1,13 @@
 // 工具文件 - 包含错误处理和其他实用函数
+import { message } from 'antd';
 
 /**
- * 处理API错误
+ * 处理 API 错误
  * @param {Error} error - 错误对象
- * @param {Function} showToast - 显示提示的函数
+ * @param {Function} showMessage - 显示提示的函数（可选，默认为 antd message）
  * @returns {Object} 错误信息
  */
-export const handleApiError = (error, showToast) => {
+export const handleApiError = (error, showMessage) => {
   let errorMessage = '操作失败，请稍后重试';
   let errorCode = 'UNKNOWN_ERROR';
 
@@ -51,9 +52,8 @@ export const handleApiError = (error, showToast) => {
   }
 
   // 显示错误提示
-  if (showToast) {
-    showToast(errorMessage, 'error');
-  }
+  const showToast = showMessage || message.error;
+  showToast(errorMessage);
 
   return {
     message: errorMessage,
@@ -65,15 +65,14 @@ export const handleApiError = (error, showToast) => {
 /**
  * 处理客户端错误
  * @param {Error} error - 错误对象
- * @param {Function} showToast - 显示提示的函数
+ * @param {Function} showMessage - 显示提示的函数（可选，默认为 antd message）
  * @returns {Object} 错误信息
  */
-export const handleClientError = (error, showToast) => {
+export const handleClientError = (error, showMessage) => {
   const errorMessage = error.message || '操作失败，请稍后重试';
   
-  if (showToast) {
-    showToast(errorMessage, 'error');
-  }
+  const showToast = showMessage || message.error;
+  showToast(errorMessage);
   
   return {
     message: errorMessage,

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
+import { message } from 'antd';
 import dynamic from 'next/dynamic';
 import { api } from '../../lib/api';
 
@@ -10,9 +11,6 @@ const Navigation = dynamic(() => import('../../components/layout/Navigation'), {
 });
 const Footer = dynamic(() => import('../../components/layout/Footer'), {
   ssr: true
-});
-const Toast = dynamic(() => import('../../components/common/Toast'), {
-  ssr: false
 });
 
 const Vocabulary = () => {
@@ -28,7 +26,7 @@ const Vocabulary = () => {
   const [searchKeyword, setSearchKeyword] = useState('');
   const [favorites, setFavorites] = useState([]);
   const [flippedCards, setFlippedCards] = useState(new Set());
-  const [toast, setToast] = useState({ isOpen: false, message: '', type: 'info' });
+  
   const itemsPerPage = 20;
 
   const levels = ['全部', 'N1', 'N2', 'N3', 'N4', 'N5'];
@@ -112,8 +110,8 @@ const Vocabulary = () => {
   };
 
   // 显示Toast通知
-  const showToast = (message, type = 'info') => {
-    setToast({ isOpen: true, message, type });
+  const showToast = (msg, type = 'info') => {
+    message[type](msg);
   };
 
   // 计算分页数据
@@ -621,14 +619,6 @@ const Vocabulary = () => {
           </div>
         </section>
       </main>
-
-      {/* Toast组件 */}
-      <Toast
-        isOpen={toast.isOpen}
-        message={toast.message}
-        type={toast.type}
-        onClose={() => setToast({ ...toast, isOpen: false })}
-      />
     </div>
   );
 };

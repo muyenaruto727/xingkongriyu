@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
+import { Modal, message } from 'antd';
 import Navigation from '../../components/layout/Navigation';
-import Toast from '../../components/common/Toast';
-import Modal from '../../components/common/Modal';
 import { FEEDBACK_TYPES } from '../../config/config';
 import { handleApiError, logError, formatTime } from '../../utils.js';
 
@@ -19,7 +18,6 @@ const ExamTest = () => {
   const [feedbackType, setFeedbackType] = useState('题目有误');
   const [feedbackDescription, setFeedbackDescription] = useState('');
   const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
-  const [toast, setToast] = useState({ isOpen: false, message: '', type: 'info' });
 
   // 加载考试配置和题目
   useEffect(() => {
@@ -395,8 +393,8 @@ const ExamTest = () => {
     }
   };
 
-  const showToast = (message, type = 'info') => {
-    setToast({ isOpen: true, message, type });
+  const showToast = (msg, type = 'info') => {
+    message[type](msg);
   };
 
   const handleFeedbackSubmit = async () => {
@@ -641,12 +639,14 @@ const ExamTest = () => {
 
       {/* 提交确认弹窗 */}
       <Modal
-        isOpen={showConfirmSubmit}
-        onClose={() => setShowConfirmSubmit(false)}
+        open={showConfirmSubmit}
+        onCancel={() => setShowConfirmSubmit(false)}
         title="确认提交"
-        size="md"
+        onOk={handleSubmitExam}
+        okText="确认提交"
+        cancelText="继续答题"
       >
-        <div className="mb-6">
+        <div className="mb-4">
           <p className="text-gray-600 mb-2">
             您已回答 <span className="font-semibold text-blue-600">{Object.keys(answers).length}</span> / {questions.length} 题
           </p>
@@ -654,28 +654,14 @@ const ExamTest = () => {
             未回答题目: <span className="font-semibold text-red-500">{questions.length - Object.keys(answers).length}</span> 题
           </p>
         </div>
-        <div className="flex justify-end gap-3">
-          <button
-            onClick={() => setShowConfirmSubmit(false)}
-            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-          >
-            继续答题
-          </button>
-          <button
-            onClick={handleSubmitExam}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            确认提交
-          </button>
-        </div>
       </Modal>
 
       {/* 反馈模态框 */}
       <Modal
-        isOpen={showFeedbackModal}
-        onClose={() => setShowFeedbackModal(false)}
+        open={showFeedbackModal}
+        onCancel={() => setShowFeedbackModal(false)}
         title="反馈题目问题"
-        size="md"
+        footer={null}
       >
         <p className="mb-4 text-gray-600">请选择问题类型，我们会自动检查并优化题目：</p>
         
@@ -733,14 +719,6 @@ const ExamTest = () => {
           </button>
         </div>
       </Modal>
-
-      {/* Toast组件 */}
-      <Toast
-        isOpen={toast.isOpen}
-        message={toast.message}
-        type={toast.type}
-        onClose={() => setToast({ ...toast, isOpen: false })}
-      />
     </div>
   );
 };

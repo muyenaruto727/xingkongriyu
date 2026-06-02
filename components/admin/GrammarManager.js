@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../lib/api';
-import Toast from '../common/Toast';
-import { Select, Input, Upload } from 'antd';
+import { message, Modal, Select, Input, Upload } from 'antd';
 import { InboxOutlined } from '@ant-design/icons';
 import Pagination from '../common/Pagination';
-import Modal from '../common/Modal';
 import PaginationTable from '../common/PaginationTable';
 
 const { Dragger } = Upload;
 
-const GrammarManager = ({ showToast }) => {
+const GrammarManager = () => {
   const [grammarList, setGrammarList] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -64,7 +62,7 @@ const GrammarManager = ({ showToast }) => {
       }
     } catch (error) {
       console.error('Failed to fetch grammar:', error);
-      showToast('加载语法数据失败', 'error');
+      message.error('加载语法数据失败');
     } finally {
       setIsLoading(false);
     }
@@ -165,35 +163,35 @@ const GrammarManager = ({ showToast }) => {
     
     // 验证必填字段
     if (!grammarForm.grammarPoint || grammarForm.grammarPoint.trim() === '') {
-      showToast('请输入语法点', 'error');
+      message.error('请输入语法点');
       return;
     }
     if (!grammarForm.level) {
-      showToast('请选择级别', 'error');
+      message.error('请选择级别');
       return;
     }
     if (!grammarForm.japaneseMeaning || grammarForm.japaneseMeaning.trim() === '') {
-      showToast('请输入日文释义', 'error');
+      message.error('请输入日文释义');
       return;
     }
     if (!grammarForm.chineseMeaning || grammarForm.chineseMeaning.trim() === '') {
-      showToast('请输入中文释义', 'error');
+      message.error('请输入中文释义');
       return;
     }
     if (!grammarForm.continuation || grammarForm.continuation.trim() === '') {
-      showToast('请输入接续方式', 'error');
+      message.error('请输入接续方式');
       return;
     }
     if (grammarForm.examples.length === 0 || !grammarForm.examples[0] || grammarForm.examples[0].trim() === '') {
-      showToast('请至少输入一个例句', 'error');
+      message.error('请至少输入一个例句');
       return;
     }
     if (grammarForm.translationExercises.length === 0 || !grammarForm.translationExercises[0] || grammarForm.translationExercises[0].trim() === '') {
-      showToast('请至少输入一个翻译练习', 'error');
+      message.error('请至少输入一个翻译练习');
       return;
     }
     if (grammarForm.referenceAnswers.length === 0 || !grammarForm.referenceAnswers[0] || grammarForm.referenceAnswers[0].trim() === '') {
-      showToast('请至少输入一个参考答案', 'error');
+      message.error('请至少输入一个参考答案');
       return;
     }
     
@@ -201,13 +199,13 @@ const GrammarManager = ({ showToast }) => {
     
     try {
       await api.createGrammar(grammarForm);
-      showToast('语法添加成功', 'success');
+      message.success('语法添加成功');
       setShowModal(false);
       resetForm();
       fetchGrammarList();
     } catch (error) {
       console.error('Failed to add grammar:', error);
-      showToast('语法添加失败', 'error');
+      message.error('语法添加失败');
     } finally {
       setIsLoading(false);
     }
@@ -219,35 +217,35 @@ const GrammarManager = ({ showToast }) => {
     
     // 验证必填字段
     if (!grammarForm.grammarPoint || grammarForm.grammarPoint.trim() === '') {
-      showToast('请输入语法点', 'error');
+      message.error('请输入语法点');
       return;
     }
     if (!grammarForm.level) {
-      showToast('请选择级别', 'error');
+      message.error('请选择级别');
       return;
     }
     if (!grammarForm.japaneseMeaning || grammarForm.japaneseMeaning.trim() === '') {
-      showToast('请输入日文释义', 'error');
+      message.error('请输入日文释义');
       return;
     }
     if (!grammarForm.chineseMeaning || grammarForm.chineseMeaning.trim() === '') {
-      showToast('请输入中文释义', 'error');
+      message.error('请输入中文释义');
       return;
     }
     if (!grammarForm.continuation || grammarForm.continuation.trim() === '') {
-      showToast('请输入接续方式', 'error');
+      message.error('请输入接续方式');
       return;
     }
     if (grammarForm.examples.length === 0 || !grammarForm.examples[0] || grammarForm.examples[0].trim() === '') {
-      showToast('请至少输入一个例句', 'error');
+      message.error('请至少输入一个例句');
       return;
     }
     if (grammarForm.translationExercises.length === 0 || !grammarForm.translationExercises[0] || grammarForm.translationExercises[0].trim() === '') {
-      showToast('请至少输入一个翻译练习', 'error');
+      message.error('请至少输入一个翻译练习');
       return;
     }
     if (grammarForm.referenceAnswers.length === 0 || !grammarForm.referenceAnswers[0] || grammarForm.referenceAnswers[0].trim() === '') {
-      showToast('请至少输入一个参考答案', 'error');
+      message.error('请至少输入一个参考答案');
       return;
     }
     
@@ -255,13 +253,13 @@ const GrammarManager = ({ showToast }) => {
     
     try {
       await api.updateGrammar(currentEditId, grammarForm);
-      showToast('语法更新成功', 'success');
+      message.success('语法更新成功');
       setShowModal(false);
       resetForm();
       fetchGrammarList();
     } catch (error) {
       console.error('Failed to update grammar:', error);
-      showToast('语法更新失败', 'error');
+      message.error('语法更新失败');
     } finally {
       setIsLoading(false);
     }
@@ -296,12 +294,12 @@ const GrammarManager = ({ showToast }) => {
     setIsLoading(true);
     try {
       await api.deleteGrammar(currentDeleteId);
-      showToast('语法删除成功', 'success');
+      message.success('语法删除成功');
       setShowDeleteConfirm(false);
       fetchGrammarList();
     } catch (error) {
       console.error('Failed to delete grammar:', error);
-      showToast('语法删除失败', 'error');
+      message.error('语法删除失败');
     } finally {
       setIsLoading(false);
     }
@@ -326,12 +324,12 @@ const GrammarManager = ({ showToast }) => {
   // 批量导入
   const handleBatchImport = async (file) => {
     setIsLoading(true);
-    showToast('开始处理文件...', 'info');
+    message.info('开始处理文件...');
     try {
       const reader = new FileReader();
       reader.onload = async (event) => {
         try {
-          showToast('解析文件中...', 'info');
+          message.info('解析文件中...');
           const content = event.target.result;
           let data;
 
@@ -339,33 +337,33 @@ const GrammarManager = ({ showToast }) => {
           if (file.name.endsWith('.json')) {
             data = JSON.parse(content);
           } else {
-            showToast('不支持的文件格式', 'error');
+            message.error('不支持的文件格式');
             setIsLoading(false);
             return;
           }
 
           // 验证数据格式
           if (!Array.isArray(data)) {
-            showToast('文件内容格式错误', 'error');
+            message.error('文件内容格式错误');
             setIsLoading(false);
             return;
           }
 
           // 过滤无效数据
-          showToast(`验证数据格式，共 ${data.length} 条数据...`, 'info');
+          message.info(`验证数据格式，共 ${data.length} 条数据...`);
           const filteredData = data.filter(item => {
             return item.grammarPoint && item.level && item.japaneseMeaning && item.chineseMeaning && item.continuation;
           });
 
           if (filteredData.length === 0) {
-            showToast('文件中没有有效的语法数据', 'error');
+            message.error('文件中没有有效的语法数据');
             setIsLoading(false);
             return;
           }
 
           // 与数据库中已有的语法进行去重
           try {
-            showToast('与数据库中已有的语法进行去重...', 'info');
+            message.info('与数据库中已有的语法进行去重...');
             const existingGrammar = await api.getGrammarList({ limit: 10000 });
             const existingKeys = new Set();
             
@@ -392,33 +390,33 @@ const GrammarManager = ({ showToast }) => {
             });
 
             if (uniqueData.length === 0) {
-              showToast('所有数据都已存在，没有新数据可导入', 'info');
+              message.info('所有数据都已存在，没有新数据可导入');
               setIsLoading(false);
               return;
             } 
 
             // 发送批量导入请求
-            showToast(`正在导入 ${uniqueData.length} 条新数据...`, 'info');
+            message.info(`正在导入 ${uniqueData.length} 条新数据...`);
             await api.importGrammar({ batch: uniqueData });
 
             if (uniqueData.length < filteredData.length) {
-              showToast(`已过滤掉 ${filteredData.length - uniqueData.length} 条重复数据，成功导入 ${uniqueData.length} 条新数据`, 'success');
+              message.success(`已过滤掉 ${filteredData.length - uniqueData.length} 条重复数据，成功导入 ${uniqueData.length} 条新数据`);
             } else {
-              showToast(`成功导入 ${uniqueData.length} 条新数据`, 'success');
+              message.success(`成功导入 ${uniqueData.length} 条新数据`);
             }
           } catch (error) {
             console.error('去重失败:', error);
             // 如果去重失败，仍然尝试导入数据
-            showToast(`直接导入 ${filteredData.length} 条数据...`, 'info');
+            message.info(`直接导入 ${filteredData.length} 条数据...`);
             await api.importGrammar({ batch: filteredData });
-            showToast(`成功导入 ${filteredData.length} 条数据`, 'success');
+            message.success(`成功导入 ${filteredData.length} 条数据`);
           }
 
-          showToast('刷新语法列表...', 'info');
+          message.info('刷新语法列表...');
           await fetchGrammarList();
         } catch (error) {
           console.error('文件解析失败:', error);
-          showToast('文件解析失败', 'error');
+          message.error('文件解析失败');
         } finally {
           setIsLoading(false);
         }
@@ -426,12 +424,12 @@ const GrammarManager = ({ showToast }) => {
       reader.readAsText(file);
     } catch (error) {
       console.error('批量导入失败:', error);
-      showToast('批量导入失败', 'error');
+      message.error('批量导入失败');
       setIsLoading(false);
     }
   };
 
-  // 下载语法模板（JSON格式）
+  // 下载语法模板（JSON 格式）
   const downloadGrammarTemplate = () => {
     const template = [
       {
@@ -469,10 +467,8 @@ const GrammarManager = ({ showToast }) => {
     document.body.removeChild(link);
     URL.revokeObjectURL(downloadUrl);
 
-    showToast('模板下载成功', 'success');
+    message.success('模板下载成功');
   };
-
-
 
   // 批量下载
   const handleBatchDownload = async () => {
@@ -509,7 +505,7 @@ const GrammarManager = ({ showToast }) => {
       const response = await api.exportGrammar(params);
       const grammarData = Array.isArray(response) ? response : (response.data || []);
 
-      // 转换为JSON字符串
+      // 转换为 JSON 字符串
       const content = JSON.stringify(grammarData, null, 2);
       const mimeType = 'application/json';
       const fileName = `grammar_${new Date().toISOString().split('T')[0]}.json`;
@@ -525,11 +521,11 @@ const GrammarManager = ({ showToast }) => {
       document.body.removeChild(link);
       URL.revokeObjectURL(downloadUrl);
 
-      showToast('批量下载成功', 'success');
+      message.success('批量下载成功');
       setShowDownloadModal(false);
     } catch (error) {
       console.error('批量下载失败:', error);
-      showToast('批量下载失败', 'error');
+      message.error('批量下载失败');
       setShowDownloadModal(false);
     } finally {
       setIsLoading(false);
@@ -558,13 +554,13 @@ const GrammarManager = ({ showToast }) => {
       }
 
       // 获取指定页码的数据
-      showToast(`开始下载第 ${pageNumber} 页，每页 ${pageSize} 条数据`, 'info');
+      message.info(`开始下载第 ${pageNumber} 页，每页 ${pageSize} 条数据`);
       const pageData = await api.exportGrammar(params);
       const grammarData = Array.isArray(pageData) ? pageData : (pageData.data || []);
       const totalItems = pageData.total || 0;
       const totalPages = Math.ceil(totalItems / pageSize);
 
-      // 转换为JSON字符串
+      // 转换为 JSON 字符串
       const content = JSON.stringify(grammarData, null, 2);
       const mimeType = 'application/json';
       const fileName = `grammar_${new Date().toISOString().split('T')[0]}_page_${pageNumber}_size_${pageSize}.json`;
@@ -580,11 +576,11 @@ const GrammarManager = ({ showToast }) => {
       document.body.removeChild(link);
       URL.revokeObjectURL(downloadUrl);
 
-      showToast(`分页下载成功，共下载 ${grammarData.length} 条数据（第 ${pageNumber}/${totalPages} 页）`, 'success');
+      message.success(`分页下载成功，共下载 ${grammarData.length} 条数据（第 ${pageNumber}/${totalPages} 页）`);
       setShowDownloadModal(false);
     } catch (error) {
       console.error('分页下载失败:', error);
-      showToast('分页下载失败', 'error');
+      message.error('分页下载失败');
       setShowDownloadModal(false);
     }
   };
@@ -716,17 +712,18 @@ const GrammarManager = ({ showToast }) => {
         emptyIcon="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
       />
 
-      {/* 语法模态框 */}
+      {/* 添加/编辑语法模态框 */}
       <Modal
-        isOpen={showModal}
-        onClose={() => {
+        open={showModal}
+        onCancel={() => {
           setShowModal(false);
           resetForm();
         }}
         title={isEditMode ? '编辑语法' : '添加语法'}
-        confirmText={isLoading ? (isEditMode ? '更新中...' : '保存中...') : '保存'}
-        onConfirm={isEditMode ? handleSubmitEdit : handleSubmitAdd}
-        size="xl"
+        width={900}
+        onOk={isEditMode ? handleSubmitEdit : handleSubmitAdd}
+        okText="保存"
+        cancelText="取消"
       >
         <form onSubmit={isEditMode ? handleSubmitEdit : handleSubmitAdd} className="space-y-4">
           <div className="mb-4">
@@ -794,7 +791,7 @@ const GrammarManager = ({ showToast }) => {
 
           {/* 例句 */}
           <div className="mb-5">
-            <label className="block text-sm font-medium text-dark mb-3">例句（最多5句） <span className="text-red-500">*</span></label>
+            <label className="block text-sm font-medium text-dark mb-3">例句（最多 5 句） <span className="text-red-500">*</span></label>
             {grammarForm.examples.map((example, exampleIndex) => (
               <div key={exampleIndex} className="flex gap-2 mb-3">
                 <Input 
@@ -833,7 +830,7 @@ const GrammarManager = ({ showToast }) => {
 
           {/* 翻译练习 */}
           <div className="mb-5">
-            <label className="block text-sm font-medium text-dark mb-3">翻译练习（最多5组） <span className="text-red-500">*</span></label>
+            <label className="block text-sm font-medium text-dark mb-3">翻译练习（最多 5 组） <span className="text-red-500">*</span></label>
             {grammarForm.translationExercises.map((exercise, exerciseIndex) => (
               <div key={exerciseIndex} className="mb-4">
                 <div className="flex gap-2 mb-3">
@@ -885,169 +882,163 @@ const GrammarManager = ({ showToast }) => {
 
       {/* 删除确认模态框 */}
       <Modal
-        isOpen={showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(false)}
+        open={showDeleteConfirm}
+        onCancel={() => setShowDeleteConfirm(false)}
         title="确认删除"
-        confirmText={isLoading ? '删除中...' : '删除'}
+        onOk={confirmDelete}
+        okText={isLoading ? '删除中...' : '删除'}
         cancelText="取消"
-        onConfirm={confirmDelete}
-        size="sm"
+        okButtonProps={{ danger: true, loading: isLoading }}
       >
-        <div className="p-6">
-          <p className="text-gray-700">确定要删除这个语法吗？此操作不可撤销。</p>
-        </div>
+        <p className="text-gray-700">确定要删除这个语法吗？此操作不可撤销。</p>
       </Modal>
 
       {/* 批量导入模态框 */}
       <Modal
-        isOpen={showImportModal}
-        onClose={() => setShowImportModal(false)}
+        open={showImportModal}
+        onCancel={() => setShowImportModal(false)}
         title="批量导入语法"
-        confirmText="关闭"
-        onConfirm={() => setShowImportModal(false)}
-        size="lg"
+        footer={null}
+        width={600}
       >
-        <div className="p-6">
-          <div className="mb-6">
-            <h4 className="text-lg font-medium text-dark mb-4">下载模板</h4>
-            <button 
-              onClick={downloadGrammarTemplate}
-              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              下载 JSON 模板
-            </button>
-          </div>
+        <div className="mb-6">
+          <h4 className="text-lg font-medium text-dark mb-4">下载模板</h4>
+          <button 
+            onClick={downloadGrammarTemplate}
+            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            下载 JSON 模板
+          </button>
+        </div>
 
-          <div className="mb-6">
-            <h4 className="text-lg font-medium text-dark mb-4">上传文件</h4>
-            <Dragger
-              name="file"
-              multiple={false}
-              accept=".json"
-              beforeUpload={(file) => {
-                handleBatchImport(file);
-                return false; // 阻止自动上传
-              }}
-            >
-              <p className="ant-upload-drag-icon">
-                <InboxOutlined />
-              </p>
-              <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
-              <p className="ant-upload-hint">
-                支持单个 JSON 文件上传
-              </p>
-            </Dragger>
-          </div>
+        <div className="mb-6">
+          <h4 className="text-lg font-medium text-dark mb-4">上传文件</h4>
+          <Dragger
+            name="file"
+            multiple={false}
+            accept=".json"
+            beforeUpload={(file) => {
+              handleBatchImport(file);
+              return false; // 阻止自动上传
+            }}
+          >
+            <p className="ant-upload-drag-icon">
+              <InboxOutlined />
+            </p>
+            <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
+            <p className="ant-upload-hint">
+              支持单个 JSON 文件上传
+            </p>
+          </Dragger>
         </div>
       </Modal>
 
       {/* 批量下载模态框 */}
       <Modal
-        isOpen={showDownloadModal}
-        onClose={() => setShowDownloadModal(false)}
+        open={showDownloadModal}
+        onCancel={() => setShowDownloadModal(false)}
         title="批量下载语法"
-        confirmText="下载"
-        onConfirm={handleBatchDownload}
-        size="lg"
+        onOk={handleBatchDownload}
+        okText="下载"
+        okButtonProps={{ loading: isLoading }}
+        width={600}
       >
-        <div className="p-6">
-          <div className="mb-6">
-            <h4 className="text-lg font-medium text-dark mb-4">下载选项</h4>
-            <p className="text-gray-600 mb-4">请选择下载方式：</p>
-            <div className="space-y-4">
-              <div className="flex items-center">
-                <input 
-                  type="radio" 
-                  id="grammar-download-all" 
-                  name="grammar-download-option" 
-                  value="all" 
-                  defaultChecked
-                  onChange={(e) => {
-                    const paginatedOptions = document.getElementById('grammar-paginated-options');
-                    if (paginatedOptions) {
-                      paginatedOptions.style.display = e.target.value === 'paginated' ? 'block' : 'none';
-                    }
-                  }}
-                />
-                <label htmlFor="grammar-download-all" className="ml-2 text-gray-700">
-                  下载所有数据（最多 10,000 条）
+        <div className="mb-6">
+          <h4 className="text-lg font-medium text-dark mb-4">下载选项</h4>
+          <p className="text-gray-600 mb-4">请选择下载方式：</p>
+          <div className="space-y-4">
+            <div className="flex items-center">
+              <input 
+                type="radio" 
+                id="grammar-download-all" 
+                name="grammar-download-option" 
+                value="all" 
+                defaultChecked
+                onChange={(e) => {
+                  const paginatedOptions = document.getElementById('grammar-paginated-options');
+                  if (paginatedOptions) {
+                    paginatedOptions.style.display = e.target.value === 'paginated' ? 'block' : 'none';
+                  }
+                }}
+              />
+              <label htmlFor="grammar-download-all" className="ml-2 text-gray-700">
+                下载所有数据（最多 10,000 条）
+              </label>
+            </div>
+            <div className="flex items-center">
+              <input 
+                type="radio" 
+                id="grammar-download-filtered" 
+                name="grammar-download-option" 
+                value="filtered"
+                onChange={(e) => {
+                  const paginatedOptions = document.getElementById('grammar-paginated-options');
+                  if (paginatedOptions) {
+                    paginatedOptions.style.display = e.target.value === 'paginated' ? 'block' : 'none';
+                  }
+                }}
+              />
+              <label htmlFor="grammar-download-filtered" className="ml-2 text-gray-700">
+                下载当前筛选条件的数据
+              </label>
+            </div>
+            <div className="flex items-center">
+              <input 
+                type="radio" 
+                id="grammar-download-paginated" 
+                name="grammar-download-option" 
+                value="paginated"
+                onChange={(e) => {
+                  const paginatedOptions = document.getElementById('grammar-paginated-options');
+                  if (paginatedOptions) {
+                    paginatedOptions.style.display = e.target.value === 'paginated' ? 'block' : 'none';
+                  }
+                }}
+              />
+              <label htmlFor="grammar-download-paginated" className="ml-2 text-gray-700">
+                分页下载（适合大量数据）
+              </label>
+            </div>
+            <div className="ml-8 space-y-4" id="grammar-paginated-options" style={{ display: 'none' }}>
+              <div>
+                <label htmlFor="grammar-page-size" className="block text-sm font-medium text-gray-700 mb-1">
+                  每页大小
                 </label>
-              </div>
-              <div className="flex items-center">
                 <input 
-                  type="radio" 
-                  id="grammar-download-filtered" 
-                  name="grammar-download-option" 
-                  value="filtered"
-                  onChange={(e) => {
-                    const paginatedOptions = document.getElementById('grammar-paginated-options');
-                    if (paginatedOptions) {
-                      paginatedOptions.style.display = e.target.value === 'paginated' ? 'block' : 'none';
-                    }
-                  }}
+                  type="number" 
+                  id="grammar-page-size" 
+                  min="1" 
+                  max="5000" 
+                  defaultValue="1000" 
+                  className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <label htmlFor="grammar-download-filtered" className="ml-2 text-gray-700">
-                  下载当前筛选条件的数据
-                </label>
               </div>
-              <div className="flex items-center">
+              <div>
+                <label htmlFor="grammar-page-number" className="block text-sm font-medium text-gray-700 mb-1">
+                  下载页码
+                </label>
                 <input 
-                  type="radio" 
-                  id="grammar-download-paginated" 
-                  name="grammar-download-option" 
-                  value="paginated"
-                  onChange={(e) => {
-                    const paginatedOptions = document.getElementById('grammar-paginated-options');
-                    if (paginatedOptions) {
-                      paginatedOptions.style.display = e.target.value === 'paginated' ? 'block' : 'none';
-                    }
-                  }}
+                  type="number" 
+                  id="grammar-page-number" 
+                  min="1" 
+                  defaultValue="1" 
+                  className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <label htmlFor="grammar-download-paginated" className="ml-2 text-gray-700">
-                  分页下载（适合大量数据）
-                </label>
-              </div>
-              <div className="ml-8 space-y-4" id="grammar-paginated-options" style={{ display: 'none' }}>
-                <div>
-                  <label htmlFor="grammar-page-size" className="block text-sm font-medium text-gray-700 mb-1">
-                    每页大小
-                  </label>
-                  <input 
-                    type="number" 
-                    id="grammar-page-size" 
-                    min="1" 
-                    max="5000" 
-                    defaultValue="1000" 
-                    className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="grammar-page-number" className="block text-sm font-medium text-gray-700 mb-1">
-                    下载页码
-                  </label>
-                  <input 
-                    type="number" 
-                    id="grammar-page-number" 
-                    min="1" 
-                    defaultValue="1" 
-                    className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
               </div>
             </div>
           </div>
-          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-yellow-700">
-                  提示：如果数据量较大，建议使用分页下载方式，避免浏览器卡顿。
-                </p>
-              </div>
+        </div>
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-yellow-700">
+                提示：如果数据量较大，建议使用分页下载方式，避免浏览器卡顿。
+              </p>
             </div>
           </div>
         </div>

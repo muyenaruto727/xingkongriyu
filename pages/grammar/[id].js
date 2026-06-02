@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
+import { message } from 'antd';
 import Navigation from '../../components/layout/Navigation';
-import Toast from '../../components/common/Toast';
 import { api } from '../../lib/api';
 
 const GrammarDetail = () => {
@@ -12,7 +12,6 @@ const GrammarDetail = () => {
   const [grammar, setGrammar] = useState(null);
   const [favorites, setFavorites] = useState([]);
   const [showAnswers, setShowAnswers] = useState({});
-  const [toast, setToast] = useState({ isOpen: false, message: '', type: 'info' });
 
   useEffect(() => {
     const user = localStorage.getItem('currentUser');
@@ -84,8 +83,8 @@ const GrammarDetail = () => {
   };
 
   // 显示Toast通知
-  const showToast = (message, type = 'info') => {
-    setToast({ isOpen: true, message, type });
+  const showToast = (msg, type = 'info') => {
+    message[type](msg);
   };
 
   if (!grammar) {
@@ -226,13 +225,7 @@ const GrammarDetail = () => {
         </div>
       </main>
 
-      {/* Toast组件 */}
-      <Toast
-        isOpen={toast.isOpen}
-        message={toast.message}
-        type={toast.type}
-        onClose={() => setToast({ ...toast, isOpen: false })}
-      />
+
     </div>
   );
 };

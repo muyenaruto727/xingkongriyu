@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
+import { Modal, message } from 'antd';
 import Navigation from '../../components/layout/Navigation';
 import Footer from '../../components/layout/Footer';
-import Toast from '../../components/common/Toast';
-import Modal from '../../components/common/Modal';
 
 const formatTime = (seconds) => {
   const hours = Math.floor(seconds / 3600);
@@ -43,7 +42,6 @@ const ExamIndex = () => {
   const [examRecords, setExamRecords] = useState([]);
   const [showRecordDetail, setShowRecordDetail] = useState(false);
   const [currentRecord, setCurrentRecord] = useState(null);
-  const [toast, setToast] = useState({ isOpen: false, message: '', type: 'info' });
 
   const levels = [
     { id: 'N1', name: 'N1', desc: '能理解广泛场合的日语' },
@@ -196,8 +194,8 @@ const ExamIndex = () => {
   };
 
   // 显示Toast通知
-  const showToast = (message, type = 'info') => {
-    setToast({ isOpen: true, message, type });
+  const showToast = (msg, type = 'info') => {
+    message[type](msg);
   };
 
   const handleStartExam = () => {
@@ -452,14 +450,13 @@ const ExamIndex = () => {
 
       {/* 考试记录详情模态框 */}
       <Modal
-        isOpen={showRecordDetail}
-        onClose={() => setShowRecordDetail(false)}
+        open={showRecordDetail}
+        onCancel={() => setShowRecordDetail(false)}
         title={`${currentRecord?.level} 完整考试`}
-        size="xl"
+        width={900}
       >
         {currentRecord && (
-          <>
-            {/* 考试基本信息 */}
+          <div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
               <div className="bg-purple-50 rounded-lg p-4 text-center">
                 <div className="text-2xl font-bold text-purple-600">{currentRecord.score}</div>
@@ -583,17 +580,9 @@ const ExamIndex = () => {
                 })}
               </div>
             </div>
-          </>
+          </div>
         )}
       </Modal>
-
-      {/* Toast组件 */}
-      <Toast
-        isOpen={toast.isOpen}
-        message={toast.message}
-        type={toast.type}
-        onClose={() => setToast({ ...toast, isOpen: false })}
-      />
     </div>
   );
 };

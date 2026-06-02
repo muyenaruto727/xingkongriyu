@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../lib/api';
-import Toast from '../common/Toast';
-import { Input, Select, Upload } from 'antd';
+import { Input, Select, Upload, Modal, message } from 'antd';
 import QuestionList from './QuestionManager/QuestionList';
 import QuestionForm from './QuestionManager/QuestionForm';
 import Pagination from '../common/Pagination';
 import Filter from './QuestionManager/Filter';
-import Modal from '../common/Modal';
 
 const { Dragger } = Upload;
 
@@ -20,7 +18,6 @@ const QuestionManager = ({ defaultType = '', defaultLevel = '' }) => {
   const [currentEditId, setCurrentEditId] = useState(null);
   const [currentDeleteId, setCurrentDeleteId] = useState(null);
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
-  const [toast, setToast] = useState({ isOpen: false, message: '', type: 'info' });
   const [isLoading, setIsLoading] = useState(false);
   
   // 批量导入/导出状态
@@ -338,8 +335,8 @@ const QuestionManager = ({ defaultType = '', defaultLevel = '' }) => {
   };
 
   // 显示Toast通知
-  const showToast = (message, type = 'info') => {
-    setToast({ isOpen: true, message, type });
+  const showToast = (msg, type = 'info') => {
+    message[type](msg);
   };
 
   // 下载题目模板（JSON格式）
@@ -635,15 +632,16 @@ const QuestionManager = ({ defaultType = '', defaultLevel = '' }) => {
 
       {/* 题目模态框 */}
       <Modal
-        isOpen={showModal}
-        onClose={() => {
+        open={showModal}
+        onCancel={() => {
           setShowModal(false);
           resetForm();
         }}
         title={isEditMode ? '编辑题目' : '添加题目'}
-        confirmText={isLoading ? (isEditMode ? '更新中...' : '保存中...') : '保存'}
-        onConfirm={isEditMode ? handleSubmitEdit : handleSubmitAdd}
-        size="xl"
+        width={900}
+        onOk={isEditMode ? handleSubmitEdit : handleSubmitAdd}
+        okText="保存"
+        cancelText="取消"
       >
         <form onSubmit={isEditMode ? handleSubmitEdit : handleSubmitAdd} className="space-y-6">
           <div className="mb-4">
@@ -1065,125 +1063,112 @@ const QuestionManager = ({ defaultType = '', defaultLevel = '' }) => {
 
       {/* 删除确认模态框 */}
       <Modal
-        isOpen={showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(false)}
+        open={showDeleteConfirm}
+        onCancel={() => setShowDeleteConfirm(false)}
         title="确认删除"
-        confirmText={isLoading ? '删除中...' : '删除'}
+        onOk={confirmDelete}
+        okButtonProps={{ danger: true, loading: isLoading }}
         cancelText="取消"
-        onConfirm={confirmDelete}
-        size="sm"
       >
-        <div className="p-6">
-          <p className="text-gray-700">确定要删除这道题目吗？此操作不可撤销。</p>
-        </div>
+        <p className="text-gray-700">确定要删除这道题目吗？此操作不可撤销。</p>
       </Modal>
 
       {/* 批量导入模态框 */}
       <Modal
-        isOpen={showImportModal}
-        onClose={() => {
+        open={showImportModal}
+        onCancel={() => {
           setShowImportModal(false);
           setImportFileList([]);
         }}
         title="批量导入题目"
-        size="lg"
+        footer={null}
+        width={600}
       >
-        <div className="p-6">
-          <div className="mb-6">
-            <h4 className="text-sm font-medium text-dark mb-3">下载模板</h4>
-            <button 
-              onClick={downloadQuestionTemplateJSON}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              下载 JSON 模板
-            </button>
-          </div>
-          
-          <div className="mb-6">
-            <h4 className="text-sm font-medium text-dark mb-3">上传文件</h4>
-            <Dragger
-              name="file"
-              multiple={false}
-              accept=".json"
-              fileList={importFileList}
-              onChange={({ file, fileList }) => {
-                setImportFileList(fileList);
-                if (file.originFileObj) {
-                  handleBatchImport(file.originFileObj);
-                }
-              }}
-            >
-              <p className="ant-upload-drag-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                </svg>
-              </p>
-              <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
-              <p className="ant-upload-hint">
-                支持单个 JSON 文件上传
-              </p>
-            </Dragger>
-          </div>
+        <div className="mb-6">
+          <h4 className="text-sm font-medium text-dark mb-3">下载模板</h4>
+          <button 
+            onClick={downloadQuestionTemplateJSON}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            下载 JSON 模板
+          </button>
+        </div>
+        
+        <div className="mb-6">
+          <h4 className="text-sm font-medium text-dark mb-3">上传文件</h4>
+          <Dragger
+            name="file"
+            multiple={false}
+            accept=".json"
+            fileList={importFileList}
+            onChange={({ file, fileList }) => {
+              setImportFileList(fileList);
+              if (file.originFileObj) {
+                handleBatchImport(file.originFileObj);
+              }
+            }}
+          >
+            <p className="ant-upload-drag-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+            </p>
+            <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
+            <p className="ant-upload-hint">
+              支持单个 JSON 文件上传
+            </p>
+          </Dragger>
         </div>
       </Modal>
 
       {/* 批量下载模态框 */}
       <Modal
-        isOpen={showDownloadModal}
-        onClose={() => setShowDownloadModal(false)}
+        open={showDownloadModal}
+        onCancel={() => setShowDownloadModal(false)}
         title="批量下载题目"
-        confirmText={isLoading ? '下载中...' : '下载'}
-        onConfirm={handleBatchDownload}
-        size="lg"
+        onOk={handleBatchDownload}
+        okText="下载"
+        okButtonProps={{ loading: isLoading }}
+        width={500}
       >
-        <div className="p-6">
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-dark mb-2">下载选项</label>
-            <Select 
-              value={downloadOption}
-              onChange={setDownloadOption}
-              style={{ width: '100%' }}
-            >
-              <Select.Option value="all">下载全部数据</Select.Option>
-              <Select.Option value="paginated">分页下载</Select.Option>
-            </Select>
-          </div>
-          
-          {downloadOption === 'paginated' && (
-            <div className="space-y-4 mb-6">
-              <div>
-                <label className="block text-sm font-medium text-dark mb-2">每页下载条数</label>
-                <Input 
-                  type="number" 
-                  min="1" 
-                  max="5000" 
-                  value={downloadPageSize}
-                  onChange={(e) => setDownloadPageSize(e.target.value)}
-                  placeholder="请输入每页下载条数"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-dark mb-2">下载页码</label>
-                <Input 
-                  type="number" 
-                  min="1" 
-                  value={downloadPageNumber}
-                  onChange={(e) => setDownloadPageNumber(e.target.value)}
-                  placeholder="请输入下载页码"
-                />
-              </div>
-            </div>
-          )}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-dark mb-2">下载选项</label>
+          <Select 
+            value={downloadOption}
+            onChange={setDownloadOption}
+            style={{ width: '100%' }}
+          >
+            <Select.Option value="all">下载全部数据</Select.Option>
+            <Select.Option value="paginated">分页下载</Select.Option>
+          </Select>
         </div>
+        
+        {downloadOption === 'paginated' && (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-dark mb-2">每页下载条数</label>
+              <Input 
+                type="number" 
+                min="1" 
+                max="5000" 
+                value={downloadPageSize}
+                onChange={(e) => setDownloadPageSize(e.target.value)}
+                placeholder="请输入每页下载条数"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-dark mb-2">下载页码</label>
+              <Input 
+                type="number" 
+                min="1" 
+                value={downloadPageNumber}
+                onChange={(e) => setDownloadPageNumber(e.target.value)}
+                placeholder="请输入下载页码"
+              />
+            </div>
+          </div>
+        )}
       </Modal>
-
-      {/* Toast组件 */}
-      <Toast
-        isOpen={toast.isOpen}
-        message={toast.message}
-        type={toast.type}
-        onClose={() => setToast({ ...toast, isOpen: false })}
-      />
     </div>
   );
 };
