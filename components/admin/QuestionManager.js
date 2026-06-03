@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { api } from '../../lib/api';
 import { Input, Select, Upload, Modal, message } from 'antd';
 import QuestionList from './QuestionManager/QuestionList';

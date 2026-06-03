@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { CATEGORIES, PITCH_ACCENTS, LEVELS, TAGS } from '../../config/config';
 import { api } from '../../lib/api';
 import { handleApiError, logError } from '../../utils.js';

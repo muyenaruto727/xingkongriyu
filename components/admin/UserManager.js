@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { handleApiError, logError } from '../../utils.js';
 import PaginationTable from '../common/PaginationTable';
 

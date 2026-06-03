@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Input, Select, Modal, message, Button } from 'antd';
 import PaginationTable from '../common/PaginationTable';
 import { api } from '../../lib/api';
-import { handleApiError, logError } from '../../utils.js';
+import { handleApiError } from '../../utils.js';
 
 const TextbookManager = () => {
   const [textbooks, setTextbooks] = useState([]);

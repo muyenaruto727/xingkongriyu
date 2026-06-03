@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { message, Modal } from 'antd';
@@ -16,7 +16,6 @@ const Footer = dynamic(() => import('../../components/layout/Footer'), {
 const Vocabulary = () => {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState(null);
-  const [vocabList, setVocabList] = useState([]);
   const [filteredVocabList, setFilteredVocabList] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedLevel, setSelectedLevel] = useState('全部');
@@ -25,7 +24,6 @@ const Vocabulary = () => {
   const [selectedLesson, setSelectedLesson] = useState('全部');
   const [searchKeyword, setSearchKeyword] = useState('');
   const [favorites, setFavorites] = useState([]);
-  const [flippedCards, setFlippedCards] = useState(new Set());
   const [textbookList, setTextbookList] = useState([]); // 从API获取的教材列表
   const [textbookLessonsMap, setTextbookLessonsMap] = useState({}); // 教材课程映射
   const [totalCount, setTotalCount] = useState(0); // 总记录数
@@ -111,10 +109,8 @@ const Vocabulary = () => {
       const total = response.total || 0;
       
       if (append) {
-        setVocabList(prev => [...prev, ...data]);
         setFilteredVocabList(prev => [...prev, ...data]);
       } else {
-        setVocabList(data);
         setFilteredVocabList(data);
         setCurrentPage(pageNum);
       }
@@ -564,7 +560,7 @@ const Vocabulary = () => {
               title={
                 <span className="text-2xl font-bold">{currentVocab?.japanese || ''}</span>
               }
-              visible={showExampleModal}
+              open={showExampleModal}
               onCancel={() => setShowExampleModal(false)}
               footer={null}
               width={520}

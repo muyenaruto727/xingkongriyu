@@ -1,4 +1,4 @@
-import React from 'react';
+
 import '../styles/globals.css';
 import 'antd/dist/reset.css';
 import ErrorBoundary from '../components/common/ErrorBoundary';

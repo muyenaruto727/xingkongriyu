@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { Input, Select } from 'antd';
 
 const Filter = ({ level, type, id, onLevelChange, onTypeChange, onIdChange, onSearch, onReset }) => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import PaginationTable from '../common/PaginationTable';
 import { Input, Button, Table, Form, Select, message, Tree, Radio, Modal } from 'antd';

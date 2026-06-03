@@ -1,4 +1,4 @@
-import React from 'react';
+
 
 const Pagination = ({ page, limit, total, onPageChange, onLimitChange }) => {
   const totalPages = Math.ceil(total / limit);

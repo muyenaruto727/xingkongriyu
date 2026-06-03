@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { api } from '../../lib/api';
 import { message, Modal, Select, Input, Upload } from 'antd';
 import { InboxOutlined } from '@ant-design/icons';

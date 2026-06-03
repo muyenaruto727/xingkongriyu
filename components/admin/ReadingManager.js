@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Input, Select, Modal } from 'antd';
 import PaginationTable from '../common/PaginationTable';
 import { api } from '../../lib/api';
