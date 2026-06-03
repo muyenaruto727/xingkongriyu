@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
-import { message } from 'antd';
+import { message, Modal } from 'antd';
 import dynamic from 'next/dynamic';
 import { api } from '../../lib/api';
 
@@ -26,24 +26,17 @@ const Vocabulary = () => {
   const [searchKeyword, setSearchKeyword] = useState('');
   const [favorites, setFavorites] = useState([]);
   const [flippedCards, setFlippedCards] = useState(new Set());
+  const [textbookList, setTextbookList] = useState([]); // 从API获取的教材列表
+  const [textbookLessonsMap, setTextbookLessonsMap] = useState({}); // 教材课程映射
+  const [totalCount, setTotalCount] = useState(0); // 总记录数
+  const [loading, setLoading] = useState(false); // 加载状态
+  const [showExampleModal, setShowExampleModal] = useState(false); // 例句弹窗状态
+  const [currentVocab, setCurrentVocab] = useState(null); // 当前查看例句的词汇
   
   const itemsPerPage = 20;
 
   const levels = ['全部', 'N1', 'N2', 'N3', 'N4', 'N5'];
   const tags = ['全部', '日常', '商务/职场', 'IT/计算机', '电子/半导体', '制造业', '金融/经济/财务', '旅游/餐饮/交通', '医疗', '其他'];
-  const textbooks = ['全部', '综合日语1', '综合日语2', '综合日语3', '综合日语4', '大家的日语初级上', '大家的日语初级下', '大家的日语中级上', '大家的日语中级下'];
-  
-  // 教材和课程对应关系
-  const textbookLessons = {
-    '综合日语1': ['第5课', '第6课', '第7课', '第8课', '第9课', '第10课', '第11课', '第12课', '第13课', '第14课', '第15课'],
-    '综合日语2': ['第16课', '第17课', '第18课', '第19课', '第20课', '第21课', '第22课', '第23课', '第24课', '第25课', '第26课', '第27课', '第28课', '第29课', '第30课'],
-    '综合日语3': ['第1课', '第2课', '第3课', '第4课', '第5课', '第6课', '第7课', '第8课', '第9课', '第10课'],
-    '综合日语4': ['第11课', '第12课', '第13课', '第14课', '第15课', '第16课', '第17课', '第18课', '第19课', '第20课'],
-    '大家的日语初级上': ['第1课', '第2课', '第3课', '第4课', '第5课', '第6课', '第7课', '第8课', '第9课', '第10课', '第11课', '第12课', '第13课', '第14课', '第15课', '第16课', '第17课', '第18课', '第19课', '第20课', '第21课', '第22课', '第23课', '第24课', '第25课'],
-    '大家的日语初级下': ['第25课', '第26课', '第27课', '第28课', '第29课', '第30课', '第31课', '第32课', '第33课', '第34课', '第35课', '第36课', '第37课', '第38课', '第39课', '第40课', '第41课', '第42课', '第43课', '第44课', '第45课', '第46课', '第47课', '第48课', '第49课', '第50课'],
-    '大家的日语中级上': ['第1课', '第2课', '第3课', '第4课', '第5课', '第6课', '第7课', '第8课', '第9课', '第10课', '第11课', '第12课'],
-    '大家的日语中级下': ['第13课', '第14课', '第15课', '第16课', '第17课', '第18课', '第19课', '第20课', '第21课', '第22课', '第23课', '第24课']
-  };
 
   useEffect(() => {
     const user = localStorage.getItem('currentUser');
@@ -66,6 +59,27 @@ const Vocabulary = () => {
     fetchVocabList();
   }, [currentUser]);
 
+  // 单独的useEffect用于获取教材列表，在组件挂载时执行
+  useEffect(() => {
+    fetchTextbookList();
+  }, []);
+
+  const fetchTextbookList = async () => {
+    try {
+      const data = await api.getTextbookList();
+      setTextbookList(data);
+      
+      // 构建教材课程映射
+      const lessonsMap = {};
+      data.forEach(textbook => {
+        lessonsMap[textbook.name] = (textbook.lessons || []).map(lesson => lesson.name);
+      });
+      setTextbookLessonsMap(lessonsMap);
+    } catch (error) {
+      console.error('Failed to fetch textbooks:', error);
+    }
+  };
+
   const fetchFavorites = async (userId) => {
     try {
       // 验证userId是否为有效数字
@@ -80,28 +94,52 @@ const Vocabulary = () => {
     }
   };
 
-  const fetchVocabList = async () => {
+  const fetchVocabList = async (pageNum = 1, append = false) => {
     try {
+      setLoading(true);
       const params = {
         level: selectedLevel !== '全部' ? selectedLevel : '',
         tag: selectedTag !== '全部' ? selectedTag : '',
         textbook: selectedTextbook !== '全部' ? selectedTextbook : '',
         lesson: selectedLesson !== '全部' ? selectedLesson : '',
-        search: searchKeyword
+        search: searchKeyword,
+        page: pageNum,
+        limit: itemsPerPage
       };
       const response = await api.getVocabList(params);
       const data = response.data || [];
-      setVocabList(data);
-      setFilteredVocabList(data);
+      const total = response.total || 0;
+      
+      if (append) {
+        setVocabList(prev => [...prev, ...data]);
+        setFilteredVocabList(prev => [...prev, ...data]);
+      } else {
+        setVocabList(data);
+        setFilteredVocabList(data);
+        setCurrentPage(pageNum);
+      }
+      setTotalCount(total);
     } catch (error) {
       console.error('Failed to fetch vocabulary:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // 当筛选参数变化时重新获取数据
+  // 当筛选参数变化时重新获取数据（从第一页开始）
   useEffect(() => {
-    fetchVocabList();
+    setCurrentPage(1);
+    fetchVocabList(1);
   }, [selectedLevel, selectedTag, selectedTextbook, selectedLesson, searchKeyword]);
+
+  // 上拉加载更多
+  const loadMore = () => {
+    if (loading) return;
+    const totalPages = Math.ceil(totalCount / itemsPerPage);
+    if (currentPage < totalPages) {
+      fetchVocabList(currentPage + 1, true);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('currentUser');
@@ -303,7 +341,7 @@ const Vocabulary = () => {
             {/* 教材筛选 */}
             <div className="mb-6">
               <div className="flex flex-wrap gap-3">
-                {textbooks.map((textbook) => (
+                {['全部', ...textbookList.map(t => t.name)].map((textbook) => (
                   <button
                     key={textbook}
                     onClick={() => {
@@ -326,7 +364,7 @@ const Vocabulary = () => {
             {selectedTextbook !== '全部' && (
               <div className="mb-6">
                 <div className="flex flex-wrap gap-3">
-                  {['全部', ...(textbookLessons[selectedTextbook] || [])].map((lesson) => (
+                  {['全部', ...(textbookLessonsMap[selectedTextbook] || [])].map((lesson) => (
                     <button
                       key={lesson}
                       onClick={() => setSelectedLesson(lesson)}
@@ -388,9 +426,8 @@ const Vocabulary = () => {
               </div>
             </div>
 
-            {/* 词汇统计 */}
+            {/* 筛选条件显示 */}
             <div className="mb-6 text-sm text-muted">
-              共 {safeVocabList.length} 个词汇
               {selectedLevel !== '全部' && `（${selectedLevel}级别）`}
               {selectedTextbook !== '全部' && `（${selectedTextbook}）`}
               {selectedLesson !== '全部' && `（${selectedLesson}）`}
@@ -400,24 +437,17 @@ const Vocabulary = () => {
             
             {/* 词汇卡片网格 */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {currentVocabList.map((vocab) => {
-                const isFlipped = flippedCards.has(vocab.id);
-                
-                const toggleFlip = () => {
-                  const newFlipped = new Set(flippedCards);
-                  if (isFlipped) {
-                    newFlipped.delete(vocab.id);
-                  } else {
-                    newFlipped.add(vocab.id);
-                  }
-                  setFlippedCards(newFlipped);
+              {safeVocabList.map((vocab) => {
+                // 打开例句弹窗
+                const openExampleModal = () => {
+                  setCurrentVocab(vocab);
+                  setShowExampleModal(true);
                 };
                 
                 return (
-                  <div key={vocab.id} className="perspective" style={{ perspective: '1000px' }}>
-                    <div className={`card relative h-[280px] transition-all duration-600`} style={{ transformStyle: 'preserve-3d', transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}>
-                      {/* 卡片正面 */}
-                      <div className="absolute inset-0 p-5 border border-gray-100 hover:border-primary/30 transition-all duration-300 flex flex-col justify-between" style={{ backfaceVisibility: 'hidden' }}>
+                  <div key={vocab.id} className="relative h-[280px]">
+                    <div className="absolute inset-0 p-5 bg-white border border-gray-100 rounded-xl shadow-sm hover:shadow-md hover:border-primary/30 transition-all duration-300 flex flex-col justify-between">
+                      {/* 卡片内容 */}
                         {/* 第一行：级别、分类、收藏按钮 */}
                         <div className="flex items-center justify-between mb-4">
                           <div className="flex items-center gap-2">
@@ -465,14 +495,14 @@ const Vocabulary = () => {
 
                         {/* 第二行：词汇 */}
                         <div className="mb-3">
-                          <div className="text-2xl font-bold text-dark mb-1">{vocab.japanese}</div>
+                          <div className="text-2xl font-bold text-dark mb-1 truncate">{vocab.japanese}</div>
                           <div className="text-base text-primary truncate">{vocab.chinese}</div>
                         </div>
                         
                         {/* 第三行：发音 */}
                         <div className="flex items-center text-gray-500 text-sm mb-3">
                           <span className="text-xs text-gray-400 mr-2">发音：</span>
-                          <span className="flex-1">{vocab.pronunciation || '-'}</span>
+                          <span className="flex-1 truncate">{vocab.pronunciation || '-'}</span>
                           <button 
                             onClick={() => speakVocab(vocab.japanese)}
                             className="ml-2 text-gray-400 hover:text-primary transition-colors"
@@ -517,83 +547,138 @@ const Vocabulary = () => {
                         {/* 第五行：查看例句按钮 */}
                         <div className="mt-auto">
                           <button
-                            onClick={toggleFlip}
+                            onClick={openExampleModal}
                             className="w-full py-2 text-sm text-primary border border-primary rounded-lg hover:bg-primary hover:text-white transition-colors"
                           >
                             查看例句
                           </button>
                         </div>
-                      </div>
-                      
-                      {/* 卡片背面 */}
-                      <div className="absolute inset-0 p-5 border border-gray-100 hover:border-primary/30 transition-all duration-300 flex flex-col justify-between" style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
-                        <div className="flex justify-between items-start mb-4">
-                          <div>
-                            <h3 className="text-lg font-semibold text-dark mb-1">{vocab.japanese}</h3>
-                            <p className="text-primary text-sm">{vocab.chinese}</p>
-                          </div>
-                          <button 
-                            onClick={toggleFlip}
-                            className="text-gray-400 hover:text-gray-600"
-                            title="返回"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        </div>
-                        
-                        <div className="flex-1 overflow-y-auto">
-                          {(() => {
-                            let examples = vocab.examples;
-                            if (typeof examples === 'string') {
-                              try {
-                                examples = JSON.parse(examples);
-                              } catch (e) {
-                                // 如果解析失败，保持原始字符串
-                              }
-                            }
-                            if (Array.isArray(examples) && examples.length > 0 && examples.some(ex => ex && ex.trim() !== '')) {
-                              return (
-                                <div className="space-y-3">
-                                  <h4 className="text-sm font-medium text-gray-500 mb-2">例句</h4>
-                                  {examples.filter(ex => ex && ex.trim() !== '').map((example, index) => (
-                                    <div key={index} className="bg-blue-50 rounded-lg p-3">
-                                      <div className="flex items-start">
-                                        <span className="text-primary font-medium mr-2">{index + 1}.</span>
-                                        <p className="text-dark text-sm">{example}</p>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              );
-                            } else {
-                              return (
-                                <div className="text-center py-8">
-                                  <p className="text-muted">暂无例句</p>
-                                </div>
-                              );
-                            }
-                          })()}
-                        </div>
-                        
-                        <div className="mt-4">
-                          <button
-                            onClick={toggleFlip}
-                            className="w-full py-2 text-sm text-primary border border-primary rounded-lg hover:bg-primary hover:text-white transition-colors"
-                          >
-                            返回
-                          </button>
-                        </div>
-                      </div>
                     </div>
                   </div>
                 );
               })}
             </div>
 
+            {/* 例句弹窗 */}
+            <Modal
+              title={
+                <span className="text-2xl font-bold">{currentVocab?.japanese || ''}</span>
+              }
+              visible={showExampleModal}
+              onCancel={() => setShowExampleModal(false)}
+              footer={null}
+              width={520}
+            >
+              <div className="py-4">
+                {(() => {
+                  if (!currentVocab) return null;
+                  
+                  // 处理分类/词性
+                  let categories = currentVocab.category;
+                  if (typeof categories === 'string') {
+                    try {
+                      const parsed = JSON.parse(categories);
+                      if (Array.isArray(parsed)) {
+                        categories = parsed;
+                      } else if (typeof parsed === 'object') {
+                        categories = Object.values(parsed);
+                      } else {
+                        categories = categories.split(',').map(item => item.trim()).filter(Boolean);
+                      }
+                    } catch (e) {
+                      categories = categories.split(',').map(item => item.trim()).filter(Boolean);
+                    }
+                  }
+                  
+                  // 处理声调
+                  let pitchAccent = currentVocab.pitch_accent || currentVocab.pitchAccent;
+                  if (typeof pitchAccent === 'string') {
+                    try {
+                      const parsed = JSON.parse(pitchAccent);
+                      if (Array.isArray(parsed)) {
+                        pitchAccent = parsed;
+                      } else if (typeof parsed === 'object') {
+                        pitchAccent = Object.values(parsed);
+                      } else {
+                        pitchAccent = pitchAccent.split(',').map(item => item.trim()).filter(Boolean);
+                      }
+                    } catch (e) {
+                      pitchAccent = pitchAccent.split(',').map(item => item.trim()).filter(Boolean);
+                    }
+                  }
+                  
+                  // 处理例句
+                  let examples = currentVocab.examples;
+                  if (typeof examples === 'string') {
+                    try {
+                      examples = JSON.parse(examples);
+                    } catch (e) {
+                      // 如果解析失败，保持原始字符串
+                    }
+                  }
+                  
+                  // 收集非空信息
+                  const infoItems = [];
+                  if (currentVocab.chinese) infoItems.push(currentVocab.chinese);
+                  if (currentVocab.level) infoItems.push(currentVocab.level);
+                  if (Array.isArray(categories) && categories.length > 0) infoItems.push(categories.join(','));
+                  if (currentVocab.pronunciation) infoItems.push(currentVocab.pronunciation);
+                  if (Array.isArray(pitchAccent) && pitchAccent.length > 0) infoItems.push(pitchAccent.join(','));
+                  
+                  return (
+                    <div className="space-y-4">
+                      {/* 紧凑的词汇信息 */}
+                      <div className="flex flex-wrap gap-2">
+                        {infoItems.map((item, index) => (
+                          <span 
+                            key={index} 
+                            className={`px-3 py-1 rounded-full text-sm ${
+                              index === 0 
+                                ? 'bg-primary text-white' 
+                                : 'bg-gray-100 text-gray-600'
+                            }`}
+                          >
+                            {item}
+                          </span>
+                        ))}
+                      </div>
+                      
+                      {/* 分隔线 */}
+                      <div className="border-t border-gray-200 my-2"></div>
+                      
+                      {/* 例句（主要区域） */}
+                      <div>
+                        <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                          <span className="w-1.5 h-4 bg-primary rounded-full mr-2"></span>
+                          例句
+                        </h4>
+                        {Array.isArray(examples) && examples.length > 0 && examples.some(ex => ex && ex.trim() !== '') ? (
+                          <div className="space-y-2">
+                            {examples.filter(ex => ex && ex.trim() !== '').map((example, index) => (
+                              <div key={index} className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg py-3 px-4">
+                                <div className="flex items-baseline">
+                                  <span className="text-primary font-bold text-base mr-3 min-w-[28px]">
+                                    {index + 1}.
+                                  </span>
+                                  <p className="text-dark text-base leading-relaxed mb-0">{example}</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-center py-8 bg-gray-50 rounded-lg">
+                            <p className="text-gray-400">暂无例句</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            </Modal>
+
             {/* 空状态 */}
-            {currentVocabList.length === 0 && (
+            {safeVocabList.length === 0 && (
               <div className="text-center py-16">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto mb-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -603,19 +688,28 @@ const Vocabulary = () => {
               </div>
             )}
             
-            {/* 分页条 */}
-            {totalPages > 1 && (
-              <div className="mt-12 flex justify-center items-center">
-                {renderPagination()}
+            {/* 加载更多按钮 */}
+            {totalCount > safeVocabList.length && (
+              <div className="mt-8">
+                <div className="text-center text-sm text-muted mb-4">
+                  共 {totalCount} 条，已显示 {safeVocabList.length} 条
+                </div>
+                <div className="flex justify-center">
+                  <button
+                    onClick={loadMore}
+                    disabled={loading}
+                    className={`px-8 py-3 rounded-full font-medium transition-colors ${
+                      loading
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-primary text-white hover:bg-blue-600'
+                    }`}
+                  >
+                    {loading ? '加载中...' : '加载更多'}
+                  </button>
+                </div>
               </div>
             )}
-
-            {/* 分页信息 */}
-            {safeVocabList.length > 0 && (
-              <div className="mt-4 text-center text-sm text-muted">
-                第 {currentPage} / {totalPages} 页，共 {safeVocabList.length} 条
-              </div>
-            )}
+            
           </div>
         </section>
       </main>

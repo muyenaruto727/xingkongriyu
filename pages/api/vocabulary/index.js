@@ -24,15 +24,18 @@ async function handler(req, res) {
   switch (method) {
     case 'GET':
       try {
-        const { level, tag, search, textbooks, lessons, page = 1, limit = 10 } = req.query;
+        // 支持单数和复数形式的参数名
+const { level, tag, search, textbooks, lessons, textbook, lesson, page = 1, limit = 20 } = req.query;
+const finalTextbooks = textbooks || textbook;
+const finalLessons = lessons || lesson;
         
         // 生成缓存键
         const cacheKey = cache.generateKey('vocabulary', {
           level,
           tag,
           search,
-          textbooks,
-          lessons,
+          textbooks: finalTextbooks,
+          lessons: finalLessons,
           page,
           limit
         });
@@ -59,23 +62,23 @@ async function handler(req, res) {
           paramIndex++;
         }
 
-        // 处理多选教材
-        if (textbooks) {
-          const textbookList = Array.isArray(textbooks) ? textbooks : [textbooks];
-          if (textbookList.length > 0 && textbookList[0] !== '') {
+        // 处理教材筛选（支持单选和多选）
+        if (finalTextbooks && finalTextbooks !== '全部' && finalTextbooks !== '') {
+          const textbookList = Array.isArray(finalTextbooks) ? finalTextbooks : [finalTextbooks];
+          if (textbookList.length > 0 && textbookList[0] !== '全部') {
             // 使用OR条件匹配逗号分隔的教材
             const textbookConditions = textbookList.map(() => `(textbook = $${paramIndex} OR textbook LIKE $${paramIndex}||',%' OR textbook LIKE '%,'||$${paramIndex} OR textbook LIKE '%,'||$${paramIndex}||',%')`).join(' OR ');
             query += ` AND (${textbookConditions})`;
             params.push(...textbookList);
-            paramIndex++;
+            paramIndex += textbookList.length;
           }
         }
 
-        // 处理多选课程
-        if (lessons) {
-          const lessonList = Array.isArray(lessons) ? lessons : [lessons];
-          if (lessonList.length > 0 && lessonList[0] !== '') {
-            // 提取课程名称部分
+        // 处理课程筛选（支持单选和多选）
+        if (finalLessons && finalLessons !== '全部' && finalLessons !== '') {
+          const lessonList = Array.isArray(finalLessons) ? finalLessons : [finalLessons];
+          if (lessonList.length > 0 && lessonList[0] !== '全部') {
+            // 提取课程名称部分（移除可能的前缀）
             const extractedLessons = lessonList.map(lessonItem => {
               const parts = lessonItem.split(':');
               return parts.length > 1 ? parts[1] : lessonItem;
@@ -84,7 +87,7 @@ async function handler(req, res) {
             const lessonConditions = extractedLessons.map(() => `(lesson = $${paramIndex} OR lesson LIKE $${paramIndex}||',%' OR lesson LIKE '%,'||$${paramIndex} OR lesson LIKE '%,'||$${paramIndex}||',%')`).join(' OR ');
             query += ` AND (${lessonConditions})`;
             params.push(...extractedLessons);
-            paramIndex++;
+            paramIndex += extractedLessons.length;
           }
         }
 

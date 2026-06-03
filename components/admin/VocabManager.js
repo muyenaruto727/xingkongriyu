@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TEXTBOOKS, CATEGORIES, PITCH_ACCENTS, LEVELS, TAGS } from '../../config/config';
+import { CATEGORIES, PITCH_ACCENTS, LEVELS, TAGS } from '../../config/config';
 import { api } from '../../lib/api';
 import { handleApiError, logError } from '../../utils.js';
 import { message, Cascader, Select, Input, Pagination, Upload, Modal } from 'antd';
@@ -8,6 +8,7 @@ import PaginationTable from '../common/PaginationTable';
 
 const VocabManager = () => {
   const [vocabList, setVocabList] = useState([]);
+  const [textbooks, setTextbooks] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -44,18 +45,29 @@ const VocabManager = () => {
   });
 
   // 转换教材数据为级联选择格式，为课程生成唯一的value
-  const cascaderOptions = TEXTBOOKS.map(textbook => ({
+  const cascaderOptions = textbooks.map(textbook => ({
     label: textbook.name,
     value: textbook.id,
-    children: textbook.lessons.map(lesson => ({
-      label: `${textbook.name}:${lesson}`, // 课程标签包含教材信息，避免重复显示
-      value: `${textbook.id}:${lesson}` // 生成唯一的课程ID，包含教材信息
+    children: (textbook.lessons || []).map(lesson => ({
+      label: `${textbook.name}:${lesson.name}`, // 课程标签包含教材信息，避免重复显示
+      value: `${textbook.id}:${lesson.name}` // 生成唯一的课程ID，包含教材信息
     }))
   }));
 
-  // 组件挂载时加载词汇列表
+  // 获取教材列表
+  const fetchTextbooks = async () => {
+    try {
+      const data = await api.getTextbookList();
+      setTextbooks(data);
+    } catch (error) {
+      handleApiError(error, message.error);
+    }
+  };
+
+  // 组件挂载时加载词汇列表和教材列表
   useEffect(() => {
     fetchVocabList(true);
+    fetchTextbooks();
   }, []);
 
   // 处理表单变化
