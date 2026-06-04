@@ -10,43 +10,68 @@
 }
 
 body {
-  font-family: 'Inter', system-ui, sans-serif;
-  background-color: #F8FAFC;
+  font-family: 'Inter', 'Noto Sans SC', system-ui, -apple-system, sans-serif;
+  background-color: #FFFFFF;
   color: #1E293B;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
 }
 
 .card {
-  @apply bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300;
+  @apply bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300;
 }
 
 .btn-primary {
-  @apply bg-primary text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors duration-300;
+  @apply bg-gray-900 text-white px-5 py-2.5 rounded-xl hover:bg-gray-800 hover:shadow-lg transition-all duration-300 font-medium;
 }
 
 .btn-secondary {
-  @apply bg-secondary text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors duration-300;
+  @apply bg-white text-gray-700 px-5 py-2.5 rounded-xl border border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all duration-300 font-medium;
 }
 
 .btn-accent {
-  @apply bg-accent text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-colors duration-300;
+  @apply bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-5 py-2.5 rounded-xl hover:from-blue-700 hover:to-indigo-700 hover:shadow-lg transition-all duration-300 font-medium;
 }
 
 .input {
-  @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent;
+  @apply w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-300;
 }
 
 .title {
-  @apply text-2xl md:text-3xl font-bold text-dark mb-4;
+  @apply text-2xl md:text-3xl font-bold text-gray-900 mb-4 tracking-tight;
 }
 
 .subtitle {
-  @apply text-xl font-semibold text-dark mb-2;
+  @apply text-xl font-semibold text-gray-900 mb-2 tracking-tight;
 }
 
 .text-muted {
-  @apply text-gray-600;
+  @apply text-gray-500;
 }
 
 .container {
   @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
 }
