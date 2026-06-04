@@ -31,12 +31,15 @@ export const AuthProvider = ({ children }) => {
     setUser(userData);
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(userData));
+    // 兼容旧版页面（exam, grammar, vocabulary 等）使用 currentUser 键
+    localStorage.setItem('currentUser', JSON.stringify(userData));
   };
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('currentUser');
     router.push('/login');
   };
 

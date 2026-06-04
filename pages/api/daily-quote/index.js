@@ -4,7 +4,7 @@ const { handleError, successResponse } = require('../../../lib/errorHandler');
 async function handler(req, res) {
   try {
     const { method } = req;
-    
+
     switch (method) {
       case 'GET':
         if (req.query.random) {
@@ -34,14 +34,14 @@ async function handler(req, res) {
 async function handleGetQuotes(req, res) {
   const { page = 1, limit = 10 } = req.query;
   const offset = (page - 1) * limit;
-  
+
   const result = await pool.query(
     'SELECT * FROM daily_quotes ORDER BY created_at DESC LIMIT $1 OFFSET $2',
     [limit, offset]
   );
-  
+
   const countResult = await pool.query('SELECT COUNT(*) FROM daily_quotes');
-  
+
   successResponse(res, {
     data: result.rows,
     pagination: {
@@ -54,11 +54,11 @@ async function handleGetQuotes(req, res) {
 
 async function handleGetRandomQuote(req, res) {
   const result = await pool.query(`
-    SELECT * FROM daily_quotes 
-    ORDER BY RANDOM() 
+    SELECT * FROM daily_quotes
+    ORDER BY RANDOM()
     LIMIT 1
   `);
-  
+
   if (result.rows.length > 0) {
     successResponse(res, result.rows[0]);
   } else {
@@ -67,32 +67,32 @@ async function handleGetRandomQuote(req, res) {
 }
 
 async function handleCreateQuote(req, res) {
-  const { sentence, source } = req.body;
-  
+  const { sentence, meaning, source } = req.body;
+
   if (!sentence) {
     return res.status(400).json({ success: false, message: '句子不能为空' });
   }
-  
+
   const result = await pool.query(
-    'INSERT INTO daily_quotes (sentence, source) VALUES ($1, $2) RETURNING *',
-    [sentence, source || '']
+    'INSERT INTO daily_quotes (sentence, meaning, source) VALUES ($1, $2, $3) RETURNING *',
+    [sentence, meaning || '', source || '']
   );
-  
+
   successResponse(res, result.rows[0]);
 }
 
 async function handleUpdateQuote(req, res) {
-  const { id, sentence, source } = req.body;
-  
+  const { id, sentence, meaning, source } = req.body;
+
   if (!id || !sentence) {
     return res.status(400).json({ success: false, message: 'ID和句子不能为空' });
   }
-  
+
   const result = await pool.query(
-    'UPDATE daily_quotes SET sentence = $1, source = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3 RETURNING *',
-    [sentence, source || '', id]
+    'UPDATE daily_quotes SET sentence = $1, meaning = $2, source = $3, updated_at = CURRENT_TIMESTAMP WHERE id = $4 RETURNING *',
+    [sentence, meaning || '', source || '', id]
   );
-  
+
   if (result.rows.length > 0) {
     successResponse(res, result.rows[0]);
   } else {
@@ -102,16 +102,16 @@ async function handleUpdateQuote(req, res) {
 
 async function handleDeleteQuote(req, res) {
   const { id } = req.query;
-  
+
   if (!id) {
     return res.status(400).json({ success: false, message: 'ID不能为空' });
   }
-  
+
   const result = await pool.query(
     'DELETE FROM daily_quotes WHERE id = $1 RETURNING *',
     [id]
   );
-  
+
   if (result.rows.length > 0) {
     successResponse(res, { message: '删除成功' });
   } else {
