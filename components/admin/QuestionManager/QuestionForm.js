@@ -53,7 +53,10 @@ const QuestionForm = ({ formData, onFormChange, onOptionChange, onSubmit, isEdit
           <Select
             name="question_type"
             value={formData.question_type}
-            onChange={(value) => onFormChange({ target: { name: 'question_type', value } })}
+            onChange={(value) => {
+              onFormChange({ target: { name: 'question_type', value } });
+              onFormChange({ target: { name: 'category', value: '' } });
+            }}
             style={{ width: '100%' }}
             placeholder="请选择题目类型"
             required

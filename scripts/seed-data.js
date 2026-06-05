@@ -19,10 +19,17 @@ const pool = new Pool({
 const LEVELS = ['N5', 'N4', 'N3', 'N2', 'N1'];
 const CATEGORIES_VOCAB = ['动词', '形容词', '名词', '副词', '接续词', '惯用语'];
 const CATEGORIES_GRAMMAR = ['助词', '句型', '活用', '敬语', '复合语法'];
-const CATEGORIES_QUESTION = ['词汇', '语法', '阅读理解', '听力理解'];
-const QUESTION_TYPES = ['選択式', '正誤判断', '穴埋め', '並べ替え'];
 const TAG_LIST = ['日常', 'ビジネス', '旅行', '食べ物', '感情', '自然', '技術', '社会'];
 const ARTICLE_CATS = ['日本文化', '生活会話', 'ニュース', '旅行', 'テクノロジー', '歴史'];
+
+// JLPT 真题考试的题目类型和分类 — 必须与 /api/exam/generate.js 保持一致
+const EXAM_QUESTION_TYPES = ['vocabulary', 'grammar', 'reading', 'listening'];
+const EXAM_CATEGORIES = {
+  vocabulary: ['kanji_reading', 'kanji_writing', 'word_formation', 'word_relation', 'synonym_replacement', 'usage'],
+  grammar: ['sentence_grammar1', 'sentence_grammar2', 'text_grammar'],
+  reading: ['short_content', 'medium_content', 'long_content', 'comprehensive', 'argument', 'information_retrieval'],
+  listening: ['problem_understanding', 'point_understanding', 'summary_understanding', 'language_expression', 'immediate_response', 'comprehensive'],
+};
 
 // ────────────────────────────────────
 // Data generators
@@ -287,36 +294,142 @@ async function seedArticles(count) {
   }
 }
 
-async function seedQuestions(count) {
-  console.log(`  → 插入 ${count} 条JLPT题库数据...`);
-  for (let i = 0; i < count; i++) {
-    const level = pick(LEVELS);
-    const category = pick(CATEGORIES_QUESTION);
-    const qType = pick(QUESTION_TYPES);
-    const options = [
-      `選択肢A（テスト${i + 1}）`,
-      `選択肢B（テスト${i + 1}）`,
-      `選択肢C（テスト${i + 1}）`,
-      `選択肢D（テスト${i + 1}）`,
-    ];
-    const correct = pick(options);
-    await pool.query(
-      `INSERT INTO questions (question_text, question_type, options, correct_answer, explanation, level, category, is_real_exam, passage, audio_url)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-      [
-        `問題 ${i + 1}: ${pick(['次の文の（　）に入る最も適当なものを選びなさい。', '次の文の★に入る最も適当なものを選びなさい。', '次の文と意味が最も近いものを選びなさい。', '次の言葉の正しい使い方を選びなさい。'])}`,
-        qType,
-        options,
-        correct,
-        `这是问题${i + 1}的详细解说。选项说明...`,
-        level,
-        category,
-        Math.random() > 0.3,
-        level === 'N1' || level === 'N2' ? `読解パッセージ: これはテスト問題${i + 1}用の長文です。近年の日本語教育において重要なトピックについて述べられています。` : null,
-        category === '听力理解' ? `https://example.com/audio/question_${i + 1}.mp3` : null,
-      ]
-    );
+async function seedQuestions() {
+  console.log(`  → 插入 JLPT 真题题库数据...`);
+
+  // 阅读/文章类题目模板
+  const readingPassages = {
+    short_content: [
+      { text: '今日は朝から雨が降っていた。傘を持っていなかったので、駅まで走って行った。駅に着いた時には、服がびしょ濡れになっていた。', questions: ['筆者はなぜ服が濡れたのか。', '筆者はどうやって駅まで行ったか。'] },
+      { text: '田中さんは毎朝6時に起きる。朝ごはんを食べてから、新聞を読む。8時に家を出て、会社に9時に着く。', questions: ['田中さんは朝ごはんの前に何をするか。', '田中さんは何時に家を出るか。'] },
+      { text: '日本のコンビニは24時間営業で、食べ物や飲み物だけでなく、公共料金の支払いもできる。とても便利だ。', questions: ['コンビニでできないことは何か。', '筆者はコンビニについてどう思っているか。'] },
+      { text: '最近、電子書籍を利用する人が増えている。紙の本と比べて、持ち運びが便利で、場所を取らないのが利点だ。', questions: ['電子書籍の利点として正しいものはどれか。'] },
+      { text: '日本では、お正月に家族でおせち料理を食べる習慣がある。おせち料理は、縁起の良い食材を使った伝統的な料理だ。', questions: ['おせち料理について正しいものはどれか。', 'おせち料理はいつ食べるか。'] },
+    ],
+    medium_content: [
+      { text: '日本の少子高齢化は深刻な問題となっている。出生率の低下と平均寿命の延伸により、総人口に占める高齢者の割合が年々増加している。政府は子育て支援や年金制度の改革など、様々な対策を講じているが、抜本的な解決には至っていない。一方で、高齢者が生き生きと働ける社会づくりも重要な課題である。', questions: ['少子高齢化の原因として正しいものはどれか。', '政府の対策として挙げられていないものはどれか。'] },
+      { text: '近年、AI技術の発展は目覚ましく、様々な産業に影響を与えている。自動運転技術や医療診断支援など、AIの活用範囲は広がる一方である。しかし、AIによって仕事が奪われるのではないかという不安の声も少なくない。', questions: ['AIについて正しいものはどれか。', '筆者の考えに最も近いものはどれか。'] },
+      { text: '地球温暖化の影響は、気温の上昇だけではない。異常気象の増加、海面上昇、生態系の変化など、多岐にわたる。国際社会はパリ協定を採択し、温室効果ガスの削減に取り組んでいるが、目標達成にはさらなる努力が必要とされている。', questions: ['地球温暖化の影響として述べられていないものはどれか。'] },
+    ],
+    long_content: [
+      { text: '日本語の敬語は、大きく分けて尊敬語、謙譲語、丁寧語の3つがある。尊敬語は相手の行動に対して使う表現で、「いらっしゃる」「おっしゃる」などが代表的な例である。一方、謙譲語は自分の行動を低めることで相手に敬意を示す表現であり、「申し上げる」「参る」などがある。丁寧語は「です」「ます」のように、聞き手に対する敬意を表す。敬語を適切に使い分けることは、日本人にとっても難しいと言われている。', questions: ['尊敬語の例として正しいものはどれか。', '敬語について正しいものはどれか。', '筆者の意見に最も近いものはどれか。'] },
+    ],
+    comprehensive: [
+      { text: 'A社の調査によると、2025年度の国内スマートフォン市場は前年比3%増の2.5兆円となった。特にシニア層のスマートフォン所有率が上昇しており、60代以上では初めて70%を超えた。一方、若年層では動画視聴やSNSの利用時間が増加傾向にある。B社のレポートでは、1日あたりの平均スマートフォン利用時間は約3時間に達している。', questions: ['60代以上のスマートフォン所有率について正しいものはどれか。', '二つの文章に共通するテーマは何か。'] },
+    ],
+    argument: [
+      { text: 'グローバル化が進む現代社会において、英語教育の重要性はますます高まっている。確かに、英語は国際共通語としてビジネスや学術の場で不可欠である。しかし、母語である日本語の教育をおろそかにしてよいわけではない。論理的思考力や豊かな表現力を養うには、母語による深い読解と作文の訓練が欠かせないからである。', questions: ['筆者の主張に最も近いものはどれか。', '筆者が英語教育についてどう考えているか。'] },
+    ],
+    information_retrieval: [
+      { text: '【アルバイト募集】\n職種：カフェスタッフ\n勤務時間：17:00〜22:00（週3日〜）\n時給：1,200円（22時以降は1,500円）\n応募条件：日本語日常会話レベル以上\n連絡先：03-1234-5678（担当：山田）', questions: ['このアルバイトの時給について正しいものはどれか。', '応募条件として必要なものはどれか。'] },
+    ],
+  };
+
+  // 文法 text_grammar 文章
+  const textGrammarPassages = [
+    { text: '私は昨日、友達と映画を見に行った。映画館はとても混んでいたが、チケットを予約していたので、すぐに入ることができた。映画は2時間ぐらいだった。内容はとても面白くて、最後に感動した。', questions: ['（　）に入る最も適当なものはどれか。'] },
+    { text: '日本では、食事の前に「いただきます」、食事の後に「ごちそうさまでした」と言う。これは、食べ物を作ってくれた人や、食材への感謝の気持ちを表している。', questions: ['（　）に入る最も適当なものはどれか。'] },
+    { text: '山田さんは来月、海外に出張する予定だ。先週パスポートを申請したので、今週中には届くはずだ。ホテルももう予約してある。', questions: ['（　）に入る最も適当なものはどれか。'] },
+  ];
+
+  let totalInserted = 0;
+
+  for (const qType of EXAM_QUESTION_TYPES) {
+    const categories = EXAM_CATEGORIES[qType];
+    for (const category of categories) {
+      const isPassageType = (qType === 'reading') || (qType === 'grammar' && category === 'text_grammar');
+
+      for (const level of LEVELS) {
+        if (isPassageType) {
+          // 文章类：选合适的文章模板，生成若干小题
+          const passagePool = qType === 'grammar' ? textGrammarPassages : (readingPassages[category] || readingPassages['short_content']);
+          const selectedPassages = pickN(passagePool, Math.min(3, passagePool.length));
+
+          for (const passage of selectedPassages) {
+            for (let qi = 0; qi < passage.questions.length; qi++) {
+              const options = [
+                `選択肢A（${level}-${category}）`,
+                `選択肢B（${level}-${category}）`,
+                `選択肢C（${level}-${category}）`,
+                `選択肢D（${level}-${category}）`,
+              ];
+              await pool.query(
+                `INSERT INTO questions (question_text, question_type, options, correct_answer, explanation, level, is_real_exam, category, passage, audio_url)
+                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+                [
+                  passage.questions[qi],
+                  qType,
+                  options,
+                  String(randInt(0, 3)),
+                  `正解の解説：${passage.text.substring(0, 50)}...`,
+                  level,
+                  true,
+                  category,
+                  passage.text,
+                  null,
+                ]
+              );
+              totalInserted++;
+            }
+          }
+        } else {
+          // 普通题目：每个 category + level 生成 4-8 道题
+          const count = randInt(4, 8);
+          for (let i = 0; i < count; i++) {
+            const questionTexts = {
+              vocabulary: [
+                '（　）の言葉の読み方として最も良いものを選びなさい。',
+                '（　）の言葉を漢字で書く時、最も良いものを選びなさい。',
+                '（　）に入れるのに最も良いものを選びなさい。',
+                '次の言葉と最も関係の深いものを選びなさい。',
+                '下線部の言葉に意味が最も近いものを選びなさい。',
+                '次の言葉の使い方として最も良いものを選びなさい。',
+              ],
+              grammar: [
+                '次の（　）に入れるのに最も良いものを選びなさい。',
+                '次の文の ★ に入る最も適当なものを選びなさい。',
+                '下線部に入る最も適当なものを選びなさい。',
+              ],
+              listening: [
+                '質問を聞いて、最も良いものを選びなさい。',
+                '話を聞いて、質問の答えとして最も良いものを選びなさい。',
+                '会話を聞いて、内容に合うものを選びなさい。',
+              ],
+            };
+            const texts = questionTexts[qType] || questionTexts['vocabulary'];
+            const qText = `${texts[i % texts.length]}（${level}-${category}-${i + 1}）`;
+
+            const options = [
+              `選択肢A`,
+              `選択肢B`,
+              `選択肢C`,
+              `選択肢D`,
+            ];
+
+            await pool.query(
+              `INSERT INTO questions (question_text, question_type, options, correct_answer, explanation, level, is_real_exam, category, passage, audio_url)
+               VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+              [
+                qText,
+                qType,
+                options,
+                String(randInt(0, 3)),
+                `これは${level}レベルの${category}に関する問題の解説です。`,
+                level,
+                true,
+                category,
+                null,
+                qType === 'listening' ? `https://example.com/audio/${level}_${category}_${i + 1}.mp3` : null,
+              ]
+            );
+            totalInserted++;
+          }
+        }
+      }
+    }
   }
+
+  console.log(`    ✓ 共插入 ${totalInserted} 条真题题目`);
 }
 
 async function seedDailyQuotes(count) {
@@ -351,7 +464,7 @@ async function main() {
     await seedListening(TARGET);
     await seedReading(TARGET);
     await seedArticles(TARGET);
-    await seedQuestions(TARGET);
+    await seedQuestions();
     await seedDailyQuotes(TARGET);
 
     const elapsed = ((Date.now() - start) / 1000).toFixed(1);

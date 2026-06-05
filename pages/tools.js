@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
+import Link from 'next/link';
 import Navigation from '../components/layout/Navigation';
 import Footer from '../components/layout/Footer';
 
@@ -37,7 +38,7 @@ const Tools = () => {
                 </div>
                 <h4 className="text-xl font-semibold mb-3 text-gray-800">打字游戏</h4>
                 <p className="text-gray-600 mb-6 leading-relaxed">通过打字游戏提高日语输入速度和准确性，熟悉日语字符的输入。</p>
-                <a href="/typing-game" className="bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium">开始游戏</a>
+                <Link href="/tools/typing-game" className="bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium">开始游戏</Link>
               </div>
               
               <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
@@ -49,7 +50,7 @@ const Tools = () => {
                 </div>
                 <h4 className="text-xl font-semibold mb-3 text-gray-800">单词消消乐</h4>
                 <p className="text-gray-600 mb-6 leading-relaxed">通过游戏方式巩固单词记忆，提高学习兴趣，让学习变得更加有趣。</p>
-                <a href="#" className="bg-pink-500 hover:bg-pink-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium">开始游戏</a>
+                <Link href="/tools/tetris-game" className="bg-pink-500 hover:bg-pink-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium">开始游戏</Link>
               </div>
             </div>
           </div>

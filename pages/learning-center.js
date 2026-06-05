@@ -91,7 +91,7 @@ const LearningCenter = () => {
 
       <main className="flex-grow">
         {/* ───── Hero ───── */}
-        <section className="relative pt-28 pb-12 md:pt-40 md:pb-20 overflow-hidden">
+        <section className="relative pt-28 pb-12 md:pt-40 md:pb-20 overflow-hidden mb-8">
           <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-white to-blue-50 pointer-events-none" />
           <div className="absolute -top-24 -right-24 w-[400px] h-[400px] rounded-full bg-gradient-to-br from-blue-100/60 to-cyan-100/30 blur-3xl pointer-events-none" />
           <div className="absolute -bottom-16 -left-16 w-[300px] h-[300px] rounded-full bg-gradient-to-tr from-purple-100/40 to-pink-100/20 blur-3xl pointer-events-none" />

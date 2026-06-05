@@ -139,7 +139,9 @@ const QuestionManager = ({ defaultType = '', defaultLevel = '' }) => {
     const { name, value } = e.target;
     setQuestionForm(prev => ({
       ...prev,
-      [name]: value
+      [name]: value,
+      // 题型改变时重置类别
+      ...(name === 'question_type' ? { category: '' } : {})
     }));
   };
 
