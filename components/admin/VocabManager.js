@@ -44,15 +44,46 @@ const VocabManager = () => {
     tag: ''
   });
 
-  // 转换教材数据为级联选择格式，为课程生成唯一的value
+  // 转换教材数据为级联选择格式
+  // lesson value 使用教材名:课程名，确保选中后 Tag 显示 "综合日语1:第5课"
   const cascaderOptions = textbooks.map(textbook => ({
     label: textbook.name,
     value: textbook.id,
     children: (textbook.lessons || []).map(lesson => ({
-      label: `${textbook.name}:${lesson.name}`, // 课程标签包含教材信息，避免重复显示
-      value: `${textbook.id}:${lesson.name}` // 生成唯一的课程ID，包含教材信息
+      label: `${textbook.name}:${lesson.name}`,
+      value: `${textbook.name}:${lesson.name}`
     }))
   }));
+
+  // 将 textbooks/lessons 状态转为 Cascader 所需的路径数组格式
+  // 选中课程时，教材ID作为路径前缀已包含，不再单独生成 tag
+  const buildCascaderValue = (tbIds, lessons) => {
+    const paths = [];
+    // 提取已选课程对应的教材ID
+    const lessonTbIds = new Set();
+    lessons.forEach(lesson => {
+      const colonIdx = lesson.indexOf(':');
+      if (colonIdx > 0) {
+        const tbName = lesson.substring(0, colonIdx);
+        const tb = textbooks.find(t => t.name === tbName);
+        if (tb) {
+          lessonTbIds.add(String(tb.id));
+          paths.push([String(tb.id), lesson]);
+        } else {
+          paths.push([lesson]);
+        }
+      } else {
+        paths.push([lesson]);
+      }
+    });
+    // 只添加未被任何课程覆盖的独立教材选择
+    tbIds.forEach(tid => {
+      if (!lessonTbIds.has(String(tid))) {
+        paths.push([String(tid)]);
+      }
+    });
+    return paths;
+  };
 
   // 获取教材列表
   const fetchTextbooks = async () => {
@@ -908,12 +939,29 @@ const VocabManager = () => {
             <label className="block text-sm font-medium text-dark mb-2">教材/课程</label>
             <Cascader
               options={cascaderOptions}
-              value={[...searchForm.textbooks, ...searchForm.lessons]}
+              value={buildCascaderValue(searchForm.textbooks, searchForm.lessons)}
               onChange={(values) => {
-                // 简化过滤逻辑，只根据值是否包含':'来分离教材和课程
-                const textbooks = values.filter(value => !value.includes(':'));
-                const lessons = values.filter(value => value.includes(':'));
-                // 直接更新状态，确保UI能够正确反映选择
+                // Ant Design 5 Cascader 在 multiple 模式下返回路径数组的数组
+                // 例如选择 "综合日语1:第5课" → values = [["1", "1:第5课"]]
+                const textbooks = [];
+                const lessons = [];
+                const flatValues = Array.isArray(values) ? values : [];
+                flatValues.forEach(item => {
+                  const path = Array.isArray(item) ? item : [item];
+                  if (path.length > 0) {
+                    // 路径第一个元素是教材ID
+                    if (!textbooks.includes(String(path[0]))) {
+                      textbooks.push(String(path[0]));
+                    }
+                    // 路径最后一个元素是叶子节点（课程）
+                    if (path.length > 1) {
+                      const leaf = String(path[path.length - 1]);
+                      if (!lessons.includes(leaf)) {
+                        lessons.push(leaf);
+                      }
+                    }
+                  }
+                });
                 setSearchForm({
                   ...searchForm,
                   textbooks,
@@ -1118,13 +1166,7 @@ const VocabManager = () => {
               <label className="block text-sm font-medium text-dark mb-2">教材/课程 <span className="text-red-500">*</span></label>
               <Cascader
                 options={cascaderOptions}
-                value={vocabForm.lessons.map(lesson => {
-                  if (lesson.includes(':')) {
-                    const [textbookId, lessonName] = lesson.split(':');
-                    return [textbookId, lesson];
-                  }
-                  return [vocabForm.textbooks[0], lesson];
-                })}
+                value={buildCascaderValue(vocabForm.textbooks || [], vocabForm.lessons || [])}
                 onChange={(values) => {
                   console.log('Cascader onChange triggered with values:', values);
                   // 处理Cascader的多选值格式

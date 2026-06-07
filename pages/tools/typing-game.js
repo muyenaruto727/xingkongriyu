@@ -98,14 +98,25 @@ const TypingGame = () => {
         setFilteredItems(items);
         getNextItem(items, []);
       } else {
-        const randomArticle = await api.getRandomArticle(articleLevel);
-        setFilteredItems([randomArticle]);
-        setCurrentItem({
-          id: randomArticle.id,
-          japanese: randomArticle.content.trim(),
-          meaning: randomArticle.title,
-          pronunciation: ''
-        });
+        const response = await api.getRandomArticle(articleLevel);
+        if (!response || !response.content) {
+          throw new Error('No article found');
+        }
+        // 将文章拆成句子，逐句练习
+        const sentences = response.content
+          .split(/[。！？\n]+/)
+          .filter(s => s.trim().length > 0)
+          .map((s, i) => ({
+            id: `s-${i}`,
+            japanese: s.trim() + '。',
+            meaning: response.title || '',
+            pronunciation: '',
+          }));
+        if (sentences.length === 0) {
+          throw new Error('No sentences found');
+        }
+        setFilteredItems(sentences);
+        getNextItem(sentences, []);
       }
     } catch (error) {
       console.error('Failed to start game:', error);
@@ -114,43 +125,15 @@ const TypingGame = () => {
     }
   };
 
-  const getNextItem = (items, usedItems) => {
-    if (items.length === 0) {
+  const getNextItem = (items, usedIds) => {
+    const available = items.filter(item => !usedIds.includes(item.id));
+    if (available.length === 0) {
       endGame();
       return;
     }
-    const availableItems = items.filter(item => !usedItems.includes(item.id));
-    if (availableItems.length === 0) {
-      endGame();
-      return;
-    }
-    const randomIndex = Math.floor(Math.random() * availableItems.length);
-    const selectedItem = availableItems[randomIndex];
-
-    if (gameMode === 'word') {
-      setCurrentItem({
-        id: selectedItem.id,
-        japanese: selectedItem.japanese,
-        meaning: selectedItem.chinese,
-        pronunciation: selectedItem.pronunciation
-      });
-    } else {
-      const sentences = selectedItem.content.split('。').filter(s => s.trim() !== '');
-      if (sentences.length > 0) {
-        const randomSentence = sentences[Math.floor(Math.random() * sentences.length)];
-        setCurrentItem({
-          id: selectedItem.id,
-          japanese: randomSentence.trim() + '。',
-          meaning: selectedItem.title,
-          pronunciation: ''
-        });
-      } else {
-        getNextItem(items, usedItems);
-        return;
-      }
-    }
-    const newUsedItems = [...usedItems, selectedItem.id];
-    setUsedItems(newUsedItems);
+    const next = available[Math.floor(Math.random() * available.length)];
+    setCurrentItem(next);
+    setUsedItems([...usedIds, next.id]);
     setUserInput('');
   };
 
@@ -162,11 +145,7 @@ const TypingGame = () => {
         setScore(prev => prev + (gameMode === 'word' ? 10 : 50));
         setCorrectCount(prev => prev + 1);
         setGameHistory(prev => [...prev, { ...currentItem, correct: true }]);
-        if (gameMode === 'word') {
-          getNextItem(filteredItems, usedItems);
-        } else {
-          endGame();
-        }
+        getNextItem(filteredItems, usedItems);
       }
     }
   };
@@ -175,11 +154,7 @@ const TypingGame = () => {
     if (currentItem) {
       setWrongCount(prev => prev + 1);
       setGameHistory(prev => [...prev, { ...currentItem, correct: false }]);
-      if (gameMode === 'word') {
-        getNextItem(filteredItems, usedItems);
-      } else {
-        endGame();
-      }
+      getNextItem(filteredItems, usedItems);
     }
   };
 
@@ -345,12 +320,9 @@ const TypingGame = () => {
                 <div className="flex gap-3">
                   <button
                     onClick={() => router.push('/tools')}
-                    className="group inline-flex items-center gap-2 px-5 py-4 rounded-2xl text-base font-semibold text-gray-500 bg-white border border-gray-200 hover:text-gray-700 hover:border-gray-300 hover:shadow-sm transition-all duration-300 flex-shrink-0"
+                    className="flex-1 py-4 rounded-2xl text-lg font-bold text-gray-500 bg-white border border-gray-200 hover:text-gray-700 hover:border-gray-300 hover:shadow-sm transition-all duration-300"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 group-hover:-translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                    返回
+                    ← 返回
                   </button>
                   <button
                     onClick={startGame}
@@ -481,12 +453,9 @@ const TypingGame = () => {
                   </button>
                   <button
                     onClick={goBackToSettings}
-                    className="group inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium text-gray-500 bg-white border border-gray-200 hover:text-gray-700 hover:border-gray-300 transition-all duration-300"
+                    className="px-5 py-2.5 bg-white text-gray-600 font-medium rounded-xl border border-gray-200 hover:bg-gray-50 transition-colors"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                    返回设置
+                    返回
                   </button>
                 </div>
               </div>
@@ -552,19 +521,10 @@ const TypingGame = () => {
               {/* Action buttons */}
               <div className="flex gap-3 mb-8">
                 <button
-                  onClick={() => router.push('/tools')}
-                  className="group inline-flex items-center gap-2 px-5 py-4 rounded-2xl text-base font-semibold text-gray-500 bg-white border border-gray-200 hover:text-gray-700 hover:border-gray-300 hover:shadow-sm transition-all duration-300 flex-shrink-0"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 group-hover:-translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                  返回
-                </button>
-                <button
                   onClick={goBackToSettings}
                   className="flex-1 py-4 bg-white text-gray-600 font-bold rounded-2xl border border-gray-200 hover:bg-gray-50 transition-all duration-300"
                 >
-                  返回设置
+                  返回
                 </button>
                 <button
                   onClick={startGame}

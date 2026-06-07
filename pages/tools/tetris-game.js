@@ -254,12 +254,9 @@ const TetrisGame = () => {
                 <div className="flex gap-3">
                   <button
                     onClick={() => router.push('/tools')}
-                    className="group inline-flex items-center gap-2 px-5 py-4 rounded-2xl text-base font-semibold text-gray-500 bg-white border border-gray-200 hover:text-gray-700 hover:border-gray-300 hover:shadow-sm transition-all duration-300 flex-shrink-0"
+                    className="flex-1 py-4 rounded-2xl text-lg font-bold text-gray-500 bg-white border border-gray-200 hover:text-gray-700 hover:border-gray-300 hover:shadow-sm transition-all duration-300"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 group-hover:-translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                    返回
+                    ← 返回
                   </button>
                   <button
                     onClick={startGame}
@@ -367,7 +364,7 @@ const TetrisGame = () => {
                     setIsPlaying(false);
                     setShowResult(false);
                   }}
-                  className="px-5 py-3 bg-white text-gray-600 font-medium rounded-2xl border border-gray-200 hover:bg-gray-50 transition-all duration-300"
+                  className="px-5 py-3 bg-red-50 text-red-500 font-medium rounded-2xl hover:bg-red-100 transition-all duration-300"
                 >
                   结束游戏
                 </button>
@@ -376,12 +373,9 @@ const TetrisGame = () => {
                     setIsPlaying(false);
                     setShowResult(false);
                   }}
-                  className="group inline-flex items-center gap-2 px-5 py-3 rounded-2xl text-sm font-medium text-gray-500 bg-white border border-gray-200 hover:text-gray-700 hover:border-gray-300 transition-all duration-300"
+                  className="px-5 py-3 bg-white text-gray-600 font-medium rounded-2xl border border-gray-200 hover:bg-gray-50 transition-all duration-300"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 group-hover:-translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                  返回设置
+                  返回
                 </button>
               </div>
             </div>
@@ -427,22 +421,13 @@ const TetrisGame = () => {
 
               <div className="flex gap-3 mb-8">
                 <button
-                  onClick={() => router.push('/tools')}
-                  className="group inline-flex items-center gap-2 px-5 py-4 rounded-2xl text-base font-semibold text-gray-500 bg-white border border-gray-200 hover:text-gray-700 hover:border-gray-300 hover:shadow-sm transition-all duration-300 flex-shrink-0"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 group-hover:-translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                  返回
-                </button>
-                <button
                   onClick={() => {
                     setIsPlaying(false);
                     setShowResult(false);
                   }}
                   className="flex-1 py-4 bg-white text-gray-600 font-bold rounded-2xl border border-gray-200 hover:bg-gray-50 transition-all duration-300"
                 >
-                  返回设置
+                  返回
                 </button>
                 <button
                   onClick={startGame}

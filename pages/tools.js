@@ -38,7 +38,7 @@ const Tools = () => {
                 </div>
                 <h4 className="text-xl font-semibold mb-3 text-gray-800">打字游戏</h4>
                 <p className="text-gray-600 mb-6 leading-relaxed">通过打字游戏提高日语输入速度和准确性，熟悉日语字符的输入。</p>
-                <Link href="/tools/typing-game" className="bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium">开始游戏</Link>
+                <Link href="/tools/typing-game"><a className="bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium">开始游戏</a></Link>
               </div>
               
               <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
@@ -50,7 +50,18 @@ const Tools = () => {
                 </div>
                 <h4 className="text-xl font-semibold mb-3 text-gray-800">单词消消乐</h4>
                 <p className="text-gray-600 mb-6 leading-relaxed">通过游戏方式巩固单词记忆，提高学习兴趣，让学习变得更加有趣。</p>
-                <Link href="/tools/tetris-game" className="bg-pink-500 hover:bg-pink-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium">开始游戏</Link>
+                <Link href="/tools/tetris-game"><a className="bg-pink-500 hover:bg-pink-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium">开始游戏</a></Link>
+              </div>
+
+              <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                <div className="bg-indigo-100 text-indigo-600 rounded-full w-16 h-16 flex items-center justify-center mb-6">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                  </svg>
+                </div>
+                <h4 className="text-xl font-semibold mb-3 text-gray-800">单词闪卡</h4>
+                <p className="text-gray-600 mb-6 leading-relaxed">按教材和课程筛选单词，通过翻转卡片强化记忆，支持中日文对照。</p>
+                <Link href="/tools/flash-cards"><a className="bg-indigo-500 hover:bg-indigo-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium">开始记忆</a></Link>
               </div>
             </div>
           </div>

@@ -67,7 +67,10 @@ const finalLessons = lessons || lesson;
           const textbookList = Array.isArray(finalTextbooks) ? finalTextbooks : [finalTextbooks];
           if (textbookList.length > 0 && textbookList[0] !== '全部') {
             // 使用OR条件匹配逗号分隔的教材
-            const textbookConditions = textbookList.map(() => `(textbook = $${paramIndex} OR textbook LIKE $${paramIndex}||',%' OR textbook LIKE '%,'||$${paramIndex} OR textbook LIKE '%,'||$${paramIndex}||',%')`).join(' OR ');
+            // 同时通过 lesson 字段以 "教材名:课程名" 格式存储的情况来匹配教材名
+            const textbookConditions = textbookList.map(() =>
+              `(textbook = $${paramIndex} OR textbook LIKE $${paramIndex}||',%' OR textbook LIKE '%,'||$${paramIndex} OR textbook LIKE '%,'||$${paramIndex}||',%' OR lesson LIKE $${paramIndex}||':%')`
+            ).join(' OR ');
             query += ` AND (${textbookConditions})`;
             params.push(...textbookList);
             paramIndex += textbookList.length;
@@ -78,16 +81,25 @@ const finalLessons = lessons || lesson;
         if (finalLessons && finalLessons !== '全部' && finalLessons !== '') {
           const lessonList = Array.isArray(finalLessons) ? finalLessons : [finalLessons];
           if (lessonList.length > 0 && lessonList[0] !== '全部') {
-            // 提取课程名称部分（移除可能的前缀）
-            const extractedLessons = lessonList.map(lessonItem => {
-              const parts = lessonItem.split(':');
-              return parts.length > 1 ? parts[1] : lessonItem;
+            // 课程可能以 "教材名:课程名" 或纯 "课程名" 形式传入
+            // 数据库中可能存储完整格式 "综合日语1:第5课" 或纯课程名 "第5课"
+            const lessonPatterns = [];
+            lessonList.forEach(lessonItem => {
+              const parts = String(lessonItem).split(':');
+              const stripped = parts.length > 1 ? parts[1] : lessonItem;
+              lessonPatterns.push({ original: String(lessonItem), stripped });
             });
-            // 使用OR条件匹配逗号分隔的课程
-            const lessonConditions = extractedLessons.map(() => `(lesson = $${paramIndex} OR lesson LIKE $${paramIndex}||',%' OR lesson LIKE '%,'||$${paramIndex} OR lesson LIKE '%,'||$${paramIndex}||',%')`).join(' OR ');
+            const lessonConditions = lessonPatterns.map(() =>
+              // 匹配: 精确匹配 original 或 stripped, 或以 original/stripped 开头后跟逗号,
+              // 或前面有逗号后跟 original/stripped, 或前后都有逗号,
+              // 或 lesson 以 "教材名:课程名" 格式存储，匹配后缀部分（如 lesson LIKE '%:第5课'）
+              `(lesson = $${paramIndex} OR lesson = $${paramIndex + 1} OR lesson LIKE $${paramIndex}||',%' OR lesson LIKE $${paramIndex + 1}||',%' OR lesson LIKE '%,'||$${paramIndex} OR lesson LIKE '%,'||$${paramIndex + 1} OR lesson LIKE '%,'||$${paramIndex}||',%' OR lesson LIKE '%,'||$${paramIndex + 1}||',%' OR lesson LIKE '%:'||$${paramIndex} OR lesson LIKE '%:'||$${paramIndex + 1} OR lesson LIKE '%:'||$${paramIndex}||',%' OR lesson LIKE '%:'||$${paramIndex + 1}||',%')`
+            ).join(' OR ');
             query += ` AND (${lessonConditions})`;
-            params.push(...extractedLessons);
-            paramIndex += extractedLessons.length;
+            lessonPatterns.forEach(p => {
+              params.push(p.original, p.stripped);
+              paramIndex += 2;
+            });
           }
         }
 
