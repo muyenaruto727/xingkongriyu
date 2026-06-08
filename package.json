@@ -12,6 +12,7 @@
     "seed-data": "node scripts/seed-data.js"
   },
   "dependencies": {
+    "@andresaya/edge-tts": "^1.8.0",
     "@ant-design/icons": "^5.2.6",
     "@wangeditor/editor": "^5.1.23",
     "@wangeditor/editor-for-react": "^1.0.6",
