@@ -1,10 +1,18 @@
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { Input, Button, Table, Modal, Form, Select, message, Tree, Radio } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, SaveOutlined, CloseOutlined } from '@ant-design/icons';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
 import api from '../../lib/api';
 import { STATUS } from '../../config/config';
+
+const WangEditor = dynamic(() => import('../common/WangEditor'), {
+  ssr: false,
+  loading: () => (
+    <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f5f5', borderRadius: '6px', color: '#999' }}>
+      编辑器加载中...
+    </div>
+  ),
+});
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -417,9 +425,9 @@ const ChapterManager = () => {
               label="文章内容"
               rules={[{ required: true, message: '请输入文章内容' }]}
             >
-              <ReactQuill 
-                placeholder="请输入文章内容" 
-                style={{ height: '300px' }} 
+              <WangEditor
+                placeholder="请输入文章内容"
+                style={{ height: '300px' }}
               />
             </Form.Item>
           )}
@@ -476,9 +484,9 @@ const ChapterManager = () => {
               label="文章内容"
               rules={[{ required: true, message: '请输入文章内容' }]}
             >
-              <ReactQuill 
-                placeholder="请输入文章内容" 
-                style={{ height: '300px' }} 
+              <WangEditor
+                placeholder="请输入文章内容"
+                style={{ height: '300px' }}
               />
             </Form.Item>
           )}

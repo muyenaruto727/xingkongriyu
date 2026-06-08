@@ -119,15 +119,23 @@ const CourseDetail = () => {
                     <span className="px-4 py-2 bg-gray-100 text-gray-800 rounded-full text-sm font-medium">
                       {course.format}
                     </span>
-                    <span className="px-4 py-2 bg-gray-100 text-gray-800 rounded-full text-sm font-medium">
-                      共 {chapters.length} 章
-                    </span>
+                    {course.format !== '1V1辅导' && (
+                      <span className="px-4 py-2 bg-gray-100 text-gray-800 rounded-full text-sm font-medium">
+                        共 {chapters.length} 章
+                      </span>
+                    )}
                   </div>
                 </div>
                 <div className="mt-6 md:mt-0">
-                  <a href="#chapters" className="bg-primary hover:bg-primary/90 text-white px-8 py-3 rounded-lg transition-colors inline-block font-medium">
-                    开始学习
-                  </a>
+                  {course.format === '1V1辅导' ? (
+                    <a href="/one-on-one" className="bg-primary hover:bg-primary/90 text-white px-8 py-3 rounded-lg transition-colors inline-block font-medium">
+                      预约课程
+                    </a>
+                  ) : (
+                    <a href="#chapters" className="bg-primary hover:bg-primary/90 text-white px-8 py-3 rounded-lg transition-colors inline-block font-medium">
+                      开始学习
+                    </a>
+                  )}
                 </div>
               </div>
               
@@ -137,8 +145,9 @@ const CourseDetail = () => {
               </div>
             </div>
             
-            {/* 章节列表 */}
-            <div id="chapters" className="bg-white rounded-xl shadow-lg p-8">
+            {/* 章节列表 — 1V1辅导课程不显示 */}
+            {course.format !== '1V1辅导' && (
+              <div id="chapters" className="bg-white rounded-xl shadow-lg p-8">
               <h2 className="text-2xl font-bold text-gray-800 mb-8">课程章节</h2>
               
               {(Array.isArray(chapters) && chapters.length === 0) ? (
@@ -203,6 +212,7 @@ const CourseDetail = () => {
                 </div>
               )}
             </div>
+            )}
           </div>
         </section>
       </main>

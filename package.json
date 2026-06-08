@@ -13,6 +13,8 @@
   },
   "dependencies": {
     "@ant-design/icons": "^5.2.6",
+    "@wangeditor/editor": "^5.1.23",
+    "@wangeditor/editor-for-react": "^1.0.6",
     "antd": "^5.12.8",
     "bcryptjs": "^3.0.3",
     "joi": "^18.0.2",
@@ -21,7 +23,6 @@
     "pg": "^8.11.3",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
-    "react-quill": "^2.0.0",
     "superpowers": "git+https://github.com/obra/superpowers.git"
   },
   "keywords": [],

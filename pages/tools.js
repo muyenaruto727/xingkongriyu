@@ -18,9 +18,9 @@ const Tools = () => {
     <div className="flex flex-col min-h-screen bg-gradient-to-b from-blue-50 to-white">
       <Head>
         <title>小工具 - 星空日语</title>
-        <meta name="description" content="小工具，提供打字游戏和单词消消乐" />
+        <meta name="description" content="小工具，提供打字游戏、单词消消乐、单词闪卡和五十音消消乐" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       </Head>
       
@@ -29,7 +29,7 @@ const Tools = () => {
       <main className="flex-grow">
         <section className="pt-24 pb-12 md:pt-32 md:pb-20">
           <div className="container">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                 <div className="bg-purple-100 text-purple-600 rounded-full w-16 h-16 flex items-center justify-center mb-6">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -62,6 +62,18 @@ const Tools = () => {
                 <h4 className="text-xl font-semibold mb-3 text-gray-800">单词闪卡</h4>
                 <p className="text-gray-600 mb-6 leading-relaxed">按教材和课程筛选单词，通过翻转卡片强化记忆，支持中日文对照。</p>
                 <Link href="/tools/flash-cards"><a className="bg-indigo-500 hover:bg-indigo-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium">开始记忆</a></Link>
+              </div>
+
+              <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                <div className="bg-sky-100 text-sky-600 rounded-full w-16 h-16 flex items-center justify-center mb-6">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 4v16M16 4v16" />
+                  </svg>
+                </div>
+                <h4 className="text-xl font-semibold mb-3 text-gray-800">五十音消消乐</h4>
+                <p className="text-gray-600 mb-6 leading-relaxed">匹配平假名和片假名，在轻量游戏中熟悉五十音对应关系。</p>
+                <Link href="/tools/gojyuon"><a className="bg-sky-500 hover:bg-sky-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium">开始游戏</a></Link>
               </div>
             </div>
           </div>

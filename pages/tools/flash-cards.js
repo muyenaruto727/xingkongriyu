@@ -263,6 +263,20 @@ const Flashcards = () => {
                     {currentVocab.pronunciation && (
                       <p className="text-sm text-indigo-400 mt-3 font-medium">{currentVocab.pronunciation}</p>
                     )}
+                    {(currentVocab.pitch_accent || currentVocab.category) && (
+                      <div className="flex flex-wrap justify-center gap-2 mt-5">
+                        {currentVocab.pitch_accent && (
+                          <span className="text-xs font-semibold text-rose-500 bg-rose-50 border border-rose-100 px-2.5 py-1 rounded-full">
+                            声调: {currentVocab.pitch_accent}
+                          </span>
+                        )}
+                        {currentVocab.category && (
+                          <span className="text-xs font-semibold text-indigo-500 bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded-full">
+                            {currentVocab.category}
+                          </span>
+                        )}
+                      </div>
+                    )}
                     <span className="absolute bottom-4 text-xs text-gray-300">点击或按空格翻转</span>
                   </div>
 

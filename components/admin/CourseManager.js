@@ -6,16 +6,11 @@ import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { api } from '../../lib/api';
 import { handleApiError, logError } from '../../utils.js';
 
-// 动态导入 ReactQuill，确保只在客户端加载
-const ReactQuill = dynamic(() => import('react-quill'), {
+// 动态导入 WangEditor，确保只在客户端加载
+const WangEditor = dynamic(() => import('../common/WangEditor'), {
   ssr: false,
-  loading: () => <div>加载中...</div>
+  loading: () => <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f5f5', borderRadius: '6px', color: '#999' }}>编辑器加载中...</div>
 });
-
-// 导入样式
-if (typeof window !== 'undefined') {
-  require('react-quill/dist/quill.snow.css');
-}
 
 const CourseManager = ({ showToast }) => {
   const [activeTab, setActiveTab] = useState('courses'); // 'courses' 或 'chapters'
@@ -56,7 +51,8 @@ const CourseManager = ({ showToast }) => {
   // 课程形式选项
   const formatOptions = [
     '文本课程',
-    '视频课程'
+    '视频课程',
+    '1V1辅导'
   ];
   
   // 是否免费选项
@@ -601,16 +597,18 @@ const CourseManager = ({ showToast }) => {
             >
               编辑
             </button>
-            <button
-              onClick={() => {
-                setCurrentEditId(row.id);
-                setActiveTab('chapters');
-                fetchChapters(row.id);
-              }}
-              className="px-2 py-1 bg-purple-100 text-purple-600 rounded text-xs hover:bg-purple-200 transition-colors"
-            >
-              章节管理
-            </button>
+            {row.format !== '1V1辅导' && (
+              <button
+                onClick={() => {
+                  setCurrentEditId(row.id);
+                  setActiveTab('chapters');
+                  fetchChapters(row.id);
+                }}
+                className="px-2 py-1 bg-purple-100 text-purple-600 rounded text-xs hover:bg-purple-200 transition-colors"
+              >
+                章节管理
+              </button>
+            )}
             {row.status === '未上架' ? (
               <>
                 <button
@@ -719,7 +717,7 @@ const CourseManager = ({ showToast }) => {
                 }}
                 value={currentEditId}
               >
-                {Array.isArray(courseList) && courseList.map(course => (
+                {Array.isArray(courseList) && courseList.filter(c => c.format !== '1V1辅导').map(course => (
                   <Select.Option key={course.id} value={course.id}>
                     {course.name}
                   </Select.Option>
@@ -957,9 +955,9 @@ const CourseManager = ({ showToast }) => {
               rules={[{ required: true, message: '请输入文章内容' }]}
             >
               <div>
-                <ReactQuill 
-                  placeholder="请输入文章内容" 
-                  style={{ height: '300px' }} 
+                <WangEditor
+                  placeholder="请输入文章内容"
+                  style={{ height: '300px' }}
                   value={sectionForm.getFieldValue('content') || ''}
                   onChange={(value) => sectionForm.setFieldsValue({ content: value })}
                 />
@@ -1020,9 +1018,9 @@ const CourseManager = ({ showToast }) => {
               rules={[{ required: true, message: '请输入文章内容' }]}
             >
               <div>
-                <ReactQuill 
-                  placeholder="请输入文章内容" 
-                  style={{ height: '300px' }} 
+                <WangEditor
+                  placeholder="请输入文章内容"
+                  style={{ height: '300px' }}
                   value={sectionForm.getFieldValue('content') || ''}
                   onChange={(value) => sectionForm.setFieldsValue({ content: value })}
                 />
