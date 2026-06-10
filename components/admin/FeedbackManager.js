@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { handleApiError, logError } from '../../utils.js';
 import PaginationTable from '../common/PaginationTable';
+import api from '../../lib/api';
 
 const FeedbackManager = () => {
   const [feedbackList, setFeedbackList] = useState([]);
@@ -24,16 +25,10 @@ const FeedbackManager = () => {
       if (searchType) params.append('type', searchType);
       if (searchStatus) params.append('status', searchStatus);
       
-      const response = await fetch(`/api/feedbacks?${params.toString()}`);
-      if (response.ok) {
-        const data = await response.json();
-        setFeedbackList(data.data || []);
-        setTotalItems(data.pagination?.total || 0);
-      } else {
-        const error = new Error('Failed to fetch feedback');
-        error.response = { status: response.status, data: await response.json() };
-        handleApiError(error, () => {});
-      }
+      const data = await api.getFeedbacks(Object.fromEntries(params.entries()));
+      const list = data.data || [];
+      setFeedbackList(list);
+      setTotalItems(data.total || list.length);
     } catch (error) {
       logError(error, 'Fetch Feedback');
       handleApiError(error, () => {});
@@ -44,17 +39,8 @@ const FeedbackManager = () => {
 
   const handleUpdateFeedbackStatus = async (id, status) => {
     try {
-      const response = await fetch('/api/feedbacks', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ id, status }),
-      });
-      
-      if (response.ok) {
-        fetchFeedback();
-      }
+      await api.updateFeedback({ id, status });
+      fetchFeedback();
     } catch (error) {
       console.error('Error updating feedback status:', error);
     }

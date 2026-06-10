@@ -4,17 +4,9 @@
  * 运行: npm run seed-data  或  node scripts/seed-data.js
  */
 
-const { Pool } = require('pg');
-require('dotenv').config();
+const { createDbPool } = require('../lib/dbConfig');
 
-const pool = new Pool({
-  user: process.env.DB_USER || 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  database: process.env.DB_NAME || 'xingkongriyu',
-  password: process.env.DB_PASSWORD || '',
-  port: process.env.DB_PORT || 5432,
-  max: 5,
-});
+const pool = createDbPool({ max: 5 });
 
 const LEVELS = ['N5', 'N4', 'N3', 'N2', 'N1'];
 const CATEGORIES_VOCAB = ['动词', '形容词', '名词', '副词', '接续词', '惯用语'];

@@ -20,7 +20,7 @@ const DailyQuoteManager = () => {
       const result = await api.getDailyQuoteList({ page: currentPage, limit: itemsPerPage });
       if (result) {
         setQuotes(result.data || []);
-        setTotalItems(result.pagination?.total || 0);
+        setTotalItems(result.total || 0);
       }
     } catch (error) {
       message.error('获取数据失败');

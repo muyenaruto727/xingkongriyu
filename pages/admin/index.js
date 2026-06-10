@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useAuth } from '../../contexts/AuthContext';
+import api from '../../lib/api';
 
 const AdminLogin = () => {
   const router = useRouter();
@@ -17,21 +18,8 @@ const AdminLogin = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.error?.message || '登录失败');
-      }
-
-      login(data.data.user, data.data.token);
+      const data = await api.login(username, password);
+      login(data.user, data.token);
       router.push('/admin/dashboard');
     } catch (err) {
       setError(err.message || '登录失败，请重试');

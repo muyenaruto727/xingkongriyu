@@ -5,6 +5,7 @@ import { Modal, message } from 'antd';
 import Navigation from '../../components/layout/Navigation';
 import { FEEDBACK_TYPES } from '../../config/config';
 import { handleApiError, logError, formatTime } from '../../utils.js';
+import api from '../../lib/api';
 
 const ExamTest = () => {
   const router = useRouter();
@@ -178,23 +179,11 @@ const ExamTest = () => {
 
   const fetchQuestions = async (config) => {
     try {
-      const response = await fetch('/api/exam/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          level: config.level,
-          sections: config.sections
-        }),
+      const data = await api.generateExam({
+        level: config.level,
+        sections: config.sections
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch questions');
-      }
-
-      const data = await response.json();
-      setQuestions(data.data?.questions || []);
+      setQuestions(data.questions || []);
     } catch (error) {
       console.error('Error fetching questions:', error);
       // 如果API调用失败，使用模拟数据
@@ -368,25 +357,12 @@ const ExamTest = () => {
     };
 
     try {
-      const response = await fetch('/api/exam-records', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_id: currentUser.id,
-          ...examRecord
-        }),
+      await api.createExamRecord({
+        user_id: currentUser.id,
+        ...examRecord
       });
-
-      if (response.ok) {
-        showToast(`考试完成！\n得分：${score}\n正确：${correctCount}/${questions.length}\n用时：${duration}`, 'success');
-        router.push('/exam');
-      } else {
-        const error = new Error('Failed to save exam record');
-        error.response = { status: response.status, data: await response.json() };
-        handleApiError(error, showToast);
-      }
+      showToast(`考试完成！\n得分：${score}\n正确：${correctCount}/${questions.length}\n用时：${duration}`, 'success');
+      router.push('/exam');
     } catch (error) {
       logError(error, 'Save Exam Record');
       handleApiError(error, showToast);
@@ -411,29 +387,16 @@ const ExamTest = () => {
     }
 
     try {
-      const response = await fetch('/api/feedbacks', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_id: currentUser.id,
-          question_id: currentQuestion.id,
-          feedback_type: feedbackType,
-          description: feedbackDescription
-        }),
+      await api.createFeedback({
+        user_id: currentUser.id,
+        question_id: currentQuestion.id,
+        feedback_type: feedbackType,
+        description: feedbackDescription
       });
-
-      if (response.ok) {
-        showToast('反馈提交成功，感谢您的反馈！', 'success');
-        setShowFeedbackModal(false);
-        setFeedbackType('题目有误');
-        setFeedbackDescription('');
-      } else {
-        const error = new Error('Failed to submit feedback');
-        error.response = { status: response.status, data: await response.json() };
-        handleApiError(error, showToast);
-      }
+      showToast('反馈提交成功，感谢您的反馈！', 'success');
+      setShowFeedbackModal(false);
+      setFeedbackType('题目有误');
+      setFeedbackDescription('');
     } catch (error) {
       logError(error, 'Submit Feedback');
       handleApiError(error, showToast);

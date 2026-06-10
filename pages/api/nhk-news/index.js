@@ -1,6 +1,8 @@
 const pool = require('../../../lib/db');
 const { handleError, successResponse } = require('../../../lib/errorHandler');
 const { fetchNhkEasyNews } = require('../../../lib/nhkEasySource');
+const { parseIntegerParam } = require('../../../lib/requestValidation');
+const { withAdminForMethods } = require('../../../lib/apiAuth');
 
 // Yahoo Japan News RSS feeds (kept for reference while switching to NHK Easy)
 // const RSS_FEEDS = [
@@ -181,20 +183,23 @@ async function handler(req, res) {
         }
 
         const { page = 1, limit = 50 } = req.query;
-        const offset = (parseInt(page) - 1) * parseInt(limit);
+        const parsedPage = parseIntegerParam(page, { name: 'page', min: 1, max: 10000, defaultValue: 1 });
+        const parsedLimit = parseIntegerParam(limit, { name: 'limit', min: 1, max: 100, defaultValue: 50 });
+        if (parsedPage.error || parsedLimit.error) {
+          return res.status(400).json({ error: parsedPage.error || parsedLimit.error });
+        }
+        const offset = (parsedPage.value - 1) * parsedLimit.value;
 
         const result = await pool.query(
           'SELECT * FROM public.nhk_news ORDER BY pub_date DESC LIMIT $1 OFFSET $2',
-          [parseInt(limit), offset]
+          [parsedLimit.value, offset]
         );
         const countResult = await pool.query('SELECT COUNT(*) FROM public.nhk_news');
 
-        return res.status(200).json({
-          success: true,
-          data: result.rows,
+        return successResponse(res, result.rows, '操作成功', {
           pagination: {
-            page: parseInt(page),
-            limit: parseInt(limit),
+            page: parsedPage.value,
+            limit: parsedLimit.value,
             total: parseInt(countResult.rows[0].count),
           },
         });
@@ -203,7 +208,7 @@ async function handler(req, res) {
       case 'POST':
         const count = await fetchAndStoreNews();
         await cleanOldNews();
-        return res.status(200).json({ success: true, inserted: count, message: '刷新成功' });
+        return successResponse(res, { inserted: count }, '刷新成功');
 
       default:
         res.setHeader('Allow', ['GET', 'POST']);
@@ -214,4 +219,4 @@ async function handler(req, res) {
   }
 }
 
-export default handler;
+export default withAdminForMethods(handler, ['POST']);

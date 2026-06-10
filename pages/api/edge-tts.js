@@ -1,19 +1,28 @@
-const DEFAULT_VOICE = 'ja-JP-NanamiNeural';
+const rateLimit = require('../../lib/rateLimit');
+const { parseTextParam } = require('../../lib/requestValidation');
 
-export default async function handler(req, res) {
+const DEFAULT_VOICE = 'ja-JP-NanamiNeural';
+const limiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  message: '请求过于频繁，请稍后再试。'
+});
+
+async function handler(req, res) {
   if (req.method !== 'GET') {
     res.setHeader('Allow', 'GET');
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const text = String(req.query.text || '').trim();
-  if (!text) {
-    return res.status(400).json({ error: 'Missing text' });
+  const parsedText = parseTextParam(req.query.text, {
+    name: 'text',
+    required: true,
+    maxLength: 120,
+  });
+  if (parsedText.error) {
+    return res.status(400).json({ error: parsedText.error });
   }
-
-  if (text.length > 120) {
-    return res.status(400).json({ error: 'Text too long' });
-  }
+  const text = parsedText.value;
 
   try {
     const { EdgeTTS, Constants } = await import('@andresaya/edge-tts');
@@ -34,3 +43,5 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Failed to synthesize audio' });
   }
 }
+
+export default rateLimit.withRateLimit(handler, limiter);

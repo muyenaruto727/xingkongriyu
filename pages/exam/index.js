@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import { Modal, message } from 'antd';
 import Navigation from '../../components/layout/Navigation';
 import Footer from '../../components/layout/Footer';
+import api from '../../lib/api';
 
 const formatTime = (seconds) => {
   const hours = Math.floor(seconds / 3600);
@@ -120,11 +121,8 @@ const ExamIndex = () => {
       }
 
       try {
-        const response = await fetch(`/api/exam-records?user_id=${currentUser.id}`);
-        if (response.ok) {
-          const data = await response.json();
-          setExamRecords(data.data?.data || []);
-        }
+        const data = await api.getExamRecords({ user_id: currentUser.id });
+        setExamRecords(data.data || []);
       } catch (error) {
         console.error('Error fetching exam records:', error);
       }
@@ -391,11 +389,8 @@ const ExamIndex = () => {
                     }
                     const fetchExamRecords = async () => {
                       try {
-                        const response = await fetch(`/api/exam-records?user_id=${currentUser.id}`);
-                        if (response.ok) {
-                          const data = await response.json();
-                          setExamRecords(data.data?.data || []);
-                        }
+                        const data = await api.getExamRecords({ user_id: currentUser.id });
+                        setExamRecords(data.data || []);
                       } catch (error) {
                         console.error('Error fetching exam records:', error);
                       }

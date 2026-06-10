@@ -1,5 +1,7 @@
 const pool = require('../../../lib/db');
 const { handleError, successResponse } = require('../../../lib/errorHandler');
+const { withAdminForMethods } = require('../../../lib/apiAuth');
+const { parseIntegerParam } = require('../../../lib/requestValidation');
 
 async function handler(req, res) {
   try {
@@ -105,6 +107,11 @@ async function handleUpdateCourse(req, res) {
 // 获取课程列表
 async function handleGetCourses(req, res) {
   const { page = 1, limit = 10, id, status } = req.query;
+  const parsedPage = parseIntegerParam(page, { name: 'page', min: 1, max: 10000, defaultValue: 1 });
+  const parsedLimit = parseIntegerParam(limit, { name: 'limit', min: 1, max: 100, defaultValue: 10 });
+  if (parsedPage.error || parsedLimit.error) {
+    return res.status(400).json({ error: parsedPage.error || parsedLimit.error });
+  }
   
   try {
     let query = 'SELECT * FROM courses';
@@ -127,9 +134,9 @@ async function handleGetCourses(req, res) {
     
     // 分页
     if (!id) {
-      const offset = (parseInt(page) - 1) * parseInt(limit);
+      const offset = (parsedPage.value - 1) * parsedLimit.value;
       query += ' LIMIT $' + paramIndex + ' OFFSET $' + (paramIndex + 1);
-      params.push(parseInt(limit), parseInt(offset));
+      params.push(parsedLimit.value, offset);
     }
     
     const result = await pool.query(query, params);
@@ -163,8 +170,8 @@ async function handleGetCourses(req, res) {
       return successResponse(res, {
         data: courses,
         total,
-        page: parseInt(page),
-        limit: parseInt(limit)
+        page: parsedPage.value,
+        limit: parsedLimit.value
       });
     }
   } catch (error) {
@@ -195,4 +202,4 @@ async function handleDeleteCourse(req, res) {
   }
 }
 
-module.exports = handler;
+export default withAdminForMethods(handler);

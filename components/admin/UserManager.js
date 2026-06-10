@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { handleApiError, logError } from '../../utils.js';
 import PaginationTable from '../common/PaginationTable';
+import api from '../../lib/api';
 
 const UserManager = ({ showToast }) => {
   const [users, setUsers] = useState([]);
@@ -13,26 +14,12 @@ const UserManager = ({ showToast }) => {
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
-      const params = new URLSearchParams({
+      const result = await api.getUserList({
         page: currentPage,
         limit: itemsPerPage
-      }).toString();
-      const response = await fetch(`/api/users?${params}`);
-      if (response.ok) {
-        const result = await response.json();
-        // API 返回的数据格式是 { success, message, data: { data, total } }
-        if (result.success && result.data) {
-          setUsers(result.data.data || []);
-          setTotalItems(result.data.total || 0);
-        } else {
-          setUsers([]);
-          setTotalItems(0);
-        }
-      } else {
-        const error = new Error('Failed to fetch users');
-        error.response = { status: response.status, data: await response.json() };
-        handleApiError(error, showToast);
-      }
+      });
+      setUsers(result.data || []);
+      setTotalItems(result.total || 0);
     } catch (error) {
       logError(error, 'Fetch Users');
       handleApiError(error, showToast);

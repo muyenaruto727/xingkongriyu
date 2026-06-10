@@ -69,10 +69,11 @@ const Tools = () => {
                 <p className="text-gray-600 mb-6 leading-relaxed">
                   匹配平假名和片假名，在轻量游戏中熟悉五十音对应关系。
                 </p>
-                <Link href="/tools/gojyuon">
-                  <a className="bg-sky-500 hover:bg-sky-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium">
-                    开始游戏
-                  </a>
+                <Link
+                  href="/tools/gojyuon"
+                  className="bg-sky-500 hover:bg-sky-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium"
+                >
+                  开始游戏
                 </Link>
               </div>
               <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
@@ -98,10 +99,11 @@ const Tools = () => {
                 <p className="text-gray-600 mb-6 leading-relaxed">
                   通过打字游戏提高日语输入速度和准确性，熟悉日语字符的输入。
                 </p>
-                <Link href="/tools/typing-game">
-                  <a className="bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium">
-                    开始游戏
-                  </a>
+                <Link
+                  href="/tools/typing-game"
+                  className="bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium"
+                >
+                  开始游戏
                 </Link>
               </div>
 
@@ -134,10 +136,11 @@ const Tools = () => {
                 <p className="text-gray-600 mb-6 leading-relaxed">
                   通过游戏方式巩固单词记忆，提高学习兴趣，让学习变得更加有趣。
                 </p>
-                <Link href="/tools/tetris-game">
-                  <a className="bg-pink-500 hover:bg-pink-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium">
-                    开始游戏
-                  </a>
+                <Link
+                  href="/tools/tetris-game"
+                  className="bg-pink-500 hover:bg-pink-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium"
+                >
+                  开始游戏
                 </Link>
               </div>
 
@@ -164,10 +167,11 @@ const Tools = () => {
                 <p className="text-gray-600 mb-6 leading-relaxed">
                   按教材和课程筛选单词，通过翻转卡片强化记忆，支持中日文对照。
                 </p>
-                <Link href="/tools/flash-cards">
-                  <a className="bg-indigo-500 hover:bg-indigo-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium">
-                    开始记忆
-                  </a>
+                <Link
+                  href="/tools/flash-cards"
+                  className="bg-indigo-500 hover:bg-indigo-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium"
+                >
+                  开始记忆
                 </Link>
               </div>
 
@@ -200,10 +204,11 @@ const Tools = () => {
                 <p className="text-gray-600 mb-6 leading-relaxed">
                   随机抽取动词和变形形式，输入假名或标准写法，练熟日语动词变化。
                 </p>
-                <Link href="/tools/verb-change">
-                  <a className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium">
-                    开始练习
-                  </a>
+                <Link
+                  href="/tools/verb-change"
+                  className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium"
+                >
+                  开始练习
                 </Link>
               </div>
 
@@ -236,10 +241,11 @@ const Tools = () => {
                 <p className="text-gray-600 mb-6 leading-relaxed">
                   选择单词或句子，听 Edge TTS 合成音频，输入听到的日语内容。
                 </p>
-                <Link href="/tools/easy-listening">
-                  <a className="bg-cyan-500 hover:bg-cyan-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium">
-                    开始听写
-                  </a>
+                <Link
+                  href="/tools/easy-listening"
+                  className="bg-cyan-500 hover:bg-cyan-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium"
+                >
+                  开始听写
                 </Link>
               </div>
 
@@ -266,10 +272,11 @@ const Tools = () => {
                 <p className="text-gray-600 mb-6 leading-relaxed">
                   阅读日语新闻，用真实语料提升阅读能力。数据每日自动更新。
                 </p>
-                <Link href="/tools/easynews">
-                  <a className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium">
-                    开始阅读
-                  </a>
+                <Link
+                  href="/tools/easynews"
+                  className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium"
+                >
+                  开始阅读
                 </Link>
               </div>
             </div>

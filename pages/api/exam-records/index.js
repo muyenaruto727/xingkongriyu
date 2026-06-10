@@ -1,5 +1,6 @@
 const pool = require('../../../lib/db');
 const { handleError, successResponse } = require('../../../lib/errorHandler');
+const { parseIntegerParam } = require('../../../lib/requestValidation');
 
 async function handler(req, res) {
   const { method, query } = req;
@@ -8,6 +9,11 @@ async function handler(req, res) {
   try {
     switch (method) {
       case 'GET':
+        const parsedPage = parseIntegerParam(page, { name: 'page', min: 1, max: 10000, defaultValue: 1 });
+        const parsedLimit = parseIntegerParam(limit, { name: 'limit', min: 1, max: 100, defaultValue: 10 });
+        if (parsedPage.error || parsedLimit.error) {
+          return res.status(400).json({ error: parsedPage.error || parsedLimit.error });
+        }
         let sql = 'SELECT * FROM exam_records WHERE 1=1';
         const params = [];
         let paramIndex = 1;
@@ -21,9 +27,9 @@ async function handler(req, res) {
         sql += ' ORDER BY created_at DESC';
         
         // 添加分页
-        const offset = (parseInt(page) - 1) * parseInt(limit);
+        const offset = (parsedPage.value - 1) * parsedLimit.value;
         sql += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
-        params.push(parseInt(limit), offset);
+        params.push(parsedLimit.value, offset);
 
         const result = await pool.query(sql, params);
         
@@ -43,8 +49,8 @@ async function handler(req, res) {
         const responseData = {
           data: result.rows,
           pagination: {
-            page: parseInt(page),
-            limit: parseInt(limit),
+            page: parsedPage.value,
+            limit: parsedLimit.value,
             total
           }
         };
@@ -92,4 +98,4 @@ async function handler(req, res) {
   }
 }
 
-module.exports = handler;
+export default handler;

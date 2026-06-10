@@ -129,7 +129,7 @@ const QuestionManager = ({ defaultType = '', defaultLevel = '' }) => {
       };
       const data = await api.getQuestionList(params);
       setQuestions(data.data);
-      setTotal(data.pagination.total);
+      setTotal(data.total || 0);
     } catch (error) {
       console.error('Failed to fetch questions:', error);
     }
@@ -518,7 +518,7 @@ const QuestionManager = ({ defaultType = '', defaultLevel = '' }) => {
         showToast(`开始下载第 ${pageNumber} 页，每页 ${pageSize} 条数据`, 'info');
         const pageData = await api.getQuestionList(params);
         const questionsData = pageData.data || [];
-        const totalItems = pageData.pagination?.total || 0;
+        const totalItems = pageData.total || 0;
         const totalPages = Math.ceil(totalItems / pageSize);
 
         // 转换为JSON字符串

@@ -1,5 +1,13 @@
 const pool = require('../../../lib/db');
+const rateLimit = require('../../../lib/rateLimit');
 const { handleError, successResponse } = require('../../../lib/errorHandler');
+const { validateExamGenerateRequest } = require('../../../lib/examValidation');
+
+const limiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  message: '请求过于频繁，请稍后再试。'
+});
 
 // 各级别的题目配置
 const examConfig = {
@@ -229,25 +237,27 @@ async function getQuestionsByType(questionType, category, level, count) {
 }
 
 async function handler(req, res) {
+  const allowed = await rateLimit.applyRateLimit(req, res, limiter);
+  if (!allowed) {
+    return;
+  }
+
   if (req.method !== 'POST') {
     res.setHeader('Allow', ['POST']);
     res.status(405).json({ success: false, error: { code: 'METHOD_NOT_ALLOWED', message: `Method ${req.method} Not Allowed` } });
     return;
   }
-  
-  const { level, sections } = req.body;
-  
-  if (!level || !sections || sections.length === 0) {
-    res.status(400).json({ success: false, error: { code: 'MISSING_PARAMS', message: 'Missing required parameters' } });
+
+  const parsedRequest = validateExamGenerateRequest(req.body);
+  if (parsedRequest.error) {
+    res.status(400).json({ success: false, error: parsedRequest.error });
     return;
   }
+
+  const { level, sections } = parsedRequest.value;
   
   try {
     const levelConfig = examConfig[level];
-    if (!levelConfig) {
-      res.status(400).json({ success: false, error: { code: 'INVALID_LEVEL', message: 'Invalid level' } });
-      return;
-    }
     
     const questions = [];
     let questionId = 1;
@@ -291,4 +301,4 @@ async function handler(req, res) {
   }
 }
 
-module.exports = handler;
+export default handler;

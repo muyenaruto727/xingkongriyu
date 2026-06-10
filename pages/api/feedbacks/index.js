@@ -1,5 +1,6 @@
 const pool = require('../../../lib/db');
 const { handleError, successResponse } = require('../../../lib/errorHandler');
+const { requireAuth, requireAdmin } = require('../../../lib/apiAuth');
 
 async function handler(req, res) {
   if (req.method === 'POST') {
@@ -9,6 +10,10 @@ async function handler(req, res) {
     if (!user_id || !question_id || !feedback_type) {
       res.status(400).json({ success: false, error: { code: 'MISSING_PARAMS', message: 'Missing required parameters' } });
       return;
+    }
+
+    if (parseInt(user_id) !== parseInt(req.user.userId)) {
+      return res.status(403).json({ success: false, error: { code: 'AUTHORIZATION_ERROR', message: '不能替其他用户提交反馈' } });
     }
     
     try {
@@ -68,4 +73,10 @@ async function handler(req, res) {
   }
 }
 
-module.exports = handler;
+async function guardedFeedbackHandler(req, res) {
+  if (req.method === 'POST') return requireAuth(handler)(req, res);
+  if (['GET', 'PUT'].includes(req.method)) return requireAdmin(handler)(req, res);
+  return handler(req, res);
+}
+
+export default guardedFeedbackHandler;

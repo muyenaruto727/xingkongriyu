@@ -1,13 +1,11 @@
-const { Pool } = require('pg');
-require('dotenv').config();
+const {
+  assertSafeForDestructiveOperation,
+  createDbPool,
+} = require('../lib/dbConfig');
 
-const pool = new Pool({
-  user: process.env.DB_USER || 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  database: process.env.DB_NAME || 'xingkongriyu',
-  password: process.env.DB_PASSWORD || '',
-  port: process.env.DB_PORT || 5432,
-});
+assertSafeForDestructiveOperation();
+
+const pool = createDbPool({ max: 5 });
 
 const textbooks = [
   { name: '综合日语1', description: '综合日语第一册', level: '初级', sortOrder: 1, lessons: 11, startLesson: 5 },

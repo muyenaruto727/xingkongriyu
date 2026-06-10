@@ -1,5 +1,6 @@
 const pool = require('../../../lib/db');
 const { handleError, successResponse } = require('../../../lib/errorHandler');
+const { withAdminForMethods } = require('../../../lib/apiAuth');
 
 async function handler(req, res) {
   try {
@@ -171,4 +172,4 @@ async function handleDeleteChapter(req, res) {
   }
 }
 
-module.exports = handler;
+export default withAdminForMethods(handler);

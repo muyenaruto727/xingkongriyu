@@ -11,6 +11,7 @@ out/
 .env.development.local
 .env.test.local
 .env.production.local
+.env.example
 
 # Logs
 logs
@@ -24,3 +25,12 @@ logs
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# .sql
+*.sql
+
+
+cookies.txt
+review.md
+
+tests/

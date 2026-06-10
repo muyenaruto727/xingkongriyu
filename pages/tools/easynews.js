@@ -3,6 +3,7 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import Navigation from '../../components/layout/Navigation';
 import Footer from '../../components/layout/Footer';
+import api from '../../lib/api';
 
 const NhkEasyNews = () => {
   const router = useRouter();
@@ -15,12 +16,12 @@ const NhkEasyNews = () => {
     try {
       if (!silent) setLoading(true);
       setError('');
-      const res = await fetch('/api/nhk-news?limit=50');
-      const data = await res.json();
-      if (data.success && Array.isArray(data.data)) {
-        setNewsList(data.data);
+      const result = await api.getNhkNews({ limit: 50 });
+      const list = Array.isArray(result) ? result : result?.data;
+      if (Array.isArray(list)) {
+        setNewsList(list);
       } else {
-        setError(data.message || '获取新闻失败');
+        setError('获取新闻失败');
       }
     } catch (err) {
       console.error('Fetch news failed:', err);
@@ -37,13 +38,8 @@ const NhkEasyNews = () => {
   const handleRefresh = async () => {
     try {
       setRefreshing(true);
-      const res = await fetch('/api/nhk-news', { method: 'POST' });
-      const data = await res.json();
-      if (data.success) {
-        await fetchNews(true);
-      } else {
-        setError(data.message || '刷新失败');
-      }
+      await api.refreshNhkNews();
+      await fetchNews(true);
     } catch (err) {
       console.error('Refresh failed:', err);
       setError('刷新失败，请稍后再试');

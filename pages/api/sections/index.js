@@ -1,5 +1,7 @@
 const pool = require('../../../lib/db');
 const { handleError, successResponse } = require('../../../lib/errorHandler');
+const { withAdminForMethods } = require('../../../lib/apiAuth');
+const { sanitizeRichText } = require('../../../lib/sanitizeHtml');
 
 async function handler(req, res) {
   try {
@@ -61,7 +63,7 @@ async function handleCreateSection(req, res) {
       VALUES ($1, $2, $3, $4, $5)
       RETURNING *
     `;
-    const params = [name, content || null, videoUrl || null, chapterId, order || 0];
+    const params = [name, content ? sanitizeRichText(content) : null, videoUrl || null, chapterId, order || 0];
     
     const result = await pool.query(query, params);
     const section = result.rows[0];
@@ -92,7 +94,7 @@ async function handleUpdateSection(req, res) {
       WHERE id = $5
       RETURNING *
     `;
-    const params = [name, content || null, videoUrl || null, order || 0, id];
+    const params = [name, content ? sanitizeRichText(content) : null, videoUrl || null, order || 0, id];
     
     const result = await pool.query(query, params);
     const section = result.rows[0];
@@ -125,4 +127,4 @@ async function handleDeleteSection(req, res) {
   }
 }
 
-module.exports = handler;
+export default withAdminForMethods(handler);

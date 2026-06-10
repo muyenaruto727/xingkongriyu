@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
+import api from '../lib/api';
 
 const Register = () => {
   const router = useRouter();
@@ -30,23 +31,11 @@ const Register = () => {
     setLoading(true);
     
     try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username: formData.username,
-          email: formData.email,
-          password: formData.password,
-        }),
+      await api.register({
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
       });
-
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.error?.message || '注册失败');
-      }
       
       setFormData({
         username: '',

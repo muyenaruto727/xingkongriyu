@@ -1,13 +1,12 @@
+const { buildPgPoolOptions, loadEnvFiles } = require('../lib/dbConfig');
+
+loadEnvFiles();
+const database = buildPgPoolOptions(process.env);
+
 module.exports = {
-  database: {
-    user: process.env.DB_USER || 'hanhan',
-    password: process.env.DB_PASSWORD || '',
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 5432,
-    database: process.env.DB_NAME || 'japanese_learning',
-  },
+  database,
   jwt: {
-    secret: process.env.JWT_SECRET || 'your-secret-key-change-in-production',
+    secret: process.env.JWT_SECRET,
     expiresIn: process.env.JWT_EXPIRES_IN || '7d',
   },
   bcrypt: {

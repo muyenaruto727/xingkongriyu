@@ -1,5 +1,6 @@
 const pool = require('../../../lib/db');
 const { handleError, successResponse } = require('../../../lib/errorHandler');
+const { requireAdmin } = require('../../../lib/apiAuth');
 
 async function handler(req, res) {
   try {
@@ -71,4 +72,4 @@ async function handleGetStats(req, res) {
   }
 }
 
-export default handler;
+export default requireAdmin(handler);

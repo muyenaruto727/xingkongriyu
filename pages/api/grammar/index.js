@@ -1,5 +1,7 @@
 const pool = require('../../../lib/db');
 const { handleError, successResponse } = require('../../../lib/errorHandler');
+const { withAdminForMethods } = require('../../../lib/apiAuth');
+const { parseIntegerParam } = require('../../../lib/requestValidation');
 
 async function handler(req, res) {
   const { method } = req;
@@ -8,6 +10,11 @@ async function handler(req, res) {
     case 'GET':
       try {
         const { level, search, page = 1, limit = 10, export: isExport } = req.query;
+        const parsedPage = parseIntegerParam(page, { name: 'page', min: 1, max: 10000, defaultValue: 1 });
+        const parsedLimit = parseIntegerParam(limit, { name: 'limit', min: 1, max: 100, defaultValue: 10 });
+        if (!isExport && (parsedPage.error || parsedLimit.error)) {
+          return res.status(400).json({ error: parsedPage.error || parsedLimit.error });
+        }
         let whereClause = '1=1';
         const params = [];
         let paramIndex = 1;
@@ -29,9 +36,9 @@ async function handler(req, res) {
         
         // 如果不是导出，添加分页
         if (!isExport) {
-          const offset = (parseInt(page) - 1) * parseInt(limit);
+          const offset = (parsedPage.value - 1) * parsedLimit.value;
           query += ` LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
-          params.push(parseInt(limit), offset);
+          params.push(parsedLimit.value, offset);
         }
 
         const result = await pool.query(query, params);
@@ -165,4 +172,4 @@ async function handler(req, res) {
   }
 }
 
-module.exports = handler;
+export default withAdminForMethods(handler);

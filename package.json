@@ -8,7 +8,8 @@
     "start": "next start",
     "export": "next export",
     "init-db": "node scripts/init-db.js",
-    "migrate-db": "node scripts/migrate-db.js",
+    "migrate-db": "node scripts/migrate-nhk-news.js",
+    "migrate-nhk-news": "node scripts/migrate-nhk-news.js",
     "seed-data": "node scripts/seed-data.js"
   },
   "dependencies": {
@@ -20,11 +21,11 @@
     "bcryptjs": "^3.0.3",
     "joi": "^18.0.2",
     "jsonwebtoken": "^9.0.3",
-    "next": "12.3.7",
-    "nhkeasy": "^2.1.0",
+    "next": "15.5.19",
     "pg": "^8.11.3",
-    "react": "^17.0.2",
-    "react-dom": "^17.0.2",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "sanitize-html": "^2.17.4",
     "superpowers": "git+https://github.com/obra/superpowers.git"
   },
   "keywords": [],

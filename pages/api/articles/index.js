@@ -1,5 +1,7 @@
 const pool = require('../../../lib/db');
 const { handleError, successResponse } = require('../../../lib/errorHandler');
+const { withAdminForMethods } = require('../../../lib/apiAuth');
+const { parseIntegerParam } = require('../../../lib/requestValidation');
 
 async function handler(req, res) {
   const { method, query } = req;
@@ -8,10 +10,16 @@ async function handler(req, res) {
   try {
     switch (method) {
       case 'GET':
-        const offset = (parseInt(page) - 1) * parseInt(limit);
+        const parsedPage = parseIntegerParam(page, { name: 'page', min: 1, max: 10000, defaultValue: 1 });
+        const parsedLimit = parseIntegerParam(limit, { name: 'limit', min: 1, max: 100, defaultValue: 10 });
+        if (parsedPage.error || parsedLimit.error) {
+          return res.status(400).json({ error: parsedPage.error || parsedLimit.error });
+        }
+
+        const offset = (parsedPage.value - 1) * parsedLimit.value;
         const result = await pool.query(
           'SELECT * FROM articles ORDER BY created_at DESC LIMIT $1 OFFSET $2',
-          [parseInt(limit), offset]
+          [parsedLimit.value, offset]
         );
         const countResult = await pool.query('SELECT COUNT(*) as total FROM articles');
         const total = parseInt(countResult.rows[0].total);
@@ -19,8 +27,8 @@ async function handler(req, res) {
         const responseData = {
           data: result.rows,
           pagination: {
-            page: parseInt(page),
-            limit: parseInt(limit),
+            page: parsedPage.value,
+            limit: parsedLimit.value,
             total
           }
         };
@@ -71,4 +79,4 @@ async function handler(req, res) {
   }
 }
 
-module.exports = handler;
+export default withAdminForMethods(handler);

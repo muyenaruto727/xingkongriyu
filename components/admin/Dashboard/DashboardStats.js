@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import api from '../../../lib/api';
 
 const DashboardStats = () => {
   const [stats, setStats] = useState({
@@ -12,18 +13,13 @@ const DashboardStats = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await fetch('/api/stats');
-        if (response.ok) {
-          const result = await response.json();
-          if (result.success && result.data) {
-            setStats({
-              totalUsers: result.data.totalUsers || 0,
-              growthRate: result.data.growthRate || 0,
-              pendingFeedback: result.data.pendingFeedback || 0,
-              recentActivity: result.data.recentActivity || []
-            });
-          }
-        }
+        const result = await api.getStats();
+        setStats({
+          totalUsers: result.totalUsers || 0,
+          growthRate: result.growthRate || 0,
+          pendingFeedback: result.pendingFeedback || 0,
+          recentActivity: result.recentActivity || []
+        });
       } catch (error) {
         console.error('Failed to fetch stats:', error);
       } finally {

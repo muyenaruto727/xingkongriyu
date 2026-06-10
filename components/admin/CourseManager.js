@@ -82,10 +82,10 @@ const CourseManager = ({ showToast }) => {
       if (typeof setCourseList === 'function') {
         // 处理不同的数据结构
         if (data && data.data && Array.isArray(data.data)) {
-          // API 返回的数据结构是 { data: [...], pagination: {...} }
+          // API 返回的数据结构是 { data: [...], total }
           console.log('Setting courseList from data.data:', data.data);
           setCourseList(data.data);
-          setTotalItems(data.pagination?.total || 0);
+          setTotalItems(data.total || 0);
         } else if (Array.isArray(data)) {
           console.log('Setting courseList from array:', data);
           setCourseList(data);

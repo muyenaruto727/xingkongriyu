@@ -4,36 +4,9 @@
  * 运行: node scripts/migrate-nhk-news.js
  */
 
-const { Pool } = require('pg');
-const fs = require('fs');
-const path = require('path');
+const { createDbPool } = require('../lib/dbConfig');
 
-// 手动解析 .env 文件
-try {
-  const envPath = path.join(__dirname, '..', '.env');
-  if (fs.existsSync(envPath)) {
-    const content = fs.readFileSync(envPath, 'utf-8');
-    content.split('\n').forEach(line => {
-      const trimmed = line.trim();
-      if (trimmed && !trimmed.startsWith('#')) {
-        const [key, ...vals] = trimmed.split('=');
-        if (key && vals.length > 0 && !process.env[key]) {
-          process.env[key] = vals.join('=').replace(/^["']|["']$/g, '');
-        }
-      }
-    });
-  }
-} catch (e) {
-  // 忽略 .env 解析错误
-}
-
-const pool = new Pool({
-  user: process.env.DB_USER || 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  database: process.env.DB_NAME || 'xingkongriyu',
-  password: process.env.DB_PASSWORD || '',
-  port: process.env.DB_PORT || 5432,
-});
+const pool = createDbPool({ max: 5 });
 
 async function migrate() {
   const client = await pool.connect();

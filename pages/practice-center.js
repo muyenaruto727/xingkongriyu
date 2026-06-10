@@ -4,6 +4,7 @@ import { Modal } from 'antd';
 import Navigation from '../components/layout/Navigation';
 import Footer from '../components/layout/Footer';
 import Card from '../components/common/Card';
+import api from '../lib/api';
 
 const PracticeCenter = () => {
   const [currentUser, setCurrentUser] = useState(null);
@@ -40,23 +41,25 @@ const PracticeCenter = () => {
 
     try {
       // 从API获取题目
-      const response = await fetch(`/api/questions?level=${level}&type=${practiceType === 'vocabulary' ? 'vocabulary' : 'grammar'}&is_real_exam=false&limit=100`);
-      if (response.ok) {
-        const data = await response.json();
-        const allQuestions = Array.isArray(data.data?.data) ? data.data.data : [];
+      const data = await api.getQuestionList({
+        level,
+        type: practiceType === 'vocabulary' ? 'vocabulary' : 'grammar',
+        is_real_exam: false,
+        limit: 100,
+      });
+      const allQuestions = Array.isArray(data.data) ? data.data : [];
         
-        // 随机抽取10题，确保不重复
-        const shuffled = allQuestions.sort(() => 0.5 - Math.random());
-        const selected = shuffled.slice(0, 10);
+      // 随机抽取10题，确保不重复
+      const shuffled = allQuestions.sort(() => 0.5 - Math.random());
+      const selected = shuffled.slice(0, 10);
         
-        setQuestions(selected);
-        setCurrentQuestionIndex(0);
-        setUserAnswer(null);
-        setShowResult(false);
-        setCorrectCount(0);
-        setIncorrectCount(0);
-        setShowPracticeModal(true);
-      }
+      setQuestions(selected);
+      setCurrentQuestionIndex(0);
+      setUserAnswer(null);
+      setShowResult(false);
+      setCorrectCount(0);
+      setIncorrectCount(0);
+      setShowPracticeModal(true);
     } catch (error) {
       console.error('Error fetching questions:', error);
     } finally {

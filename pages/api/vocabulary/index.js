@@ -2,6 +2,8 @@ const pool = require('../../../lib/db');
 const rateLimit = require('../../../lib/rateLimit');
 const cache = require('../../../lib/cache');
 const { handleError, successResponse } = require('../../../lib/errorHandler');
+const { withAdminForMethods } = require('../../../lib/apiAuth');
+const { parseIntegerParam } = require('../../../lib/requestValidation');
 
 // 应用速率限制
 const limiter = rateLimit({
@@ -11,13 +13,10 @@ const limiter = rateLimit({
 });
 
 async function handler(req, res) {
-  // 应用速率限制
-  await new Promise((resolve, reject) => {
-    limiter(req, res, (err) => {
-      if (err) reject(err);
-      else resolve();
-    });
-  });
+  const allowed = await rateLimit.applyRateLimit(req, res, limiter);
+  if (!allowed) {
+    return;
+  }
 
   const { method } = req;
 
@@ -26,6 +25,11 @@ async function handler(req, res) {
       try {
         // 支持单数和复数形式的参数名
 const { level, tag, search, textbooks, lessons, textbook, lesson, page = 1, limit = 20 } = req.query;
+const parsedPage = parseIntegerParam(page, { name: 'page', min: 1, max: 10000, defaultValue: 1 });
+const parsedLimit = parseIntegerParam(limit, { name: 'limit', min: 1, max: 100, defaultValue: 20 });
+if (parsedPage.error || parsedLimit.error) {
+  return res.status(400).json({ error: parsedPage.error || parsedLimit.error });
+}
 const finalTextbooks = textbooks || textbook;
 const finalLessons = lessons || lesson;
         
@@ -43,7 +47,7 @@ const finalLessons = lessons || lesson;
         // 尝试从缓存获取数据
         const cachedData = cache.get(cacheKey);
         if (cachedData) {
-          return res.status(200).json(cachedData);
+          return successResponse(res, cachedData);
         }
         
         let query = 'SELECT * FROM vocabulary WHERE 1=1';
@@ -115,9 +119,9 @@ const finalLessons = lessons || lesson;
         const total = parseInt(countResult.rows[0].count);
 
         // 添加分页
-        const offset = (parseInt(page) - 1) * parseInt(limit);
+        const offset = (parsedPage.value - 1) * parsedLimit.value;
         query += ' ORDER BY id DESC LIMIT $' + paramIndex + ' OFFSET $' + (paramIndex + 1);
-        params.push(parseInt(limit), offset);
+        params.push(parsedLimit.value, offset);
 
         const result = await pool.query(query, params);
         const responseData = { data: result.rows, total };
@@ -275,4 +279,4 @@ const finalLessons = lessons || lesson;
   }
 }
 
-module.exports = handler;
+export default withAdminForMethods(handler);
