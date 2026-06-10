@@ -121,11 +121,8 @@ const Vocabulary = () => {
   };
 
   const speakVocab = (japanese) => {
-    if ('speechSynthesis' in window) {
-      const speech = new SpeechSynthesisUtterance(japanese);
-      speech.lang = 'ja-JP'; speech.volume = 1; speech.rate = 0.5; speech.pitch = 1;
-      speechSynthesis.speak(speech);
-    } else { showToast('您的浏览器不支持语音合成功能', 'info'); }
+    const audio = new Audio(`/api/edge-tts?text=${encodeURIComponent(japanese)}&t=${Date.now()}`);
+    audio.play().catch(() => showToast('语音播放失败，请重试', 'error'));
   };
 
   // Helper to parse fields that may be string, JSON, or array

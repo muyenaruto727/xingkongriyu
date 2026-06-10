@@ -242,6 +242,36 @@ const Tools = () => {
                   </a>
                 </Link>
               </div>
+
+              <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                <div className="bg-orange-100 text-orange-600 rounded-full w-16 h-16 flex items-center justify-center mb-6">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-8 w-8"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"
+                    />
+                  </svg>
+                </div>
+                <h4 className="text-xl font-semibold mb-3 text-gray-800">
+                  看新闻知天下
+                </h4>
+                <p className="text-gray-600 mb-6 leading-relaxed">
+                  阅读日语新闻，用真实语料提升阅读能力。数据每日自动更新。
+                </p>
+                <Link href="/tools/easynews">
+                  <a className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium">
+                    开始阅读
+                  </a>
+                </Link>
+              </div>
             </div>
           </div>
         </section>

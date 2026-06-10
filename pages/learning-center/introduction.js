@@ -166,11 +166,9 @@ const Introduction = () => {
       const audio = new Audio(`/audio/${kana.roman}.mp3`);
       audio.play();
     } else {
-      // 使用Web Speech API播放音频
-      const utterance = new SpeechSynthesisUtterance(kana.char);
-      utterance.lang = 'ja-JP'; // 设置日语
-      utterance.rate = 0.5; // 设置播放速度为0.5
-      speechSynthesis.speak(utterance);
+      // 使用 edge-tts API 播放音频
+      const audio = new Audio(`/api/edge-tts?text=${encodeURIComponent(kana.char)}&t=${Date.now()}`);
+      audio.play().catch(() => console.error('语音播放失败'));
     }
   };
 
