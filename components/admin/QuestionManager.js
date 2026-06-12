@@ -173,7 +173,6 @@ const QuestionManager = ({ defaultType = '', defaultLevel = '' }) => {
       fetchQuestions();
     } catch (error) {
       console.error('Failed to create question:', error);
-      showToast('创建失败', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -198,7 +197,6 @@ const QuestionManager = ({ defaultType = '', defaultLevel = '' }) => {
       fetchQuestions();
     } catch (error) {
       console.error('Failed to update question:', error);
-      showToast('更新失败', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -298,7 +296,6 @@ const QuestionManager = ({ defaultType = '', defaultLevel = '' }) => {
       fetchQuestions();
     } catch (error) {
       console.error('Failed to delete question:', error);
-      showToast('删除失败', 'error');
     } finally {
       setIsLoading(false);
     }

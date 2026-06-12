@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { CATEGORIES, PITCH_ACCENTS, LEVELS, TAGS } from '../../config/config';
 import { api } from '../../lib/api';
-import { handleApiError, logError } from '../../utils.js';
+import { logError } from '../../utils.js';
 import { message, Cascader, Select, Input, Pagination, Upload, Modal } from 'antd';
 import { InboxOutlined } from '@ant-design/icons';
 import PaginationTable from '../common/PaginationTable';
@@ -91,7 +91,6 @@ const VocabManager = () => {
       const data = await api.getTextbookList();
       setTextbooks(data);
     } catch (error) {
-      handleApiError(error, message.error);
     }
   };
 
@@ -259,7 +258,6 @@ const VocabManager = () => {
       setShowModal(false);
     } catch (error) {
       logError(error, 'Add Vocabulary');
-      handleApiError(error, message.error);
     } finally {
       setIsLoading(false);
     }
@@ -297,7 +295,6 @@ const VocabManager = () => {
       setShowModal(false);
     } catch (error) {
       logError(error, 'Update Vocabulary');
-      handleApiError(error, message.error);
     } finally {
       setIsLoading(false);
     }
@@ -317,7 +314,6 @@ const VocabManager = () => {
       fetchVocabList(true);
     } catch (error) {
       logError(error, 'Delete Vocabulary');
-      handleApiError(error, message.error);
     } finally {
       setIsLoading(false);
     }
@@ -381,7 +377,6 @@ const VocabManager = () => {
       }
     } catch (error) {
       logError(error, 'Fetch Vocabulary');
-      handleApiError(error, message.error);
     } finally {
       setIsLoading(false);
     }

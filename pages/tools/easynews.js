@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
+import { message } from 'antd';
 import Navigation from '../../components/layout/Navigation';
 import Footer from '../../components/layout/Footer';
 import api from '../../lib/api';
@@ -10,22 +11,20 @@ const NhkEasyNews = () => {
   const [newsList, setNewsList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState('');
 
   const fetchNews = async (silent = false) => {
     try {
       if (!silent) setLoading(true);
-      setError('');
       const result = await api.getNhkNews({ limit: 50 });
       const list = Array.isArray(result) ? result : result?.data;
       if (Array.isArray(list)) {
         setNewsList(list);
       } else {
-        setError('获取新闻失败');
+        setNewsList([]);
+        message.warning('新闻数据暂时无法读取，请稍后再试');
       }
-    } catch (err) {
-      console.error('Fetch news failed:', err);
-      setError('获取新闻失败，请检查网络连接');
+    } catch {
+      // API errors are shown by lib/api.js; keep page state cleanup here.
     } finally {
       setLoading(false);
     }
@@ -40,9 +39,8 @@ const NhkEasyNews = () => {
       setRefreshing(true);
       await api.refreshNhkNews();
       await fetchNews(true);
-    } catch (err) {
-      console.error('Refresh failed:', err);
-      setError('刷新失败，请稍后再试');
+    } catch {
+      // API errors are shown by lib/api.js; keep page state cleanup here.
     } finally {
       setRefreshing(false);
     }
@@ -165,19 +163,6 @@ const NhkEasyNews = () => {
               </button>
             </div>
 
-            {error && (
-              <div className="mb-6 border-l-4 border-[#b9512e] bg-[#fffaf1] p-5 text-sm text-[#7b3f25] shadow-sm">
-                <p className="font-semibold">{error}</p>
-                <button
-                  type="button"
-                  onClick={() => fetchNews()}
-                  className="mt-3 inline-flex border-b border-[#b9512e] font-bold text-[#b9512e] transition-colors hover:text-[#8d3a22] focus:outline-none focus:ring-2 focus:ring-[#b9512e]/25"
-                >
-                  重试
-                </button>
-              </div>
-            )}
-
             {loading && (
               <div className="grid gap-4">
                 {Array.from({ length: 6 }).map((_, i) => (
@@ -194,7 +179,7 @@ const NhkEasyNews = () => {
               </div>
             )}
 
-            {!loading && !error && newsList.length === 0 && (
+            {!loading && newsList.length === 0 && (
               <div className="border border-[#d6c3ad] bg-[#fffaf1] px-6 py-16 text-center shadow-[8px_8px_0_rgba(87,58,35,0.08)]">
                 <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center border border-[#d6c3ad] bg-[#f6f0e6] text-[#b9512e]">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -214,7 +199,7 @@ const NhkEasyNews = () => {
               </div>
             )}
 
-            {!loading && !error && newsList.length > 0 && (
+            {!loading && newsList.length > 0 && (
               <div className="grid gap-4">
                 {newsList.map((news, index) => (
                   <a

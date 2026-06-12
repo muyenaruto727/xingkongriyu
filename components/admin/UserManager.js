@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { handleApiError, logError } from '../../utils.js';
+import { logError } from '../../utils.js';
 import PaginationTable from '../common/PaginationTable';
 import api from '../../lib/api';
 
@@ -22,7 +22,6 @@ const UserManager = ({ showToast }) => {
       setTotalItems(result.total || 0);
     } catch (error) {
       logError(error, 'Fetch Users');
-      handleApiError(error, showToast);
     } finally {
       setIsLoading(false);
     }

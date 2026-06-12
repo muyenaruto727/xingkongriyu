@@ -62,7 +62,6 @@ const GrammarManager = () => {
       }
     } catch (error) {
       console.error('Failed to fetch grammar:', error);
-      message.error('加载语法数据失败');
     } finally {
       setIsLoading(false);
     }
@@ -205,7 +204,6 @@ const GrammarManager = () => {
       fetchGrammarList();
     } catch (error) {
       console.error('Failed to add grammar:', error);
-      message.error('语法添加失败');
     } finally {
       setIsLoading(false);
     }
@@ -259,7 +257,6 @@ const GrammarManager = () => {
       fetchGrammarList();
     } catch (error) {
       console.error('Failed to update grammar:', error);
-      message.error('语法更新失败');
     } finally {
       setIsLoading(false);
     }
@@ -299,7 +296,6 @@ const GrammarManager = () => {
       fetchGrammarList();
     } catch (error) {
       console.error('Failed to delete grammar:', error);
-      message.error('语法删除失败');
     } finally {
       setIsLoading(false);
     }

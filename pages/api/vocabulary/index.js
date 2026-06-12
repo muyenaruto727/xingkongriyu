@@ -26,7 +26,7 @@ async function handler(req, res) {
         // 支持单数和复数形式的参数名
 const { level, tag, search, textbooks, lessons, textbook, lesson, page = 1, limit = 20 } = req.query;
 const parsedPage = parseIntegerParam(page, { name: 'page', min: 1, max: 10000, defaultValue: 1 });
-const parsedLimit = parseIntegerParam(limit, { name: 'limit', min: 1, max: 100, defaultValue: 20 });
+const parsedLimit = parseIntegerParam(limit, { name: 'limit', min: 1, max: 10000, defaultValue: 20 });
 if (parsedPage.error || parsedLimit.error) {
   return res.status(400).json({ error: parsedPage.error || parsedLimit.error });
 }

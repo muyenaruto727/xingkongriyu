@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
+import { message } from 'antd';
 import Navigation from '../../components/layout/Navigation';
 import { api } from '../../lib/api';
 
@@ -27,7 +28,6 @@ const TetrisGame = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const [selectedLevel, setSelectedLevel] = useState('N5');
   const [pairCount, setPairCount] = useState(8);
-  const [vocabList, setVocabList] = useState([]);
   const [cards, setCards] = useState([]);
   const [selectedCard, setSelectedCard] = useState(null);
   const [matchedPairs, setMatchedPairs] = useState([]);
@@ -39,6 +39,7 @@ const TetrisGame = () => {
   const [showResult, setShowResult] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [shakeCard, setShakeCard] = useState(null);
+  const [isLoadingData, setIsLoadingData] = useState(false);
 
   const levels = ['N1', 'N2', 'N3', 'N4', 'N5'];
   const pairOptions = [4, 8, 12, 16];
@@ -46,7 +47,6 @@ const TetrisGame = () => {
   useEffect(() => {
     const user = localStorage.getItem('currentUser');
     if (user) setCurrentUser(JSON.parse(user));
-    fetchVocab();
   }, []);
 
   useEffect(() => {
@@ -57,62 +57,65 @@ const TetrisGame = () => {
     return () => clearInterval(timer);
   }, [isPlaying, showResult]);
 
-  const fetchVocab = async () => {
+  const startGame = useCallback(async () => {
     try {
-      const data = await api.getVocabList({ limit: 1000 });
+      setIsLoadingData(true);
+      const data = await api.getVocabList({ level: selectedLevel, limit: 1000 });
       const list = data.data || data || [];
-      setVocabList(Array.isArray(list) ? list : []);
+      const levelVocab = (Array.isArray(list) ? list : []).filter(v => v.level === selectedLevel);
+      const selected = shuffleArray(levelVocab).slice(0, pairCount);
+
+      // If not enough vocab, fill with what we have.
+      const actualCount = Math.min(selected.length, pairCount);
+      if (actualCount === 0) {
+        message.warning('当前配置没有可用词汇，请换一个等级后再试');
+        return;
+      }
+
+      const gameCards = [];
+      const usedVocab = selected.slice(0, actualCount);
+
+      usedVocab.forEach((vocab, index) => {
+        const color = cardColors[index % cardColors.length];
+        // Japanese card
+        gameCards.push({
+          id: `j-${vocab.id}`,
+          pairId: vocab.id,
+          type: 'japanese',
+          text: vocab.japanese,
+          subText: vocab.pronunciation || '',
+          color,
+          matched: false,
+        });
+        // Chinese card
+        gameCards.push({
+          id: `c-${vocab.id}`,
+          pairId: vocab.id,
+          type: 'chinese',
+          text: vocab.chinese,
+          subText: '',
+          color,
+          matched: false,
+        });
+      });
+
+      setCards(shuffleArray(gameCards));
+      setSelectedCard(null);
+      setMatchedPairs([]);
+      setScore(0);
+      setMoves(0);
+      setCorrectMatches(0);
+      setWrongAttempts(0);
+      setElapsedTime(0);
+      setShowResult(false);
+      setIsPlaying(true);
     } catch (error) {
-      console.error('Failed to fetch vocabulary:', error);
+      setIsPlaying(false);
+      setShowResult(false);
+    } finally {
+      setIsLoadingData(false);
     }
-  };
-
-  const startGame = useCallback(() => {
-    const levelVocab = vocabList.filter(v => v.level === selectedLevel);
-    const selected = shuffleArray(levelVocab).slice(0, pairCount);
-
-    // If not enough vocab, fill with what we have
-    const actualCount = Math.min(selected.length, pairCount);
-    if (actualCount === 0) return;
-
-    const gameCards = [];
-    const usedVocab = selected.slice(0, actualCount);
-
-    usedVocab.forEach((vocab, index) => {
-      const color = cardColors[index % cardColors.length];
-      // Japanese card
-      gameCards.push({
-        id: `j-${vocab.id}`,
-        pairId: vocab.id,
-        type: 'japanese',
-        text: vocab.japanese,
-        subText: vocab.pronunciation || '',
-        color,
-        matched: false,
-      });
-      // Chinese card
-      gameCards.push({
-        id: `c-${vocab.id}`,
-        pairId: vocab.id,
-        type: 'chinese',
-        text: vocab.chinese,
-        subText: '',
-        color,
-        matched: false,
-      });
-    });
-
-    setCards(shuffleArray(gameCards));
-    setSelectedCard(null);
-    setMatchedPairs([]);
-    setScore(0);
-    setMoves(0);
-    setCorrectMatches(0);
-    setWrongAttempts(0);
-    setElapsedTime(0);
-    setShowResult(false);
-    setIsPlaying(true);
-  }, [vocabList, selectedLevel, pairCount]);
+  }, [selectedLevel, pairCount]);
 
   const handleCardClick = (card) => {
     if (card.matched || shakeCard) return;
@@ -260,9 +263,10 @@ const TetrisGame = () => {
                   </button>
                   <button
                     onClick={startGame}
-                    className="flex-1 py-4 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-lg font-bold rounded-2xl hover:from-pink-600 hover:to-rose-600 hover:shadow-lg hover:shadow-pink-200/50 hover:-translate-y-0.5 transition-all duration-300"
+                    disabled={isLoadingData}
+                    className="flex-1 py-4 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-lg font-bold rounded-2xl hover:from-pink-600 hover:to-rose-600 hover:shadow-lg hover:shadow-pink-200/50 hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                   >
-                    开始游戏
+                    {isLoadingData ? '准备中...' : '开始游戏'}
                   </button>
                 </div>
               </div>

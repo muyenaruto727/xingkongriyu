@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Input, Select, Modal } from 'antd';
 import PaginationTable from '../common/PaginationTable';
 import { api } from '../../lib/api';
-import { handleApiError, logError } from '../../utils.js';
+import { logError } from '../../utils.js';
 
 const ReadingManager = ({ showToast }) => {
   const [readingList, setReadingList] = useState([]);
@@ -156,7 +156,6 @@ const ReadingManager = ({ showToast }) => {
       }
     } catch (error) {
       logError(error, 'Fetch Reading');
-      handleApiError(error, showToast);
     } finally {
       setIsLoading(false);
     }
@@ -202,7 +201,6 @@ const ReadingManager = ({ showToast }) => {
       fetchReadingList();
     } catch (error) {
       logError(error, 'Add Reading');
-      handleApiError(error, showToast);
     } finally {
       setIsLoading(false);
     }
@@ -234,7 +232,6 @@ const ReadingManager = ({ showToast }) => {
       fetchReadingList();
     } catch (error) {
       logError(error, 'Update Reading');
-      handleApiError(error, showToast);
     } finally {
       setIsLoading(false);
     }
@@ -285,7 +282,6 @@ const ReadingManager = ({ showToast }) => {
       fetchReadingList(true);
     } catch (error) {
       logError(error, 'Delete Reading');
-      handleApiError(error, showToast);
     } finally {
       setIsLoading(false);
     }

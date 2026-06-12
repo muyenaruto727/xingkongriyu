@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { handleApiError, logError } from '../../utils.js';
+import { logError } from '../../utils.js';
 import PaginationTable from '../common/PaginationTable';
 import api from '../../lib/api';
 
@@ -31,7 +31,6 @@ const FeedbackManager = () => {
       setTotalItems(data.total || list.length);
     } catch (error) {
       logError(error, 'Fetch Feedback');
-      handleApiError(error, () => {});
     } finally {
       setIsFeedbackLoading(false);
     }

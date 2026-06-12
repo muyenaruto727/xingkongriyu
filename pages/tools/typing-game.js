@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
+import { message } from 'antd';
 import Navigation from '../../components/layout/Navigation';
 import { api } from '../../lib/api';
 
@@ -21,10 +22,9 @@ const TypingGame = () => {
   const [selectedLevel, setSelectedLevel] = useState('N5');
   const [wordCount, setWordCount] = useState(20);
   const [articleLevel, setArticleLevel] = useState('N5');
-  const [vocabList, setVocabList] = useState([]);
-  const [articleList, setArticleList] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
   const [usedItems, setUsedItems] = useState([]);
+  const [isLoadingData, setIsLoadingData] = useState(false);
   const inputRef = useRef(null);
 
   const levels = ['N1', 'N2', 'N3', 'N4', 'N5'];
@@ -42,21 +42,7 @@ const TypingGame = () => {
     if (user) {
       setCurrentUser(JSON.parse(user));
     }
-    fetchData();
   }, []);
-
-  const fetchData = async () => {
-    try {
-      const [vocabData, articleData] = await Promise.all([
-        api.getVocabList({ limit: 1000 }),
-        api.getArticleList({ limit: 1000 })
-      ]);
-      setVocabList(vocabData.data || vocabData || []);
-      setArticleList(articleData.data || articleData || []);
-    } catch (error) {
-      console.error('Failed to fetch data:', error);
-    }
-  };
 
   useEffect(() => {
     let timer;
@@ -78,7 +64,7 @@ const TypingGame = () => {
 
   const startGame = async () => {
     try {
-      setIsPlaying(true);
+      setIsLoadingData(true);
       setScore(0);
       setCorrectCount(0);
       setWrongCount(0);
@@ -93,14 +79,21 @@ const TypingGame = () => {
       setUsedItems([]);
 
       if (gameMode === 'word') {
-        const filtered = vocabList.filter(vocab => vocab.level === selectedLevel);
+        const vocabData = await api.getVocabList({ level: selectedLevel, limit: 1000 });
+        const vocabList = vocabData.data || vocabData || [];
+        const filtered = (Array.isArray(vocabList) ? vocabList : []).filter(vocab => vocab.level === selectedLevel);
         const items = filtered.slice(0, wordCount);
+        if (items.length === 0) {
+          message.warning('当前配置没有可用词汇，请换一个等级后再试');
+          return;
+        }
         setFilteredItems(items);
         getNextItem(items, []);
       } else {
         const response = await api.getRandomArticle(articleLevel);
         if (!response || !response.content) {
-          throw new Error('No article found');
+          message.warning('当前难度暂无可练习的文章，请换一个难度后再试');
+          return;
         }
         // 将文章拆成句子，逐句练习
         const sentences = response.content
@@ -113,15 +106,18 @@ const TypingGame = () => {
             pronunciation: '',
           }));
         if (sentences.length === 0) {
-          throw new Error('No sentences found');
+          message.warning('当前文章没有可练习的句子，请换一个难度后再试');
+          return;
         }
         setFilteredItems(sentences);
         getNextItem(sentences, []);
       }
+      setIsPlaying(true);
     } catch (error) {
-      console.error('Failed to start game:', error);
       setIsPlaying(false);
-      setShowResult(true);
+      setShowResult(false);
+    } finally {
+      setIsLoadingData(false);
     }
   };
 
@@ -326,9 +322,10 @@ const TypingGame = () => {
                   </button>
                   <button
                     onClick={startGame}
-                    className="flex-1 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-lg font-bold rounded-2xl hover:from-purple-600 hover:to-pink-600 hover:shadow-lg hover:shadow-purple-200/50 hover:-translate-y-0.5 transition-all duration-300"
+                    disabled={isLoadingData}
+                    className="flex-1 py-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-lg font-bold rounded-2xl hover:from-purple-600 hover:to-pink-600 hover:shadow-lg hover:shadow-purple-200/50 hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                   >
-                    开始游戏
+                    {isLoadingData ? '准备中...' : '开始游戏'}
                   </button>
                 </div>
               </div>

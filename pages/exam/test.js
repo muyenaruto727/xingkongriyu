@@ -4,7 +4,7 @@ import { useRouter } from 'next/router';
 import { Modal, message } from 'antd';
 import Navigation from '../../components/layout/Navigation';
 import { FEEDBACK_TYPES } from '../../config/config';
-import { handleApiError, logError, formatTime } from '../../utils.js';
+import { logError, formatTime } from '../../utils.js';
 import api from '../../lib/api';
 
 const ExamTest = () => {
@@ -365,7 +365,6 @@ const ExamTest = () => {
       router.push('/exam');
     } catch (error) {
       logError(error, 'Save Exam Record');
-      handleApiError(error, showToast);
     }
   };
 
@@ -399,7 +398,6 @@ const ExamTest = () => {
       setFeedbackDescription('');
     } catch (error) {
       logError(error, 'Submit Feedback');
-      handleApiError(error, showToast);
     }
   };
 

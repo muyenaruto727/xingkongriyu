@@ -22,6 +22,7 @@ const Grammar = () => {
   const [searchKeyword, setSearchKeyword] = useState('');
   const [favorites, setFavorites] = useState([]);
   const itemsPerPage = 20;
+  const currentUserId = currentUser?.id;
 
   const levels = ['全部', 'N1', 'N2', 'N3', 'N4', 'N5'];
 
@@ -29,13 +30,17 @@ const Grammar = () => {
     const user = localStorage.getItem('currentUser');
     if (user) {
       const parsedUser = JSON.parse(user);
-      if (!currentUser) setCurrentUser(parsedUser);
-      if (parsedUser.id) fetchFavorites(parsedUser.id);
+      setCurrentUser(parsedUser);
     }
-    fetchGrammarList();
     const storedFavorites = localStorage.getItem('grammarFavorites');
-    if (storedFavorites && !currentUser) setFavorites(JSON.parse(storedFavorites));
-  }, [currentUser]);
+    if (storedFavorites && !user) setFavorites(JSON.parse(storedFavorites));
+  }, []);
+
+  useEffect(() => {
+    if (currentUserId) {
+      fetchFavorites(currentUserId);
+    }
+  }, [currentUserId]);
 
   const fetchFavorites = async (userId) => {
     try {
@@ -71,7 +76,9 @@ const Grammar = () => {
         await api.addFavorite(currentUser.id, 'grammar', grammarId);
         setFavorites([...favorites, grammarId]);
       }
-    } catch (error) { showToast('收藏操作失败，请重试', 'error'); }
+    } catch {
+      // API errors are shown by lib/api.js.
+    }
   };
 
   const showToast = (msg, type = 'info') => { message[type](msg); };

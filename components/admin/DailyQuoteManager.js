@@ -22,8 +22,8 @@ const DailyQuoteManager = () => {
         setQuotes(result.data || []);
         setTotalItems(result.total || 0);
       }
-    } catch (error) {
-      message.error('获取数据失败');
+    } catch {
+      // API errors are shown by lib/api.js.
     } finally {
       setLoading(false);
     }
@@ -49,9 +49,14 @@ const DailyQuoteManager = () => {
   };
 
   const handleOk = async () => {
+    let values;
     try {
-      const values = await form.validateFields();
+      values = await form.validateFields();
+    } catch {
+      return;
+    }
 
+    try {
       if (editingId) {
         await api.updateDailyQuote(editingId, values);
         message.success('修改成功');
@@ -62,8 +67,8 @@ const DailyQuoteManager = () => {
 
       setIsModalVisible(false);
       fetchQuotes();
-    } catch (error) {
-      message.error(error.message || '操作失败');
+    } catch {
+      // API errors are shown by lib/api.js.
     }
   };
 
@@ -72,8 +77,8 @@ const DailyQuoteManager = () => {
       await api.deleteDailyQuote(id);
       message.success('删除成功');
       fetchQuotes();
-    } catch (error) {
-      message.error(error.message || '删除失败');
+    } catch {
+      // API errors are shown by lib/api.js.
     }
   };
 

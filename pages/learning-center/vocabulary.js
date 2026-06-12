@@ -33,6 +33,7 @@ const Vocabulary = () => {
   const [loading, setLoading] = useState(false);
   const [showExampleModal, setShowExampleModal] = useState(false);
   const [currentVocab, setCurrentVocab] = useState(null);
+  const currentUserId = currentUser?.id;
 
   const itemsPerPage = 20;
   const levels = ['全部', 'N1', 'N2', 'N3', 'N4', 'N5'];
@@ -43,14 +44,16 @@ const Vocabulary = () => {
     if (user) {
       try {
         const parsedUser = JSON.parse(user);
-        if (!currentUser) setCurrentUser(parsedUser);
-        if (parsedUser?.id && typeof parsedUser.id === 'number' && parsedUser.id > 0) {
-          fetchFavorites(parsedUser.id);
-        }
+        setCurrentUser(parsedUser);
       } catch (error) { console.error('Failed to parse user:', error); }
     }
-    fetchVocabList();
-  }, [currentUser]);
+  }, []);
+
+  useEffect(() => {
+    if (currentUserId) {
+      fetchFavorites(currentUserId);
+    }
+  }, [currentUserId]);
 
   useEffect(() => { fetchTextbookList(); }, []);
 
@@ -117,7 +120,9 @@ const Vocabulary = () => {
         await api.addFavorite(currentUser.id, 'vocabulary', vocabId);
         setFavorites([...favorites, vocabId]);
       }
-    } catch (error) { showToast('收藏操作失败，请重试', 'error'); }
+    } catch {
+      // API errors are shown by lib/api.js.
+    }
   };
 
   const speakVocab = (japanese) => {

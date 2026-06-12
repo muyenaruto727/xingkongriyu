@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../../lib/api';
 import { ARTICLE_LEVELS, ARTICLE_CATEGORIES } from '../../config/config';
-import { handleApiError, logError } from '../../utils.js';
+import { logError } from '../../utils.js';
 import { Modal, Input, Select } from 'antd';
 import Pagination from '../common/Pagination';
 
@@ -31,7 +31,6 @@ const ArticleManager = ({ showToast }) => {
       setArticleList(articleData.data);
     } catch (error) {
       logError(error, 'Fetch Article List');
-      handleApiError(error, showToast);
     }
   };
 
@@ -71,7 +70,6 @@ const ArticleManager = ({ showToast }) => {
       showToast('文章添加成功', 'success');
     } catch (error) {
       console.error('Failed to create article:', error);
-      showToast('创建失败', 'error');
     }
   };
 
@@ -116,7 +114,6 @@ const ArticleManager = ({ showToast }) => {
       showToast('文章更新成功', 'success');
     } catch (error) {
       console.error('Failed to update article:', error);
-      showToast('更新失败', 'error');
     }
   };
 
@@ -134,7 +131,6 @@ const ArticleManager = ({ showToast }) => {
       showToast('文章删除成功', 'success');
     } catch (error) {
       console.error('Failed to delete article:', error);
-      showToast('删除失败', 'error');
     }
   };
 

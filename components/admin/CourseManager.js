@@ -4,7 +4,7 @@ import PaginationTable from '../common/PaginationTable';
 import { Input, Button, Table, Form, Select, message, Tree, Radio, Modal } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { api } from '../../lib/api';
-import { handleApiError, logError } from '../../utils.js';
+import { logError } from '../../utils.js';
 
 // 动态导入 WangEditor，确保只在客户端加载
 const WangEditor = dynamic(() => import('../common/WangEditor'), {
@@ -100,7 +100,6 @@ const CourseManager = ({ showToast }) => {
       }
     } catch (error) {
       logError(error, 'Fetch Course');
-      handleApiError(error, showToast);
     } finally {
       setIsLoading(false);
     }
@@ -184,7 +183,6 @@ const CourseManager = ({ showToast }) => {
       fetchCourseList();
     } catch (error) {
       logError(error, 'Add Course');
-      handleApiError(error, showToast);
     } finally {
       setIsLoading(false);
     }
@@ -220,7 +218,6 @@ const CourseManager = ({ showToast }) => {
       fetchCourseList();
     } catch (error) {
       logError(error, 'Update Course');
-      handleApiError(error, showToast);
     } finally {
       setIsLoading(false);
     }
@@ -269,7 +266,6 @@ const CourseManager = ({ showToast }) => {
       fetchCourseList(true);
     } catch (error) {
       logError(error, 'Delete Course');
-      handleApiError(error, showToast);
     } finally {
       setIsLoading(false);
     }
@@ -292,7 +288,6 @@ const CourseManager = ({ showToast }) => {
       fetchCourseList();
     } catch (error) {
       logError(error, 'Update Course Status');
-      handleApiError(error, showToast);
     } finally {
       setIsLoading(false);
     }
@@ -313,7 +308,6 @@ const CourseManager = ({ showToast }) => {
       setExpandedKeys(keys);
     } catch (error) {
       console.error('获取章节列表失败:', error);
-      message.error('获取章节列表失败');
     } finally {
       setIsLoading(false);
     }
@@ -337,7 +331,6 @@ const CourseManager = ({ showToast }) => {
       fetchChapters(currentEditId);
     } catch (error) {
       console.error('添加章节失败:', error);
-      message.error('添加章节失败');
     } finally {
       setIsLoading(false);
     }
@@ -355,7 +348,6 @@ const CourseManager = ({ showToast }) => {
       fetchChapters(currentEditId);
     } catch (error) {
       console.error('更新章节失败:', error);
-      message.error('更新章节失败');
     } finally {
       setIsLoading(false);
     }
@@ -376,7 +368,6 @@ const CourseManager = ({ showToast }) => {
           fetchChapters(currentEditId);
         } catch (error) {
           console.error('删除章节失败:', error);
-          message.error('删除章节失败');
         } finally {
           setIsLoading(false);
         }
@@ -407,7 +398,6 @@ const CourseManager = ({ showToast }) => {
       fetchChapters(currentEditId);
     } catch (error) {
       console.error('添加小节失败:', error);
-      message.error('添加小节失败');
     } finally {
       setIsLoading(false);
     }
@@ -431,7 +421,6 @@ const CourseManager = ({ showToast }) => {
       fetchChapters(currentEditId);
     } catch (error) {
       console.error('更新小节失败:', error);
-      message.error('更新小节失败');
     } finally {
       setIsLoading(false);
     }
@@ -452,7 +441,6 @@ const CourseManager = ({ showToast }) => {
           fetchChapters(currentEditId);
         } catch (error) {
           console.error('删除小节失败:', error);
-          message.error('删除小节失败');
         } finally {
           setIsLoading(false);
         }

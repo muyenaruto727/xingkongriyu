@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Input, Select, Modal } from 'antd';
 import PaginationTable from '../common/PaginationTable';
 import { api } from '../../lib/api';
-import { handleApiError, logError } from '../../utils.js';
+import { logError } from '../../utils.js';
 
 const ListeningManager = ({ showToast }) => {
   const [listeningList, setListeningList] = useState([]);
@@ -175,7 +175,6 @@ const ListeningManager = ({ showToast }) => {
       }
     } catch (error) {
       logError(error, 'Fetch Listening');
-      handleApiError(error, showToast);
     } finally {
       setIsLoading(false);
     }
@@ -229,7 +228,6 @@ const ListeningManager = ({ showToast }) => {
       fetchListeningList(true);
     } catch (error) {
       logError(error, 'Add Listening');
-      handleApiError(error, showToast);
     } finally {
       setIsLoading(false);
     }
@@ -265,7 +263,6 @@ const ListeningManager = ({ showToast }) => {
       fetchListeningList();
     } catch (error) {
       logError(error, 'Update Listening');
-      handleApiError(error, showToast);
     } finally {
       setIsLoading(false);
     }
@@ -318,7 +315,6 @@ const ListeningManager = ({ showToast }) => {
       fetchListeningList(true);
     } catch (error) {
       logError(error, 'Delete Listening');
-      handleApiError(error, showToast);
     } finally {
       setIsLoading(false);
     }

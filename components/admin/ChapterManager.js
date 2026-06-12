@@ -43,7 +43,6 @@ const ChapterManager = () => {
       setCourses(Array.isArray(response) ? response : []);
     } catch (error) {
       console.error('获取课程列表失败:', error);
-      message.error('获取课程列表失败');
       setCourses([]); // 确保 courses 始终是一个数组
     } finally {
       setIsLoading(false);
@@ -64,7 +63,6 @@ const ChapterManager = () => {
       setExpandedKeys(keys);
     } catch (error) {
       console.error('获取章节列表失败:', error);
-      message.error('获取章节列表失败');
     } finally {
       setIsLoading(false);
     }
@@ -95,7 +93,6 @@ const ChapterManager = () => {
       fetchChapters(selectedCourse.id);
     } catch (error) {
       console.error('添加章节失败:', error);
-      message.error('添加章节失败');
     } finally {
       setIsLoading(false);
     }
@@ -113,7 +110,6 @@ const ChapterManager = () => {
       fetchChapters(selectedCourse.id);
     } catch (error) {
       console.error('更新章节失败:', error);
-      message.error('更新章节失败');
     } finally {
       setIsLoading(false);
     }
@@ -134,7 +130,6 @@ const ChapterManager = () => {
           fetchChapters(selectedCourse.id);
         } catch (error) {
           console.error('删除章节失败:', error);
-          message.error('删除章节失败');
         } finally {
           setIsLoading(false);
         }
@@ -161,7 +156,6 @@ const ChapterManager = () => {
       fetchChapters(selectedCourse.id);
     } catch (error) {
       console.error('添加小节失败:', error);
-      message.error('添加小节失败');
     } finally {
       setIsLoading(false);
     }
@@ -179,7 +173,6 @@ const ChapterManager = () => {
       fetchChapters(selectedCourse.id);
     } catch (error) {
       console.error('更新小节失败:', error);
-      message.error('更新小节失败');
     } finally {
       setIsLoading(false);
     }
@@ -200,7 +193,6 @@ const ChapterManager = () => {
           fetchChapters(selectedCourse.id);
         } catch (error) {
           console.error('删除小节失败:', error);
-          message.error('删除小节失败');
         } finally {
           setIsLoading(false);
         }

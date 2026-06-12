@@ -2,67 +2,6 @@
 import { message } from 'antd';
 
 /**
- * 处理 API 错误
- * @param {Error} error - 错误对象
- * @param {Function} showMessage - 显示提示的函数（可选，默认为 antd message）
- * @returns {Object} 错误信息
- */
-export const handleApiError = (error, showMessage) => {
-  let errorMessage = '操作失败，请稍后重试';
-  let errorCode = 'UNKNOWN_ERROR';
-
-  if (error.response) {
-    // 服务器返回错误状态码
-    const { status, data } = error.response;
-    
-    switch (status) {
-      case 400:
-        errorMessage = data.error || '请求参数错误';
-        errorCode = 'BAD_REQUEST';
-        break;
-      case 401:
-        errorMessage = '未授权，请重新登录';
-        errorCode = 'UNAUTHORIZED';
-        // 可以在这里处理登录过期的逻辑
-        break;
-      case 403:
-        errorMessage = '权限不足，无法操作';
-        errorCode = 'FORBIDDEN';
-        break;
-      case 404:
-        errorMessage = '请求的资源不存在';
-        errorCode = 'NOT_FOUND';
-        break;
-      case 500:
-        errorMessage = '服务器内部错误';
-        errorCode = 'INTERNAL_SERVER_ERROR';
-        break;
-      default:
-        errorMessage = data.error || `请求失败 (${status})`;
-        errorCode = 'SERVER_ERROR';
-    }
-  } else if (error.request) {
-    // 请求已发出，但没有收到响应
-    errorMessage = '网络错误，请检查网络连接';
-    errorCode = 'NETWORK_ERROR';
-  } else {
-    // 在设置请求时发生错误
-    errorMessage = error.message || '请求失败';
-    errorCode = 'REQUEST_ERROR';
-  }
-
-  // 显示错误提示
-  const showToast = showMessage || message.error;
-  showToast(errorMessage);
-
-  return {
-    message: errorMessage,
-    code: errorCode,
-    originalError: error
-  };
-};
-
-/**
  * 处理客户端错误
  * @param {Error} error - 错误对象
  * @param {Function} showMessage - 显示提示的函数（可选，默认为 antd message）

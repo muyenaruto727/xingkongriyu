@@ -118,8 +118,8 @@ const GrammarDetail = () => {
         await api.addFavorite(currentUser.id, 'grammar', grammar.id);
         setFavorites([...favorites, grammar.id]);
       }
-    } catch (error) {
-      showToast('收藏操作失败，请重试', 'error');
+    } catch {
+      // API errors are shown by lib/api.js.
     }
   };
 

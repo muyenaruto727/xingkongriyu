@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Tree, Divider, Spin, message } from 'antd';
+import { Tree, Divider, Spin } from 'antd';
 import api from '../../lib/api';
 
 const CourseChapters = ({ courseId }) => {
@@ -21,7 +21,6 @@ const CourseChapters = ({ courseId }) => {
       setExpandedKeys(keys);
     } catch (error) {
       console.error('获取章节列表失败:', error);
-      message.error('获取章节列表失败');
     } finally {
       setIsLoading(false);
     }

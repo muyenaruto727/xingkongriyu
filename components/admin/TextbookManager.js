@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Input, Select, Modal, message, Button } from 'antd';
 import PaginationTable from '../common/PaginationTable';
 import { api } from '../../lib/api';
-import { handleApiError } from '../../utils.js';
 
 const TextbookManager = () => {
   const [textbooks, setTextbooks] = useState([]);
@@ -29,7 +28,6 @@ const TextbookManager = () => {
       const data = await api.getTextbookList();
       setTextbooks(data);
     } catch (error) {
-      handleApiError(error, message.error);
     }
   };
 
@@ -132,7 +130,6 @@ const TextbookManager = () => {
       resetForm();
       fetchTextbooks();
     } catch (error) {
-      handleApiError(error, message.error);
     } finally {
       setIsLoading(false);
     }
@@ -152,7 +149,6 @@ const TextbookManager = () => {
           message.success('教材删除成功');
           fetchTextbooks();
         } catch (error) {
-          handleApiError(error, message.error);
         }
       }
     });
