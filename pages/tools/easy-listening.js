@@ -5,9 +5,10 @@ import Navigation from '../../components/layout/Navigation';
 import Footer from '../../components/layout/Footer';
 
 const {
-  audioSamples,
+  getListeningAnswerValues,
   getListeningSamples,
   listeningTypeLabels,
+  listeningTypes,
   normalizeListeningAnswer,
 } = require('../../lib/listeningSamples');
 
@@ -16,8 +17,8 @@ const randomItem = items => items[Math.floor(Math.random() * items.length)];
 const EasyListening = () => {
   const router = useRouter();
   const audioRef = useRef(null);
-  const [selectedType, setSelectedType] = useState('vacabulary');
-  const [currentSample, setCurrentSample] = useState('');
+  const [selectedType, setSelectedType] = useState(listeningTypes[0]);
+  const [currentSample, setCurrentSample] = useState(null);
   const [answer, setAnswer] = useState('');
   const [feedback, setFeedback] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -52,7 +53,7 @@ const EasyListening = () => {
         audioRef.current.pause();
       }
 
-      const audio = new Audio(`/api/edge-tts?text=${encodeURIComponent(currentSample)}&t=${Date.now()}`);
+      const audio = new Audio(`/api/edge-tts?text=${encodeURIComponent(currentSample.v)}&t=${Date.now()}`);
       audioRef.current = audio;
       audio.onended = () => setIsPlaying(false);
       audio.onerror = () => {
@@ -72,11 +73,13 @@ const EasyListening = () => {
     if (!answer.trim() || !currentSample) return;
 
     const normalizedAnswer = normalizeListeningAnswer(answer);
-    const normalizedExpected = normalizeListeningAnswer(currentSample);
-    const correct = normalizedAnswer === normalizedExpected;
+    const answerValues = getListeningAnswerValues(currentSample);
+    const correct = answerValues
+      .map(normalizeListeningAnswer)
+      .includes(normalizedAnswer);
     setFeedback({
       correct,
-      expected: currentSample,
+      expected: answerValues,
       input: answer.trim(),
     });
 
@@ -118,7 +121,7 @@ const EasyListening = () => {
                   <div>
                     <h1 className="text-3xl font-extrabold text-gray-900 mb-3">听力入门</h1>
                     <p className="text-gray-500 leading-relaxed">
-                      选择单词或句子，听 Edge TTS 合成音频，输入你听到的内容。
+                      选择题型，听音频，输入你听到的内容。
                     </p>
                   </div>
 
@@ -141,7 +144,7 @@ const EasyListening = () => {
 
               <div className="p-6 md:p-8">
                 <div className="flex flex-wrap gap-3 mb-8">
-                  {Object.keys(audioSamples).map(type => (
+                  {listeningTypes.map(type => (
                     <button
                       key={type}
                       type="button"
@@ -181,7 +184,7 @@ const EasyListening = () => {
                     <input
                       value={answer}
                       onChange={(event) => setAnswer(event.target.value)}
-                      placeholder={selectedType === 'vacabulary' ? '例如：おしえる' : '例如：どうぞよろしくお願いします'}
+                      placeholder={selectedType === '数字' ? '例如：53 或 ごじゅうさん' : '例如：どうぞよろしくお願いします'}
                       className="flex-1 px-4 py-4 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-cyan-100 focus:border-cyan-300 text-lg"
                     />
                     <button
@@ -207,7 +210,7 @@ const EasyListening = () => {
                       你的输入：<span className="font-bold text-gray-900">{feedback.input}</span>
                     </p>
                     <p className="text-sm text-gray-600 mb-4">
-                      正确答案：<span className="font-bold text-gray-900">{feedback.expected}</span>
+                      正确答案：<span className="font-bold text-gray-900">{feedback.expected.join(' / ')}</span>
                     </p>
                     <button
                       type="button"

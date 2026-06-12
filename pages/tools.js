@@ -239,7 +239,7 @@ const Tools = () => {
                   听力入门
                 </h4>
                 <p className="text-gray-600 mb-6 leading-relaxed">
-                  选择单词或句子，听 Edge TTS 合成音频，输入听到的日语内容。
+                  选择单词或句子，听音频，输入听到的日语内容。
                 </p>
                 <Link
                   href="/tools/easy-listening"

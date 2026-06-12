@@ -158,6 +158,13 @@ async function shouldRefresh() {
   return Date.now() - new Date(lastFetch).getTime() > sixHours;
 }
 
+async function hasCorruptNewsRows() {
+  const result = await pool.query(
+    "SELECT COUNT(*) FROM public.nhk_news WHERE title LIKE '%�%' OR description LIKE '%�%'"
+  );
+  return parseInt(result.rows[0]?.count || '0') > 0;
+}
+
 async function handler(req, res) {
   try {
     await ensureTable();
@@ -174,6 +181,13 @@ async function handler(req, res) {
             await cleanOldNews();
           } catch (err) {
             console.error('[news] Initial fetch failed:', err.message);
+          }
+        } else if (await hasCorruptNewsRows()) {
+          try {
+            await fetchAndStoreNews();
+            await cleanOldNews();
+          } catch (err) {
+            console.error('[news] Corrupt data refresh failed:', err.message);
           }
         } else if (await shouldRefresh()) {
           // 过期→后台刷新
