@@ -47,7 +47,7 @@ const Grammar = () => {
       if (!userId || typeof userId !== 'number' || isNaN(userId) || userId <= 0) return;
       const favoriteIds = await api.getFavorites(userId, 'grammar');
       setFavorites(favoriteIds);
-    } catch (error) { console.error('Failed to fetch favorites:', error); }
+    } catch (error) { api.handleError('Failed to fetch favorites:', error); }
   };
 
   const fetchGrammarList = async (params = {}) => {
@@ -56,7 +56,7 @@ const Grammar = () => {
       const data = response?.data || [];
       setGrammarList(data);
       setFilteredGrammarList(data.slice(0, itemsPerPage));
-    } catch (error) { console.error('Failed to fetch grammar:', error); }
+    } catch (error) { api.handleError('Failed to fetch grammar:', error); }
   };
 
   useEffect(() => {

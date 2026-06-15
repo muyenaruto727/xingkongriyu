@@ -38,7 +38,7 @@ const CourseDetail = () => {
           const expandedKeys = chaptersWithSortedSections.map(chapter => chapter.id.toString());
           setExpandedChapters(expandedKeys);
         } catch (error) {
-          console.error('获取课程详情失败:', error);
+          api.handleError('获取课程详情失败:', error);
         } finally {
           setIsLoading(false);
         }

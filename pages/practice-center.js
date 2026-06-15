@@ -61,7 +61,7 @@ const PracticeCenter = () => {
       setIncorrectCount(0);
       setShowPracticeModal(true);
     } catch (error) {
-      console.error('Error fetching questions:', error);
+      api.handleError('Error fetching questions:', error);
     } finally {
       setLoading(false);
     }

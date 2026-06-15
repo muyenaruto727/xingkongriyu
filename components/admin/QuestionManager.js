@@ -131,7 +131,7 @@ const QuestionManager = ({ defaultType = '', defaultLevel = '' }) => {
       setQuestions(data.data);
       setTotal(data.total || 0);
     } catch (error) {
-      console.error('Failed to fetch questions:', error);
+      api.handleError('Failed to fetch questions:', error);
     }
   };
 
@@ -172,7 +172,7 @@ const QuestionManager = ({ defaultType = '', defaultLevel = '' }) => {
       resetForm();
       fetchQuestions();
     } catch (error) {
-      console.error('Failed to create question:', error);
+      api.handleError('Failed to create question:', error);
     } finally {
       setIsLoading(false);
     }
@@ -196,7 +196,7 @@ const QuestionManager = ({ defaultType = '', defaultLevel = '' }) => {
       resetForm();
       fetchQuestions();
     } catch (error) {
-      console.error('Failed to update question:', error);
+      api.handleError('Failed to update question:', error);
     } finally {
       setIsLoading(false);
     }
@@ -295,7 +295,7 @@ const QuestionManager = ({ defaultType = '', defaultLevel = '' }) => {
       setShowDeleteConfirm(false);
       fetchQuestions();
     } catch (error) {
-      console.error('Failed to delete question:', error);
+      api.handleError('Failed to delete question:', error);
     } finally {
       setIsLoading(false);
     }
@@ -442,7 +442,7 @@ const QuestionManager = ({ defaultType = '', defaultLevel = '' }) => {
               showToast(`成功导入 ${uniqueData.length} 条新数据`, 'success');
             }
           } catch (error) {
-            console.error('去重失败:', error);
+            api.handleError('去重失败:', error);
             // 如果去重失败，仍然尝试导入数据
             showToast(`直接导入 ${filteredData.length} 条数据...`, 'info');
             await api.importQuestions({ batch: filteredData });
@@ -455,7 +455,7 @@ const QuestionManager = ({ defaultType = '', defaultLevel = '' }) => {
           setImportFileList([]);
         } catch (error) {
           showToast('JSON文件解析失败', 'error');
-          console.error('解析JSON失败:', error);
+          api.handleError('解析JSON失败:', error);
         } finally {
           setIsLoading(false);
         }
@@ -466,7 +466,7 @@ const QuestionManager = ({ defaultType = '', defaultLevel = '' }) => {
       };
       reader.readAsText(file);
     } catch (error) {
-      console.error('批量导入失败:', error);
+      api.handleError('批量导入失败:', error);
       showToast('批量导入失败', 'error');
       setIsLoading(false);
     }
@@ -538,7 +538,7 @@ const QuestionManager = ({ defaultType = '', defaultLevel = '' }) => {
       }
       setShowDownloadModal(false);
     } catch (error) {
-      console.error('批量下载失败:', error);
+      api.handleError('批量下载失败:', error);
       showToast('批量下载失败', 'error');
     } finally {
       setIsLoading(false);

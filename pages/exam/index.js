@@ -124,7 +124,7 @@ const ExamIndex = () => {
         const data = await api.getExamRecords({ user_id: currentUser.id });
         setExamRecords(data.data || []);
       } catch (error) {
-        console.error('Error fetching exam records:', error);
+        api.handleError('Error fetching exam records:', error);
       }
     };
 
@@ -392,7 +392,7 @@ const ExamIndex = () => {
                         const data = await api.getExamRecords({ user_id: currentUser.id });
                         setExamRecords(data.data || []);
                       } catch (error) {
-                        console.error('Error fetching exam records:', error);
+                        api.handleError('Error fetching exam records:', error);
                       }
                     };
                     fetchExamRecords();

@@ -78,7 +78,7 @@ const GrammarDetail = () => {
           const found = grammarList.find(g => g.id === parseInt(id));
           if (found) setGrammar(found);
         } catch (error) {
-          console.error('Failed to fetch grammar:', error);
+          api.handleError('Failed to fetch grammar:', error);
         }
       };
       fetchGrammar();
@@ -95,7 +95,7 @@ const GrammarDetail = () => {
             const favoriteIds = await api.getFavorites(parsedUser.id, 'grammar');
             setFavorites(favoriteIds);
           } catch (error) {
-            console.error('Failed to fetch favorites:', error);
+            api.handleError('Failed to fetch favorites:', error);
           }
         };
         fetchFavorites();

@@ -61,7 +61,7 @@ const GrammarManager = () => {
         setTotalItems(0);
       }
     } catch (error) {
-      console.error('Failed to fetch grammar:', error);
+      api.handleError('Failed to fetch grammar:', error);
     } finally {
       setIsLoading(false);
     }
@@ -134,7 +134,7 @@ const GrammarManager = () => {
 
   // 添加翻译练习
   const addExercise = () => {
-    if (grammarForm.translationExercises.length < 5) {
+    if (grammarForm.translationExercises.length < 8) {
       setGrammarForm(prev => ({
         ...prev,
         translationExercises: [...prev.translationExercises, ''],
@@ -203,7 +203,7 @@ const GrammarManager = () => {
       resetForm();
       fetchGrammarList();
     } catch (error) {
-      console.error('Failed to add grammar:', error);
+      api.handleError('Failed to add grammar:', error);
     } finally {
       setIsLoading(false);
     }
@@ -256,7 +256,7 @@ const GrammarManager = () => {
       resetForm();
       fetchGrammarList();
     } catch (error) {
-      console.error('Failed to update grammar:', error);
+      api.handleError('Failed to update grammar:', error);
     } finally {
       setIsLoading(false);
     }
@@ -295,7 +295,7 @@ const GrammarManager = () => {
       setShowDeleteConfirm(false);
       fetchGrammarList();
     } catch (error) {
-      console.error('Failed to delete grammar:', error);
+      api.handleError('Failed to delete grammar:', error);
     } finally {
       setIsLoading(false);
     }
@@ -401,7 +401,7 @@ const GrammarManager = () => {
               message.success(`成功导入 ${uniqueData.length} 条新数据`);
             }
           } catch (error) {
-            console.error('去重失败:', error);
+            api.handleError('去重失败:', error);
             // 如果去重失败，仍然尝试导入数据
             message.info(`直接导入 ${filteredData.length} 条数据...`);
             await api.importGrammar({ batch: filteredData });
@@ -411,7 +411,7 @@ const GrammarManager = () => {
           message.info('刷新语法列表...');
           await fetchGrammarList();
         } catch (error) {
-          console.error('文件解析失败:', error);
+          api.handleError('文件解析失败:', error);
           message.error('文件解析失败');
         } finally {
           setIsLoading(false);
@@ -419,7 +419,7 @@ const GrammarManager = () => {
       };
       reader.readAsText(file);
     } catch (error) {
-      console.error('批量导入失败:', error);
+      api.handleError('批量导入失败:', error);
       message.error('批量导入失败');
       setIsLoading(false);
     }
@@ -520,7 +520,7 @@ const GrammarManager = () => {
       message.success('批量下载成功');
       setShowDownloadModal(false);
     } catch (error) {
-      console.error('批量下载失败:', error);
+      api.handleError('批量下载失败:', error);
       message.error('批量下载失败');
       setShowDownloadModal(false);
     } finally {
@@ -575,7 +575,7 @@ const GrammarManager = () => {
       message.success(`分页下载成功，共下载 ${grammarData.length} 条数据（第 ${pageNumber}/${totalPages} 页）`);
       setShowDownloadModal(false);
     } catch (error) {
-      console.error('分页下载失败:', error);
+      api.handleError('分页下载失败:', error);
       message.error('分页下载失败');
       setShowDownloadModal(false);
     }

@@ -47,7 +47,7 @@ const Profile = () => {
         setFavoriteVocabulary(filteredVocab);
       }
     } catch (error) {
-      console.error('Failed to fetch favorites:', error);
+      api.handleError('Failed to fetch favorites:', error);
     } finally {
       setLoading(false);
     }

@@ -42,7 +42,7 @@ const ChapterManager = () => {
       console.log('Course list response:', response);
       setCourses(Array.isArray(response) ? response : []);
     } catch (error) {
-      console.error('获取课程列表失败:', error);
+      api.handleError('获取课程列表失败:', error);
       setCourses([]); // 确保 courses 始终是一个数组
     } finally {
       setIsLoading(false);
@@ -62,7 +62,7 @@ const ChapterManager = () => {
       const keys = chapterData.map(chapter => chapter.id.toString());
       setExpandedKeys(keys);
     } catch (error) {
-      console.error('获取章节列表失败:', error);
+      api.handleError('获取章节列表失败:', error);
     } finally {
       setIsLoading(false);
     }
@@ -92,7 +92,7 @@ const ChapterManager = () => {
       form.resetFields();
       fetchChapters(selectedCourse.id);
     } catch (error) {
-      console.error('添加章节失败:', error);
+      api.handleError('添加章节失败:', error);
     } finally {
       setIsLoading(false);
     }
@@ -109,7 +109,7 @@ const ChapterManager = () => {
       setEditingChapter(null);
       fetchChapters(selectedCourse.id);
     } catch (error) {
-      console.error('更新章节失败:', error);
+      api.handleError('更新章节失败:', error);
     } finally {
       setIsLoading(false);
     }
@@ -129,7 +129,7 @@ const ChapterManager = () => {
           message.success('章节删除成功');
           fetchChapters(selectedCourse.id);
         } catch (error) {
-          console.error('删除章节失败:', error);
+          api.handleError('删除章节失败:', error);
         } finally {
           setIsLoading(false);
         }
@@ -155,7 +155,7 @@ const ChapterManager = () => {
       setSectionType('article');
       fetchChapters(selectedCourse.id);
     } catch (error) {
-      console.error('添加小节失败:', error);
+      api.handleError('添加小节失败:', error);
     } finally {
       setIsLoading(false);
     }
@@ -172,7 +172,7 @@ const ChapterManager = () => {
       setEditingSection(null);
       fetchChapters(selectedCourse.id);
     } catch (error) {
-      console.error('更新小节失败:', error);
+      api.handleError('更新小节失败:', error);
     } finally {
       setIsLoading(false);
     }
@@ -192,7 +192,7 @@ const ChapterManager = () => {
           message.success('小节删除成功');
           fetchChapters(selectedCourse.id);
         } catch (error) {
-          console.error('删除小节失败:', error);
+          api.handleError('删除小节失败:', error);
         } finally {
           setIsLoading(false);
         }

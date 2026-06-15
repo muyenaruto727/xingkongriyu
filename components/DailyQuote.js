@@ -18,7 +18,7 @@ const DailyQuote = () => {
         setQuote(result);
       }
     } catch (error) {
-      console.error('获取每日一句失败:', error);
+      api.handleError('获取每日一句失败:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);

@@ -26,7 +26,7 @@ const Flashcards = () => {
       const list = Array.isArray(data) ? data : (data?.data || []);
       setTextbooks(list);
     } catch (err) {
-      console.error('Failed to fetch textbooks:', err);
+      api.handleError('Failed to fetch textbooks:', err);
     }
   };
 
@@ -73,7 +73,7 @@ const Flashcards = () => {
       setIsFlipped(false);
       setIsPlaying(true);
     } catch (err) {
-      console.error('Failed to fetch vocabulary:', err);
+      api.handleError('Failed to fetch vocabulary:', err);
     }
     setLoading(false);
   };

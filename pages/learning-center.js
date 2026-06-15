@@ -19,7 +19,7 @@ const LearningCenter = () => {
         const response = await api.getCourseList({ status: '上架' });
         setCourses(Array.isArray(response.data) ? response.data : []);
       } catch (error) {
-        console.error('获取课程列表失败:', error);
+        api.handleError('获取课程列表失败:', error);
         setCourses([]);
       }
     };

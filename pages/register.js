@@ -57,8 +57,8 @@ const Register = () => {
         });
       }, 1000);
     } catch (error) {
-      console.error('Registration error:', error);
-      setError(error.message || '注册失败，请重试');
+      api.handleError('Registration error:', error);
+      setError(error.userMessage || error.message || '注册失败，请重试');
     } finally {
       setLoading(false);
     }

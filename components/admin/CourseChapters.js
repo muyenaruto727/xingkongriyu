@@ -20,7 +20,7 @@ const CourseChapters = ({ courseId }) => {
       const keys = chapterData.map(chapter => chapter.id.toString());
       setExpandedKeys(keys);
     } catch (error) {
-      console.error('获取章节列表失败:', error);
+      api.handleError('获取章节列表失败:', error);
     } finally {
       setIsLoading(false);
     }

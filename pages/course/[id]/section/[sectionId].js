@@ -42,10 +42,10 @@ const SectionDetail = () => {
           if (foundSection) {
             setSection(foundSection);
           } else {
-            console.error('小节不存在');
+            api.handleError('小节不存在');
           }
         } catch (error) {
-          console.error('获取小节详情失败:', error);
+          api.handleError('获取小节详情失败:', error);
         } finally {
           setIsLoading(false);
         }

@@ -16,7 +16,7 @@ const Courses = () => {
         const response = await api.getCourseList({ status: '上架' });
         setCourses(response.data || []);
       } catch (error) {
-        console.error('获取课程失败:', error);
+        api.handleError('获取课程失败:', error);
       } finally {
         setIsLoading(false);
       }

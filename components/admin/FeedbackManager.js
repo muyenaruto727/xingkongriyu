@@ -41,7 +41,7 @@ const FeedbackManager = () => {
       await api.updateFeedback({ id, status });
       fetchFeedback();
     } catch (error) {
-      console.error('Error updating feedback status:', error);
+      api.handleError('Error updating feedback status:', error);
     }
   };
 

@@ -185,7 +185,7 @@ const ExamTest = () => {
       });
       setQuestions(data.questions || []);
     } catch (error) {
-      console.error('Error fetching questions:', error);
+      api.handleError('Error fetching questions:', error);
       // 如果API调用失败，使用模拟数据
       generateMockQuestions(config);
     }

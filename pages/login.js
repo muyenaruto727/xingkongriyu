@@ -32,8 +32,8 @@ const Login = () => {
       login(data.user, data.token);
       router.push('/');
     } catch (error) {
-      console.error('Login error:', error);
-      setError(error.message || '登录失败，请重试');
+      api.handleError('Login error:', error);
+      setError(error.userMessage || error.message || '登录失败，请重试');
     } finally {
       setLoading(false);
     }

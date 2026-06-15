@@ -45,7 +45,7 @@ const Vocabulary = () => {
       try {
         const parsedUser = JSON.parse(user);
         setCurrentUser(parsedUser);
-      } catch (error) { console.error('Failed to parse user:', error); }
+      } catch (error) { api.handleError('Failed to parse user:', error); }
     }
   }, []);
 
@@ -64,7 +64,7 @@ const Vocabulary = () => {
       const lessonsMap = {};
       data.forEach(textbook => { lessonsMap[textbook.name] = (textbook.lessons || []).map(l => l.name); });
       setTextbookLessonsMap(lessonsMap);
-    } catch (error) { console.error('Failed to fetch textbooks:', error); }
+    } catch (error) { api.handleError('Failed to fetch textbooks:', error); }
   };
 
   const fetchFavorites = async (userId) => {
@@ -72,7 +72,7 @@ const Vocabulary = () => {
       if (!userId || typeof userId !== 'number' || isNaN(userId) || userId <= 0) return;
       const favoriteIds = await api.getFavorites(userId, 'vocabulary');
       setFavorites(favoriteIds);
-    } catch (error) { console.error('Failed to fetch favorites:', error); }
+    } catch (error) { api.handleError('Failed to fetch favorites:', error); }
   };
 
   const fetchVocabList = async (pageNum = 1, append = false) => {
@@ -95,7 +95,7 @@ const Vocabulary = () => {
         setCurrentPage(pageNum);
       }
       setTotalCount(total);
-    } catch (error) { console.error('Failed to fetch vocabulary:', error); }
+    } catch (error) { api.handleError('Failed to fetch vocabulary:', error); }
     finally { setLoading(false); }
   };
 

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Head from 'next/head';
+import { message } from 'antd';
 import Navigation from '../../components/layout/Navigation';
 import Footer from '../../components/layout/Footer';
 import GojyuonGame from '../../components/tools/GojyuonGame';
@@ -168,7 +169,7 @@ const Introduction = () => {
     } else {
       // 使用 edge-tts API 播放音频
       const audio = new Audio(`/api/edge-tts?text=${encodeURIComponent(kana.char)}&t=${Date.now()}`);
-      audio.play().catch(() => console.error('语音播放失败'));
+      audio.play().catch(() => message.error('语音播放失败，请稍后再试'));
     }
   };
 
@@ -1410,55 +1411,187 @@ const Introduction = () => {
                 <div>
                   <h3 className="text-2xl font-semibold mb-6 text-gray-800">特殊音</h3>
                   <p className="text-gray-600 mb-6 leading-relaxed">
-                    日语中还有一些特殊的发音，包括拨音、长音和促音。
+                    学完五十音以后，还会遇到一些“看起来多一个小符号，读起来却会改变节奏”的发音。先不用背复杂术语，抓住一个核心：日语是按“一拍一拍”来读的，特殊音就是在普通假名之间加入停顿、延长或鼻音。
                   </p>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <h4 className="font-medium mb-3 text-gray-700">拨音 (ん)</h4>
-                      <p className="text-gray-600 mb-4">发音时软腭下垂，气流从鼻腔通过。</p>
-                      <div className="text-center p-2">ん (n)</div>
+
+                  <div className="space-y-6">
+                    <div className="bg-blue-50 border border-blue-100 p-5 rounded-lg">
+                      <h4 className="text-lg font-semibold mb-3 text-blue-800">先记住：小字和符号也算发音的一部分</h4>
+                      <p className="text-gray-700 leading-relaxed">
+                        小 っ、ん、长音 ー、以及小 ゃ・ゅ・ょ 都不是装饰。它们会改变单词的长度和听感。读单词时可以先用手指敲节拍：每个大假名通常一拍，ん 一拍，小 っ 一拍，长音也一拍。
+                      </p>
                     </div>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <h4 className="font-medium mb-3 text-gray-700">长音</h4>
-                      <p className="text-gray-600 mb-4">发音时将元音延长一拍，用长音符号（ー）表示。</p>
-                      <div className="grid grid-cols-4 gap-2">
-                        <div className="text-center p-2">おおきい (ookii)</div>
-                        <div className="text-center p-2">とおい (tooi)</div>
-                        <div className="text-center p-2">せんせい (sensei)</div>
-                        <div className="text-center p-2">にいさん (niisan)</div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <div className="bg-gray-50 p-5 rounded-lg">
+                        <h4 className="font-semibold mb-3 text-gray-800">拨音 ん：鼻音，也占一拍</h4>
+                        <p className="text-gray-600 mb-4 leading-relaxed">
+                          ん 不要读得太短，它自己就是一拍。发音时让声音从鼻腔出来，像中文“嗯”的尾巴，但不要额外加“恩”的 e 音。
+                        </p>
+                        <div className="space-y-2 text-gray-700">
+                          <div className="bg-white rounded-md p-3">ほん：ほ・ん，2拍，书</div>
+                          <div className="bg-white rounded-md p-3">にほん：に・ほ・ん，3拍，日本</div>
+                          <div className="bg-white rounded-md p-3">せんせい：せ・ん・せ・い，4拍，老师</div>
+                        </div>
+                        <p className="mt-3 text-sm text-blue-700">练习：读 ほん 时，不要读成 ho-nu，也不要把 ん 吞掉。</p>
+                      </div>
+
+                      <div className="bg-gray-50 p-5 rounded-lg">
+                        <h4 className="font-semibold mb-3 text-gray-800">促音 小っ：停一拍，再爆出来</h4>
+                        <p className="text-gray-600 mb-4 leading-relaxed">
+                          小 っ 不读成 tsu。它表示前面“卡住”一拍，然后把后面的辅音发出来。可以理解成短暂停顿，但停顿也算一拍。
+                        </p>
+                        <div className="space-y-2 text-gray-700">
+                          <div className="bg-white rounded-md p-3">きって：き・っ・て，3拍，邮票</div>
+                          <div className="bg-white rounded-md p-3">がっこう：が・っ・こ・う，4拍，学校</div>
+                          <div className="bg-white rounded-md p-3">ちょっと：ちょ・っ・と，3拍，稍微</div>
+                        </div>
+                        <p className="mt-3 text-sm text-blue-700">练习：きて 是“来”，きって 是“邮票”。小 っ 少了，意思可能就变了。</p>
                       </div>
                     </div>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <h4 className="font-medium mb-3 text-gray-700">促音 (っ)</h4>
-                      <p className="text-gray-600 mb-4">发音时堵住气流，形成一个短促的停顿。</p>
-                      <div className="text-center p-2">っ (small tsu)</div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <div className="bg-gray-50 p-5 rounded-lg">
+                        <h4 className="font-semibold mb-3 text-gray-800">长音：把前一个元音拉长一拍</h4>
+                        <p className="text-gray-600 mb-4 leading-relaxed">
+                          长音不是读得“更重”，而是读得“更长”。平假名里常用 あ・い・う・え・お 来表示延长，片假名外来语常用 ー。
+                        </p>
+                        <div className="space-y-2 text-gray-700">
+                          <div className="bg-white rounded-md p-3">おばさん：お・ば・さ・ん，阿姨</div>
+                          <div className="bg-white rounded-md p-3">おばあさん：お・ば・あ・さ・ん，奶奶</div>
+                          <div className="bg-white rounded-md p-3">ビル：ビ・ル，大楼</div>
+                          <div className="bg-white rounded-md p-3">ビール：ビー・ル，啤酒</div>
+                        </div>
+                        <p className="mt-3 text-sm text-blue-700">练习：长音要真的多占一拍，不要只轻轻拖一下。</p>
+                      </div>
+
+                      <div className="bg-gray-50 p-5 rounded-lg">
+                        <h4 className="font-semibold mb-3 text-gray-800">拗音 小ゃ・ゅ・ょ：合成一拍</h4>
+                        <p className="text-gray-600 mb-4 leading-relaxed">
+                          きゃ、しゅ、ちょ 这类音虽然写了两个字符，但它们合起来是一拍。小字要贴着前面的音读，不要拆成 き・や 或 し・ゆ。
+                        </p>
+                        <div className="space-y-2 text-gray-700">
+                          <div className="bg-white rounded-md p-3">きゃ：kya，不是 ki-ya</div>
+                          <div className="bg-white rounded-md p-3">しゅくだい：しゅ・く・だ・い，4拍，作业</div>
+                          <div className="bg-white rounded-md p-3">ちょっと：ちょ・っ・と，3拍，稍微</div>
+                        </div>
+                        <p className="mt-3 text-sm text-blue-700">练习：看到小字时，把它和前一个假名“粘”在一起读。</p>
+                      </div>
+                    </div>
+
+                    <div className="bg-gray-50 p-5 rounded-lg">
+                      <h4 className="font-semibold mb-4 text-gray-800">片假名里常见的外来语特殊音</h4>
+                      <p className="text-gray-600 mb-4 leading-relaxed">
+                        外来语为了接近原本发音，会用一些五十音表里不常单独出现的组合。初学阶段先会认、会读即可。
+                      </p>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-gray-700">
+                        <div className="bg-white rounded-md p-3">ファ：ファイル，file</div>
+                        <div className="bg-white rounded-md p-3">ティ：パーティー，party</div>
+                        <div className="bg-white rounded-md p-3">チェ：チェーン，chain</div>
+                        <div className="bg-white rounded-md p-3">シェ：シェア，share</div>
+                        <div className="bg-white rounded-md p-3">ヴァ：ヴァイオリン，violin</div>
+                        <div className="bg-white rounded-md p-3">ウォ：ウォーター，water</div>
+                      </div>
+                    </div>
+
+                    <div className="bg-amber-50 border border-amber-100 p-5 rounded-lg">
+                      <h4 className="font-semibold mb-3 text-amber-800">初学者最容易错的地方</h4>
+                      <ul className="list-disc pl-5 space-y-2 text-gray-700">
+                        <li>把小 っ 读出来：きって 不是 ki-tsu-te，而是 ki-停-te。</li>
+                        <li>把长音读短：おばさん 和 おばあさん 的区别就在多一拍。</li>
+                        <li>把拗音拆开：きょう 是 きょ・う，不是 き・よ・う。</li>
+                        <li>把 ん 吞掉：にほん 的 ん 要保留一拍，读得太快会不清楚。</li>
+                      </ul>
                     </div>
                   </div>
                 </div>
               )}
               
-              {activeTab === 'pitch' && (
+              {activeTab === 'intonation' && (
                 <div>
                   <h3 className="text-2xl font-semibold mb-6 text-gray-800">声调和节拍</h3>
                   <p className="text-gray-600 mb-6 leading-relaxed">
-                    日语的声调是高低型的，不同的声调会改变词语的意思。节拍则是指发音的节奏。
+                    日语听起来不像中文那样有明显的四声，它更像“高低起伏 + 稳定节奏”。零基础阶段先掌握两件事：每个假名按一拍读，单词里有高低变化，但不要把它读成中文声调。
                   </p>
-                  <div className="bg-gray-50 p-4 rounded-lg mb-6">
-                    <h4 className="font-medium mb-3 text-gray-700">声调类型</h4>
-                    <ul className="list-disc pl-5 space-y-2 text-gray-600">
-                      <li>平板型：第一个音节低，后面的音节都高</li>
-                      <li>头高型：第一个音节高，后面的音节都低</li>
-                      <li>中高型：第二个音节高，其他音节低</li>
-                      <li>尾高型：最后一个音节高，其他音节低</li>
-                    </ul>
-                  </div>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h4 className="font-medium mb-3 text-gray-700">节拍示例</h4>
-                    <div className="space-y-3 text-gray-600">
-                      <div>かんじ (汉字) - 2拍</div>
-                      <div>にほんご (日本語) - 3拍</div>
-                      <div>すみません (对不起) - 4拍</div>
-                      <div>ありがとう (谢谢) - 4拍</div>
+
+                  <div className="space-y-6">
+                    <div className="bg-blue-50 border border-blue-100 p-5 rounded-lg">
+                      <h4 className="text-lg font-semibold mb-3 text-blue-800">一、节拍：日语不是按汉字数读，而是按“拍”读</h4>
+                      <p className="text-gray-700 mb-4 leading-relaxed">
+                        拍可以理解成读单词时的“格子”。普通假名一拍，ん 一拍，小 っ 一拍，长音一拍，拗音合起来一拍。读得像节拍器一样稳定，日语会自然很多。
+                      </p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-gray-700">
+                        <div className="bg-white rounded-md p-3">さくら：さ・く・ら，3拍</div>
+                        <div className="bg-white rounded-md p-3">にほん：に・ほ・ん，3拍</div>
+                        <div className="bg-white rounded-md p-3">がっこう：が・っ・こ・う，4拍</div>
+                        <div className="bg-white rounded-md p-3">きょう：きょ・う，2拍</div>
+                        <div className="bg-white rounded-md p-3">せんせい：せ・ん・せ・い，4拍</div>
+                        <div className="bg-white rounded-md p-3">ありがとう：あ・り・が・と・う，5拍</div>
+                      </div>
+                    </div>
+
+                    <div className="bg-gray-50 p-5 rounded-lg">
+                      <h4 className="font-semibold mb-3 text-gray-800">二、声调：日语是“高低”，不是中文的“一声二声三声四声”</h4>
+                      <p className="text-gray-600 mb-4 leading-relaxed">
+                        日语单词通常会在某个位置从高变低，或者一直保持后面较高。你不用一开始就背所有重音编号，但要养成听“哪里开始掉下来”的习惯。
+                      </p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="bg-white rounded-md p-4">
+                          <h5 className="font-medium text-gray-800 mb-2">平板型：低 → 高，然后保持</h5>
+                          <p className="text-gray-600">例：さくら。第一个音较低，后面抬起来，接助词时也不掉。</p>
+                          <p className="mt-2 text-sm text-blue-700">感觉：sa 低，ku-ra 稍高。</p>
+                        </div>
+                        <div className="bg-white rounded-md p-4">
+                          <h5 className="font-medium text-gray-800 mb-2">头高型：高 → 低</h5>
+                          <p className="text-gray-600">例：あめ。第一个音高，后面马上掉下来。</p>
+                          <p className="mt-2 text-sm text-blue-700">感觉：a 高，me 低。</p>
+                        </div>
+                        <div className="bg-white rounded-md p-4">
+                          <h5 className="font-medium text-gray-800 mb-2">中高型：中间高，后面掉</h5>
+                          <p className="text-gray-600">例：たまご。前面抬起来，中途掉下去。</p>
+                          <p className="mt-2 text-sm text-blue-700">感觉：ta 低，ma 高，go 低。</p>
+                        </div>
+                        <div className="bg-white rounded-md p-4">
+                          <h5 className="font-medium text-gray-800 mb-2">尾高型：词尾高，接助词后掉</h5>
+                          <p className="text-gray-600">例：はな。单词最后高，但后面接 が、は 等助词时会掉。</p>
+                          <p className="mt-2 text-sm text-blue-700">感觉：ha 低，na 高，助词低。</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-gray-50 p-5 rounded-lg">
+                      <h4 className="font-semibold mb-3 text-gray-800">三、为什么要注意声调：同样的假名，意思可能不同</h4>
+                      <p className="text-gray-600 mb-4 leading-relaxed">
+                        初学者先不用害怕，说错声调通常还能沟通，但有些词只靠高低来区分。知道这件事，会让你从一开始就更愿意听标准发音。
+                      </p>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-gray-700">
+                        <div className="bg-white rounded-md p-3">あめ：雨 / 糖，声调不同</div>
+                        <div className="bg-white rounded-md p-3">はし：桥 / 筷子，声调不同</div>
+                        <div className="bg-white rounded-md p-3">かき：柿子 / 牡蛎，声调不同</div>
+                      </div>
+                    </div>
+
+                    <div className="bg-gray-50 p-5 rounded-lg">
+                      <h4 className="font-semibold mb-3 text-gray-800">四、助词会帮你听出声调</h4>
+                      <p className="text-gray-600 mb-4 leading-relaxed">
+                        日语单词后面常接 は、が、を、に 等助词。很多时候，单词本身听起来差不多，接上助词以后，高低变化会更明显。
+                      </p>
+                      <div className="space-y-2 text-gray-700">
+                        <div className="bg-white rounded-md p-3">平板型：さくらが，后面的 が 也保持较高。</div>
+                        <div className="bg-white rounded-md p-3">尾高型：はなが，はな 高，到了 が 掉下来。</div>
+                        <div className="bg-white rounded-md p-3">头高型：あめが，あ 高，め 和 が 都低。</div>
+                      </div>
+                    </div>
+
+                    <div className="bg-amber-50 border border-amber-100 p-5 rounded-lg">
+                      <h4 className="font-semibold mb-3 text-amber-800">零基础练习方法</h4>
+                      <ol className="list-decimal pl-5 space-y-2 text-gray-700">
+                        <li>先按拍拆词：ありがとう 拆成 あ・り・が・と・う。</li>
+                        <li>一边读一边轻轻敲桌子，每拍长度尽量一样。</li>
+                        <li>听标准发音时，不急着跟读，先听哪里变高、哪里掉下去。</li>
+                        <li>跟读时不要用中文四声套进去，保持轻、短、平稳。</li>
+                        <li>遇到 ん、小 っ、长音时，一定给它们留出一拍。</li>
+                      </ol>
                     </div>
                   </div>
                 </div>

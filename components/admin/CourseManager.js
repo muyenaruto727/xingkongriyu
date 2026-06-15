@@ -307,7 +307,7 @@ const CourseManager = ({ showToast }) => {
       const keys = chapterData.map(chapter => `chapter-${chapter.id}`);
       setExpandedKeys(keys);
     } catch (error) {
-      console.error('获取章节列表失败:', error);
+      api.handleError('获取章节列表失败:', error);
     } finally {
       setIsLoading(false);
     }
@@ -330,7 +330,7 @@ const CourseManager = ({ showToast }) => {
       form.resetFields();
       fetchChapters(currentEditId);
     } catch (error) {
-      console.error('添加章节失败:', error);
+      api.handleError('添加章节失败:', error);
     } finally {
       setIsLoading(false);
     }
@@ -347,7 +347,7 @@ const CourseManager = ({ showToast }) => {
       setEditingChapter(null);
       fetchChapters(currentEditId);
     } catch (error) {
-      console.error('更新章节失败:', error);
+      api.handleError('更新章节失败:', error);
     } finally {
       setIsLoading(false);
     }
@@ -367,7 +367,7 @@ const CourseManager = ({ showToast }) => {
           message.success('章节删除成功');
           fetchChapters(currentEditId);
         } catch (error) {
-          console.error('删除章节失败:', error);
+          api.handleError('删除章节失败:', error);
         } finally {
           setIsLoading(false);
         }
@@ -397,7 +397,7 @@ const CourseManager = ({ showToast }) => {
       setSectionType('article');
       fetchChapters(currentEditId);
     } catch (error) {
-      console.error('添加小节失败:', error);
+      api.handleError('添加小节失败:', error);
     } finally {
       setIsLoading(false);
     }
@@ -420,7 +420,7 @@ const CourseManager = ({ showToast }) => {
       setEditingSection(null);
       fetchChapters(currentEditId);
     } catch (error) {
-      console.error('更新小节失败:', error);
+      api.handleError('更新小节失败:', error);
     } finally {
       setIsLoading(false);
     }
@@ -440,7 +440,7 @@ const CourseManager = ({ showToast }) => {
           message.success('小节删除成功');
           fetchChapters(currentEditId);
         } catch (error) {
-          console.error('删除小节失败:', error);
+          api.handleError('删除小节失败:', error);
         } finally {
           setIsLoading(false);
         }

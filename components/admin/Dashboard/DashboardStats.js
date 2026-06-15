@@ -21,7 +21,7 @@ const DashboardStats = () => {
           recentActivity: result.recentActivity || []
         });
       } catch (error) {
-        console.error('Failed to fetch stats:', error);
+        api.handleError('Failed to fetch stats:', error);
       } finally {
         setLoading(false);
       }

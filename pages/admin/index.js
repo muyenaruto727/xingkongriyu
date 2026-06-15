@@ -22,7 +22,8 @@ const AdminLogin = () => {
       login(data.user, data.token);
       router.push('/admin/dashboard');
     } catch (err) {
-      setError(err.message || '登录失败，请重试');
+      api.handleError('Admin login error:', err);
+      setError(err.userMessage || err.message || '登录失败，请重试');
     } finally {
       setLoading(false);
     }

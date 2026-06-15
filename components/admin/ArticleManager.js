@@ -69,7 +69,7 @@ const ArticleManager = ({ showToast }) => {
       setShowAddArticleDrawer(false);
       showToast('文章添加成功', 'success');
     } catch (error) {
-      console.error('Failed to create article:', error);
+      api.handleError('Failed to create article:', error);
     }
   };
 
@@ -113,7 +113,7 @@ const ArticleManager = ({ showToast }) => {
       setShowEditArticleModal(false);
       showToast('文章更新成功', 'success');
     } catch (error) {
-      console.error('Failed to update article:', error);
+      api.handleError('Failed to update article:', error);
     }
   };
 
@@ -130,7 +130,7 @@ const ArticleManager = ({ showToast }) => {
       setShowDeleteArticleConfirm(false);
       showToast('文章删除成功', 'success');
     } catch (error) {
-      console.error('Failed to delete article:', error);
+      api.handleError('Failed to delete article:', error);
     }
   };
 

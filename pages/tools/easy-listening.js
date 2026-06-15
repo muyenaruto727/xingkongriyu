@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
+import { message } from 'antd';
 import Navigation from '../../components/layout/Navigation';
 import Footer from '../../components/layout/Footer';
 
@@ -62,9 +63,9 @@ const EasyListening = () => {
       };
       await audio.play();
     } catch (error) {
-      console.error('Play audio failed:', error);
       setIsPlaying(false);
       setPlayError('音频播放失败，请检查浏览器播放权限');
+      message.error('音频播放失败，请检查浏览器播放权限');
     }
   };
 
