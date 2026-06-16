@@ -201,6 +201,7 @@ const ListeningManager = ({ showToast }) => {
   // 处理添加听力
   const handleSubmitAdd = async (e) => {
     e.preventDefault();
+    if (isLoading) return;
     
     // 表单验证
     if (!validateForm()) {
@@ -236,6 +237,7 @@ const ListeningManager = ({ showToast }) => {
   // 处理编辑听力
   const handleSubmitEdit = async (e) => {
     e.preventDefault();
+    if (isLoading) return;
     
     // 表单验证
     if (!validateForm()) {
@@ -301,6 +303,7 @@ const ListeningManager = ({ showToast }) => {
 
   // 处理删除听力
   const confirmDelete = async () => {
+    if (isLoading) return;
     setIsLoading(true);
     
     try {
@@ -421,8 +424,9 @@ const ListeningManager = ({ showToast }) => {
         title={isEditMode ? '编辑听力' : '添加听力'}
         width={900}
         onOk={isEditMode ? handleSubmitEdit : handleSubmitAdd}
-        okText="保存"
+        okText={isLoading ? '保存中...' : '保存'}
         cancelText="取消"
+        okButtonProps={{ loading: isLoading, disabled: isLoading }}
       >
         <form onSubmit={isEditMode ? handleSubmitEdit : handleSubmitAdd} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -571,8 +575,8 @@ const ListeningManager = ({ showToast }) => {
         onCancel={() => setShowDeleteConfirm(false)}
         title="确认删除"
         onOk={confirmDelete}
-        okText="删除"
-        okButtonProps={{ danger: true }}
+        okText={isLoading ? '删除中...' : '删除'}
+        okButtonProps={{ danger: true, loading: isLoading, disabled: isLoading }}
         cancelText="取消"
       >
         <p className="text-center">确定要删除这个听力项目吗？</p>

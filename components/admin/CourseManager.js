@@ -77,26 +77,21 @@ const CourseManager = ({ showToast }) => {
       }
       
       const data = await api.getCourseList(params);
-      console.log('API Response:', data);
       
       if (typeof setCourseList === 'function') {
         // 处理不同的数据结构
         if (data && data.data && Array.isArray(data.data)) {
           // API 返回的数据结构是 { data: [...], total }
-          console.log('Setting courseList from data.data:', data.data);
           setCourseList(data.data);
           setTotalItems(data.total || 0);
         } else if (Array.isArray(data)) {
-          console.log('Setting courseList from array:', data);
           setCourseList(data);
           setTotalItems(data.length);
         } else {
-          console.log('Setting courseList to empty array');
           setCourseList([]);
           setTotalItems(0);
         }
       } else {
-        console.log('setCourseList is not a function');
       }
     } catch (error) {
       logError(error, 'Fetch Course');
@@ -156,6 +151,7 @@ const CourseManager = ({ showToast }) => {
   // 处理添加课程
   const handleSubmitAdd = async (e) => {
     e.preventDefault();
+    if (isLoading) return;
     
     // 表单验证
     if (!validateForm()) {
@@ -191,6 +187,7 @@ const CourseManager = ({ showToast }) => {
   // 处理更新课程
   const handleSubmitEdit = async (e) => {
     e.preventDefault();
+    if (isLoading) return;
     
     // 表单验证
     if (!validateForm()) {
@@ -252,6 +249,7 @@ const CourseManager = ({ showToast }) => {
   
   // 处理删除课程
   const confirmDelete = async () => {
+    if (isLoading) return;
     setIsLoading(true);
     
     try {
@@ -300,7 +298,6 @@ const CourseManager = ({ showToast }) => {
     setIsLoading(true);
     try {
       const response = await api.getChapterList({ courseId });
-      console.log('Chapter list response:', response);
       const chapterData = Array.isArray(response) ? response : [];
       setChapters(chapterData);
       // 展开所有节点
@@ -315,6 +312,7 @@ const CourseManager = ({ showToast }) => {
 
   // 处理章节添加
   const handleAddChapter = async (values) => {
+    if (isLoading) return;
     if (!currentEditId) {
       message.error('请先选择课程');
       return;
@@ -338,6 +336,7 @@ const CourseManager = ({ showToast }) => {
 
   // 处理章节编辑
   const handleEditChapter = async (values) => {
+    if (isLoading) return;
     setIsLoading(true);
     try {
       await api.updateChapter(editingChapter.id, values);
@@ -377,6 +376,7 @@ const CourseManager = ({ showToast }) => {
 
   // 处理小节添加
   const handleAddSection = async (values) => {
+    if (isLoading) return;
     if (!selectedChapter) {
       message.error('请先选择章节');
       return;
@@ -405,6 +405,7 @@ const CourseManager = ({ showToast }) => {
 
   // 处理小节编辑
   const handleEditSection = async (values) => {
+    if (isLoading) return;
     setIsLoading(true);
     try {
       // 确保 content 和 videoUrl 字段存在，避免传递 undefined
@@ -746,7 +747,7 @@ const CourseManager = ({ showToast }) => {
           resetForm();
         }}
         footer={[
-          <Button key="cancel" onClick={() => {
+          <Button key="cancel" disabled={isLoading} onClick={() => {
             setShowModal(false);
             resetForm();
           }}>
@@ -755,8 +756,8 @@ const CourseManager = ({ showToast }) => {
           <Button key="submit" type="primary" onClick={(e) => {
             e.preventDefault();
             isEditMode ? handleSubmitEdit(e) : handleSubmitAdd(e);
-          }} style={{ backgroundColor: '#3B82F6', borderColor: '#3B82F6' }}>
-            保存
+          }} loading={isLoading} disabled={isLoading} style={{ backgroundColor: '#3B82F6', borderColor: '#3B82F6' }}>
+            {isLoading ? '保存中...' : '保存'}
           </Button>
         ]}
       >
@@ -829,11 +830,11 @@ const CourseManager = ({ showToast }) => {
         open={showDeleteConfirm}
         onCancel={() => setShowDeleteConfirm(false)}
         footer={[
-          <Button key="cancel" onClick={() => setShowDeleteConfirm(false)}>
+          <Button key="cancel" disabled={isLoading} onClick={() => setShowDeleteConfirm(false)}>
             取消
           </Button>,
-          <Button key="delete" type="primary" danger onClick={confirmDelete}>
-            删除
+          <Button key="delete" type="primary" danger loading={isLoading} disabled={isLoading} onClick={confirmDelete}>
+            {isLoading ? '删除中...' : '删除'}
           </Button>
         ]}
       >
@@ -849,11 +850,11 @@ const CourseManager = ({ showToast }) => {
         okText="保存"
         cancelText="取消"
         footer={[
-          <Button key="cancel" onClick={() => setShowAddModal(false)}>
+          <Button key="cancel" disabled={isLoading} onClick={() => setShowAddModal(false)}>
             取消
           </Button>,
-          <Button key="submit" type="primary" onClick={form.submit}>
-            保存
+          <Button key="submit" type="primary" loading={isLoading} disabled={isLoading} onClick={form.submit}>
+            {isLoading ? '保存中...' : '保存'}
           </Button>
         ]}
       >
@@ -883,11 +884,11 @@ const CourseManager = ({ showToast }) => {
         okText="保存"
         cancelText="取消"
         footer={[
-          <Button key="cancel" onClick={() => setShowEditModal(false)}>
+          <Button key="cancel" disabled={isLoading} onClick={() => setShowEditModal(false)}>
             取消
           </Button>,
-          <Button key="submit" type="primary" onClick={form.submit}>
-            保存
+          <Button key="submit" type="primary" loading={isLoading} disabled={isLoading} onClick={form.submit}>
+            {isLoading ? '保存中...' : '保存'}
           </Button>
         ]}
       >
@@ -914,8 +915,10 @@ const CourseManager = ({ showToast }) => {
         open={showAddSectionModal}
         onOk={() => sectionForm.submit()}
         onCancel={() => setShowAddSectionModal(false)}
-        okText="保存"
+        okText={isLoading ? '保存中...' : '保存'}
         cancelText="取消"
+        confirmLoading={isLoading}
+        okButtonProps={{ loading: isLoading, disabled: isLoading }}
       >
         <Form form={sectionForm} layout="vertical" onFinish={handleAddSection}>
           <Form.Item
@@ -977,8 +980,10 @@ const CourseManager = ({ showToast }) => {
         open={showEditSectionModal}
         onOk={() => sectionForm.submit()}
         onCancel={() => setShowEditSectionModal(false)}
-        okText="保存"
+        okText={isLoading ? '保存中...' : '保存'}
         cancelText="取消"
+        confirmLoading={isLoading}
+        okButtonProps={{ loading: isLoading, disabled: isLoading }}
       >
         <Form form={sectionForm} layout="vertical" onFinish={handleEditSection}>
           <Form.Item

@@ -80,6 +80,14 @@ async function handleCreateQuote(req, res) {
     return res.status(400).json({ success: false, message: '句子不能为空' });
   }
 
+  const duplicateResult = await pool.query(
+    'SELECT id FROM daily_quotes WHERE sentence = $1 LIMIT 1',
+    [sentence]
+  );
+  if (duplicateResult.rows.length > 0) {
+    return res.status(409).json({ success: false, error: { code: 'DUPLICATE_RESOURCE', message: '每日一句已存在' } });
+  }
+
   const result = await pool.query(
     'INSERT INTO daily_quotes (sentence, meaning, source) VALUES ($1, $2, $3) RETURNING *',
     [sentence, meaning || '', source || '']

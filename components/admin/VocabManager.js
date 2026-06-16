@@ -109,10 +109,8 @@ const VocabManager = () => {
   // 处理搜索表单变化
   const handleSearchChange = (e) => {
     const { name, value } = e.target;
-    console.log('handleSearchChange called with name:', name, 'value:', value);
     setSearchForm(prev => {
       const newSearchForm = { ...prev, [name]: value };
-      console.log('Search form updated:', newSearchForm);
       return newSearchForm;
     });
   };
@@ -208,6 +206,7 @@ const VocabManager = () => {
   // 处理添加词汇
   const handleSubmitAdd = async (e) => {
     e.preventDefault();
+    if (isLoading) return;
     
     // 表单验证
     if (!validateForm()) {
@@ -266,6 +265,7 @@ const VocabManager = () => {
   // 处理编辑词汇
   const handleSubmitEdit = async (e) => {
     e.preventDefault();
+    if (isLoading) return;
     
     // 表单验证
     if (!validateForm()) {
@@ -302,6 +302,7 @@ const VocabManager = () => {
 
   // 处理删除词汇
   const confirmDelete = async () => {
+    if (isLoading) return;
     setIsLoading(true);
     
     try {
@@ -323,8 +324,6 @@ const VocabManager = () => {
   const fetchVocabList = async (useEmptyFilters = false, customLimit = null) => {
     setIsLoading(true);
     try {
-      console.log('Fetching vocab list with useEmptyFilters:', useEmptyFilters);
-      console.log('Current search form:', searchForm);
       // 构建查询参数
       const params = {
         page: currentPage,
@@ -335,30 +334,23 @@ const VocabManager = () => {
         // 确保读取最新的 searchForm 状态
         if (searchForm.level && searchForm.level !== '') {
           params.level = searchForm.level;
-          console.log('Added level parameter:', searchForm.level);
         }
         if (searchForm.tag && searchForm.tag !== '') {
           params.tag = searchForm.tag;
-          console.log('Added tag parameter:', searchForm.tag);
         }
         if (searchForm.japanese && searchForm.japanese !== '') {
           params.search = searchForm.japanese;
-          console.log('Added search parameter for japanese:', searchForm.japanese);
         }
         if (searchForm.pronunciation && searchForm.pronunciation !== '') {
           params.search = searchForm.pronunciation;
-          console.log('Added search parameter for pronunciation:', searchForm.pronunciation);
         }
         if (searchForm.textbooks && searchForm.textbooks.length > 0) {
           params.textbooks = searchForm.textbooks;
-          console.log('Added textbooks parameter:', searchForm.textbooks);
         }
         if (searchForm.lessons && searchForm.lessons.length > 0) {
           params.lessons = searchForm.lessons;
-          console.log('Added lessons parameter:', searchForm.lessons);
         }
       }
-      console.log('Query params:', params);
       
       const data = await api.getVocabList(params);
       
@@ -993,7 +985,6 @@ const VocabManager = () => {
         </button>
         <button 
           onClick={() => {
-            console.log('Search button clicked, current searchForm:', searchForm);
             fetchVocabList();
           }}
           className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -1144,8 +1135,9 @@ const VocabManager = () => {
         title={isEditMode ? '编辑词汇' : '添加词汇'}
         width={900}
         onOk={isEditMode ? handleSubmitEdit : handleSubmitAdd}
-        okText="保存"
+        okText={isLoading ? '保存中...' : '保存'}
         cancelText="取消"
+        okButtonProps={{ loading: isLoading, disabled: isLoading }}
       >
         <form onSubmit={isEditMode ? handleSubmitEdit : handleSubmitAdd} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1163,7 +1155,6 @@ const VocabManager = () => {
                 options={cascaderOptions}
                 value={buildCascaderValue(vocabForm.textbooks || [], vocabForm.lessons || [])}
                 onChange={(values) => {
-                  console.log('Cascader onChange triggered with values:', values);
                   // 处理Cascader的多选值格式
                   const textbooksSet = new Set();
                   const lessons = [];
@@ -1177,8 +1168,6 @@ const VocabManager = () => {
                   });
                   
                   const textbooks = Array.from(textbooksSet);
-                  console.log('Separated textbooks:', textbooks);
-                  console.log('Separated lessons:', lessons);
                   
                   // 直接更新状态，确保UI能够正确反映选择
                   setVocabForm({
@@ -1186,7 +1175,6 @@ const VocabManager = () => {
                     textbooks,
                     lessons
                   });
-                  console.log('Vocab form updated');
                 }}
                 placeholder="请选择教材和课程"
                 multiple
@@ -1298,7 +1286,7 @@ const VocabManager = () => {
         onCancel={() => setShowDeleteConfirm(false)}
         title="确认删除"
         onOk={confirmDelete}
-        okButtonProps={{ danger: true, loading: isLoading }}
+        okButtonProps={{ danger: true, loading: isLoading, disabled: isLoading }}
         cancelText="取消"
       >
         <p className="text-gray-700">确定要删除这个词汇吗？此操作不可撤销。</p>
@@ -1356,7 +1344,7 @@ const VocabManager = () => {
         title="批量下载词汇"
         onOk={handleBatchDownload}
         okText="下载"
-        okButtonProps={{ loading: isLoading }}
+        okButtonProps={{ loading: isLoading, disabled: isLoading }}
         width={600}
       >
         <div className="mb-6">

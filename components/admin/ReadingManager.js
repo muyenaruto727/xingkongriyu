@@ -178,6 +178,7 @@ const ReadingManager = ({ showToast }) => {
   // 处理添加阅读
   const handleSubmitAdd = async (e) => {
     e.preventDefault();
+    if (isLoading) return;
     if (!validateForm()) {
       return;
     }
@@ -209,6 +210,7 @@ const ReadingManager = ({ showToast }) => {
   // 处理更新阅读
   const handleSubmitEdit = async (e) => {
     e.preventDefault();
+    if (isLoading) return;
     if (!validateForm()) {
       return;
     }
@@ -268,6 +270,7 @@ const ReadingManager = ({ showToast }) => {
 
   // 处理删除阅读
   const confirmDelete = async () => {
+    if (isLoading) return;
     setIsLoading(true);
     
     try {
@@ -385,8 +388,9 @@ const ReadingManager = ({ showToast }) => {
           resetForm();
         }}
         onOk={isEditMode ? handleSubmitEdit : handleSubmitAdd}
-        okText="保存"
+        okText={isLoading ? '保存中...' : '保存'}
         cancelText="取消"
+        okButtonProps={{ loading: isLoading, disabled: isLoading }}
       >
         <form onSubmit={isEditMode ? handleSubmitEdit : handleSubmitAdd}>
           {/* 难度 */}
@@ -527,8 +531,8 @@ const ReadingManager = ({ showToast }) => {
         open={showDeleteConfirm}
         onCancel={() => setShowDeleteConfirm(false)}
         onOk={confirmDelete}
-        okText="删除"
-        okButtonProps={{ danger: true }}
+        okText={isLoading ? '删除中...' : '删除'}
+        okButtonProps={{ danger: true, loading: isLoading, disabled: isLoading }}
         cancelText="取消"
       >
         <p>确定要删除这个阅读项目吗？</p>

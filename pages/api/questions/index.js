@@ -107,11 +107,21 @@ async function handler(req, res) {
           grammarPassage,
           questions
         } = req.body;
+        const isDuplicateQuestion = async (item) => {
+          const duplicateResult = await pool.query(
+            'SELECT id FROM questions WHERE question_text = $1 AND question_type = $2 AND level = $3 LIMIT 1',
+            [item.question_text, item.question_type, item.level]
+          );
+          return duplicateResult.rows.length > 0;
+        };
         
         // 处理批量导入
         if (batch && Array.isArray(batch)) {
           const results = [];
           for (const item of batch) {
+            if (await isDuplicateQuestion(item)) {
+              continue;
+            }
             const insertResult = await pool.query(
               `INSERT INTO questions 
                (question_text, question_type, options, correct_answer, explanation, level, is_real_exam, category, passage, audio_url) 
@@ -127,6 +137,9 @@ async function handler(req, res) {
           const insertedQuestions = [];
           for (const q of questions) {
             const currentPassage = (question_type === 'grammar' && category === 'text_grammar') ? grammarPassage : passage;
+            if (await isDuplicateQuestion({ question_text: q.question_text, question_type, level: qLevel })) {
+              continue;
+            }
             const insertResult = await pool.query(
               `INSERT INTO questions 
                (question_text, question_type, options, correct_answer, explanation, level, is_real_exam, category, passage, audio_url) 
@@ -138,6 +151,9 @@ async function handler(req, res) {
           }
           return successResponse(res, { questions: insertedQuestions }, '题目组添加成功');
         } else {
+          if (await isDuplicateQuestion({ question_text, question_type, level: qLevel })) {
+            return res.status(409).json({ success: false, error: { code: 'DUPLICATE_RESOURCE', message: '题目已存在' } });
+          }
           // 处理其他类型的题目
           const insertResult = await pool.query(
             `INSERT INTO questions 

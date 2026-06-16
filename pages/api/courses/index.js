@@ -36,6 +36,14 @@ async function handleCreateCourse(req, res) {
   const { name, format, description, isFree, status } = req.body;
   
   try {
+    const duplicateResult = await pool.query(
+      'SELECT id FROM courses WHERE name = $1 LIMIT 1',
+      [name]
+    );
+    if (duplicateResult.rows.length > 0) {
+      return res.status(409).json({ success: false, error: { code: 'DUPLICATE_RESOURCE', message: '课程名称已存在' } });
+    }
+
     const query = `
       INSERT INTO courses (name, format, description, is_free, status, title, level)
       VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -175,7 +183,6 @@ async function handleGetCourses(req, res) {
       });
     }
   } catch (error) {
-    console.error('获取课程列表错误:', error);
     handleError(error, req, res);
   }
 }

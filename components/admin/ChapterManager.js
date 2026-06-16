@@ -39,7 +39,6 @@ const ChapterManager = () => {
     setIsLoading(true);
     try {
       const response = await api.getCourseList();
-      console.log('Course list response:', response);
       setCourses(Array.isArray(response) ? response : []);
     } catch (error) {
       api.handleError('获取课程列表失败:', error);
@@ -55,7 +54,6 @@ const ChapterManager = () => {
     setIsLoading(true);
     try {
       const response = await api.getChapterList({ courseId });
-      console.log('Chapter list response:', response);
       const chapterData = Array.isArray(response) ? response : [];
       setChapters(chapterData);
       // 展开所有节点
@@ -77,6 +75,7 @@ const ChapterManager = () => {
 
   // 处理章节添加
   const handleAddChapter = async (values) => {
+    if (isLoading) return;
     if (!selectedCourse) {
       message.error('请先选择课程');
       return;
@@ -100,6 +99,7 @@ const ChapterManager = () => {
 
   // 处理章节编辑
   const handleEditChapter = async (values) => {
+    if (isLoading) return;
     setIsLoading(true);
     try {
       await api.updateChapter(editingChapter.id, values);
@@ -139,6 +139,7 @@ const ChapterManager = () => {
 
   // 处理小节添加
   const handleAddSection = async (values) => {
+    if (isLoading) return;
     if (!selectedChapter) {
       message.error('请先选择章节');
       return;
@@ -163,6 +164,7 @@ const ChapterManager = () => {
 
   // 处理小节编辑
   const handleEditSection = async (values) => {
+    if (isLoading) return;
     setIsLoading(true);
     try {
       await api.updateSection(editingSection.id, values);
@@ -337,8 +339,10 @@ const ChapterManager = () => {
         open={showAddModal}
         onOk={form.submit}
         onCancel={() => setShowAddModal(false)}
-        okText="保存"
+        okText={isLoading ? '保存中...' : '保存'}
         cancelText="取消"
+        confirmLoading={isLoading}
+        okButtonProps={{ loading: isLoading, disabled: isLoading }}
       >
         <Form form={form} layout="vertical" onFinish={handleAddChapter}>
           <Form.Item
@@ -363,8 +367,10 @@ const ChapterManager = () => {
         open={showEditModal}
         onOk={form.submit}
         onCancel={() => setShowEditModal(false)}
-        okText="保存"
+        okText={isLoading ? '保存中...' : '保存'}
         cancelText="取消"
+        confirmLoading={isLoading}
+        okButtonProps={{ loading: isLoading, disabled: isLoading }}
       >
         <Form form={form} layout="vertical" onFinish={handleEditChapter}>
           <Form.Item
@@ -389,8 +395,10 @@ const ChapterManager = () => {
         open={showAddSectionModal}
         onOk={sectionForm.submit}
         onCancel={() => setShowAddSectionModal(false)}
-        okText="保存"
+        okText={isLoading ? '保存中...' : '保存'}
         cancelText="取消"
+        confirmLoading={isLoading}
+        okButtonProps={{ loading: isLoading, disabled: isLoading }}
       >
         <Form form={sectionForm} layout="vertical" onFinish={handleAddSection}>
           <Form.Item
@@ -448,8 +456,10 @@ const ChapterManager = () => {
         open={showEditSectionModal}
         onOk={sectionForm.submit}
         onCancel={() => setShowEditSectionModal(false)}
-        okText="保存"
+        okText={isLoading ? '保存中...' : '保存'}
         cancelText="取消"
+        confirmLoading={isLoading}
+        okButtonProps={{ loading: isLoading, disabled: isLoading }}
       >
         <Form form={sectionForm} layout="vertical" onFinish={handleEditSection}>
           <Form.Item

@@ -38,6 +38,13 @@ async function handler(req, res) {
       case 'POST':
         {
           const { title, content, level, category } = req.body;
+          const duplicateResult = await pool.query(
+            'SELECT id FROM articles WHERE title = $1 LIMIT 1',
+            [title]
+          );
+          if (duplicateResult.rows.length > 0) {
+            return res.status(409).json({ success: false, error: { code: 'DUPLICATE_RESOURCE', message: '文章标题已存在' } });
+          }
           const insertResult = await pool.query(
             'INSERT INTO articles (title, content, level, category) VALUES ($1, $2, $3, $4) RETURNING *',
             [title, content, level, category]

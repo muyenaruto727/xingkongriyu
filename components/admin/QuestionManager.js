@@ -156,6 +156,7 @@ const QuestionManager = ({ defaultType = '', defaultLevel = '' }) => {
 
   const handleSubmitAdd = async (e) => {
     e.preventDefault();
+    if (isLoading) return;
     setIsLoading(true);
     try {
       let submitData = questionForm;
@@ -180,6 +181,7 @@ const QuestionManager = ({ defaultType = '', defaultLevel = '' }) => {
 
   const handleSubmitEdit = async (e) => {
     e.preventDefault();
+    if (isLoading) return;
     setIsLoading(true);
     try {
       let submitData = questionForm;
@@ -289,6 +291,7 @@ const QuestionManager = ({ defaultType = '', defaultLevel = '' }) => {
   };
 
   const confirmDelete = async () => {
+    if (isLoading) return;
     setIsLoading(true);
     try {
       await api.deleteQuestion(currentDeleteId);
@@ -639,8 +642,9 @@ const QuestionManager = ({ defaultType = '', defaultLevel = '' }) => {
         title={isEditMode ? '编辑题目' : '添加题目'}
         width={900}
         onOk={isEditMode ? handleSubmitEdit : handleSubmitAdd}
-        okText="保存"
+        okText={isLoading ? '保存中...' : '保存'}
         cancelText="取消"
+        okButtonProps={{ loading: isLoading, disabled: isLoading }}
       >
         <form onSubmit={isEditMode ? handleSubmitEdit : handleSubmitAdd} className="space-y-6">
           <div className="mb-4">
@@ -1066,7 +1070,7 @@ const QuestionManager = ({ defaultType = '', defaultLevel = '' }) => {
         onCancel={() => setShowDeleteConfirm(false)}
         title="确认删除"
         onOk={confirmDelete}
-        okButtonProps={{ danger: true, loading: isLoading }}
+        okButtonProps={{ danger: true, loading: isLoading, disabled: isLoading }}
         cancelText="取消"
       >
         <p className="text-gray-700">确定要删除这道题目吗？此操作不可撤销。</p>
@@ -1127,7 +1131,7 @@ const QuestionManager = ({ defaultType = '', defaultLevel = '' }) => {
         title="批量下载题目"
         onOk={handleBatchDownload}
         okText="下载"
-        okButtonProps={{ loading: isLoading }}
+        okButtonProps={{ loading: isLoading, disabled: isLoading }}
         width={500}
       >
         <div className="mb-6">

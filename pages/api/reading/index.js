@@ -59,6 +59,13 @@ async function handler(req, res) {
         // 处理添加阅读
         try {
           const { difficulty, article, groups } = body;
+          const duplicateResult = await pool.query(
+            'SELECT id FROM reading WHERE difficulty = $1 AND article = $2 LIMIT 1',
+            [difficulty, article]
+          );
+          if (duplicateResult.rows.length > 0) {
+            return res.status(409).json({ success: false, error: { code: 'DUPLICATE_RESOURCE', message: '阅读材料已存在' } });
+          }
 
           // 插入数据
           const query = `

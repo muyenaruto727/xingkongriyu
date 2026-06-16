@@ -138,11 +138,21 @@ const finalLessons = lessons || lesson;
     case 'POST':
       try {
         const { batch, japanese, pronunciation, chinese, level, category, pitch_accent, tag, examples, textbook, lesson } = req.body;
+        const isDuplicateVocab = async (item) => {
+          const duplicateResult = await pool.query(
+            'SELECT id FROM vocabulary WHERE japanese = $1 AND pronunciation = $2 AND level = $3 LIMIT 1',
+            [item.japanese, item.pronunciation, item.level]
+          );
+          return duplicateResult.rows.length > 0;
+        };
         
         // 处理批量导入
         if (batch && Array.isArray(batch)) {
           const results = [];
           for (const item of batch) {
+            if (await isDuplicateVocab(item)) {
+              continue;
+            }
             // 构建动态SQL查询，根据数据库结构调整
             let query, params;
             try {
@@ -188,6 +198,9 @@ const finalLessons = lessons || lesson;
           cache.clear();
           return successResponse(res, results, '批量导入成功');
         } else {
+          if (await isDuplicateVocab({ japanese, pronunciation, level })) {
+            return res.status(409).json({ success: false, error: { code: 'DUPLICATE_RESOURCE', message: '词汇已存在' } });
+          }
           // 处理单个词汇添加
           // 构建动态SQL查询，根据数据库结构调整
           let query, params;

@@ -57,6 +57,14 @@ async function handleCreateSection(req, res) {
     if (checkResult.rows.length === 0) {
       return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: '章节不存在' } });
     }
+
+    const duplicateResult = await pool.query(
+      'SELECT id FROM sections WHERE chapter_id = $1 AND name = $2 LIMIT 1',
+      [chapterId, name]
+    );
+    if (duplicateResult.rows.length > 0) {
+      return res.status(409).json({ success: false, error: { code: 'DUPLICATE_RESOURCE', message: '小节已存在' } });
+    }
     
     const query = `
       INSERT INTO sections (name, content, video_url, chapter_id, "order")

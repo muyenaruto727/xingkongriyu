@@ -78,11 +78,21 @@ async function handler(req, res) {
     case 'POST':
       try {
         const { batch, grammarPoint, level, japaneseMeaning, chineseMeaning, continuation, attentionPoints, translationExercises, referenceAnswers, examples } = req.body;
+        const isDuplicateGrammar = async (item) => {
+          const duplicateResult = await pool.query(
+            'SELECT id FROM grammar WHERE grammar_point = $1 AND level = $2 LIMIT 1',
+            [item.grammarPoint, item.level]
+          );
+          return duplicateResult.rows.length > 0;
+        };
         
         // 处理批量导入
         if (batch && Array.isArray(batch)) {
           const results = [];
           for (const item of batch) {
+            if (await isDuplicateGrammar(item)) {
+              continue;
+            }
             const result = await pool.query(
               `INSERT INTO grammar (grammar_point, level, japanese_meaning, chinese_meaning, continuation, attention_points, translation_exercises, reference_answers, examples)
                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
@@ -93,6 +103,9 @@ async function handler(req, res) {
           }
           return successResponse(res, results, '批量导入成功');
         } else {
+          if (await isDuplicateGrammar({ grammarPoint, level })) {
+            return res.status(409).json({ success: false, error: { code: 'DUPLICATE_RESOURCE', message: '语法点已存在' } });
+          }
           // 处理单个语法添加
           const result = await pool.query(
             `INSERT INTO grammar (grammar_point, level, japanese_meaning, chinese_meaning, continuation, attention_points, translation_exercises, reference_answers, examples)

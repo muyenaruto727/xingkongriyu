@@ -87,6 +87,14 @@ async function handleCreateChapter(req, res) {
     if (checkResult.rows.length === 0) {
       return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: '课程不存在' } });
     }
+
+    const duplicateResult = await pool.query(
+      'SELECT id FROM chapters WHERE course_id = $1 AND name = $2 LIMIT 1',
+      [courseId, name]
+    );
+    if (duplicateResult.rows.length > 0) {
+      return res.status(409).json({ success: false, error: { code: 'DUPLICATE_RESOURCE', message: '章节已存在' } });
+    }
     
     const query = `
       INSERT INTO chapters (name, description, course_id)

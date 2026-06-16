@@ -232,6 +232,15 @@ async function handleCreateTextbook(req, res) {
   
   try {
     await client.query('BEGIN');
+
+    const duplicateResult = await client.query(
+      'SELECT id FROM textbooks WHERE name = $1 LIMIT 1',
+      [name]
+    );
+    if (duplicateResult.rows.length > 0) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({ success: false, error: { code: 'DUPLICATE_RESOURCE', message: '教材名称已存在' } });
+    }
     
     // 创建教材
     const textbookQuery = `
@@ -273,7 +282,7 @@ async function handleCreateTextbook(req, res) {
   } catch (error) {
     await client.query('ROLLBACK');
     if (error.code === '23505' && error.constraint === 'textbooks_name_key') {
-      return res.status(400).json({ success: false, error: { code: 'DUPLICATE_NAME', message: '教材名称已存在' } });
+      return res.status(409).json({ success: false, error: { code: 'DUPLICATE_RESOURCE', message: '教材名称已存在' } });
     }
     handleError(error, req, res);
   } finally {

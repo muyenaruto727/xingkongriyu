@@ -159,6 +159,7 @@ const GrammarManager = () => {
   // 处理添加语法
   const handleSubmitAdd = async (e) => {
     e.preventDefault();
+    if (isLoading) return;
     
     // 验证必填字段
     if (!grammarForm.grammarPoint || grammarForm.grammarPoint.trim() === '') {
@@ -212,6 +213,7 @@ const GrammarManager = () => {
   // 处理编辑语法
   const handleSubmitEdit = async (e) => {
     e.preventDefault();
+    if (isLoading) return;
     
     // 验证必填字段
     if (!grammarForm.grammarPoint || grammarForm.grammarPoint.trim() === '') {
@@ -288,6 +290,7 @@ const GrammarManager = () => {
 
   // 确认删除
   const confirmDelete = async () => {
+    if (isLoading) return;
     setIsLoading(true);
     try {
       await api.deleteGrammar(currentDeleteId);
@@ -718,8 +721,9 @@ const GrammarManager = () => {
         title={isEditMode ? '编辑语法' : '添加语法'}
         width={900}
         onOk={isEditMode ? handleSubmitEdit : handleSubmitAdd}
-        okText="保存"
+        okText={isLoading ? '保存中...' : '保存'}
         cancelText="取消"
+        okButtonProps={{ loading: isLoading, disabled: isLoading }}
       >
         <form onSubmit={isEditMode ? handleSubmitEdit : handleSubmitAdd} className="space-y-4">
           <div className="mb-4">
@@ -826,7 +830,7 @@ const GrammarManager = () => {
 
           {/* 翻译练习 */}
           <div className="mb-5">
-            <label className="block text-sm font-medium text-dark mb-3">翻译练习（最多 5 组） <span className="text-red-500">*</span></label>
+            <label className="block text-sm font-medium text-dark mb-3">翻译练习（最多 8 组） <span className="text-red-500">*</span></label>
             {grammarForm.translationExercises.map((exercise, exerciseIndex) => (
               <div key={exerciseIndex} className="mb-4">
                 <div className="flex gap-2 mb-3">
@@ -884,7 +888,7 @@ const GrammarManager = () => {
         onOk={confirmDelete}
         okText={isLoading ? '删除中...' : '删除'}
         cancelText="取消"
-        okButtonProps={{ danger: true, loading: isLoading }}
+        okButtonProps={{ danger: true, loading: isLoading, disabled: isLoading }}
       >
         <p className="text-gray-700">确定要删除这个语法吗？此操作不可撤销。</p>
       </Modal>
@@ -936,7 +940,7 @@ const GrammarManager = () => {
         title="批量下载语法"
         onOk={handleBatchDownload}
         okText="下载"
-        okButtonProps={{ loading: isLoading }}
+        okButtonProps={{ loading: isLoading, disabled: isLoading }}
         width={600}
       >
         <div className="mb-6">

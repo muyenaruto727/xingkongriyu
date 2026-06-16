@@ -111,6 +111,8 @@ const TextbookManager = () => {
 
   // 提交添加/编辑教材
   const handleSubmit = async () => {
+    if (isLoading) return;
+
     if (!textbookForm.name.trim()) {
       message.error('请输入教材名称');
       return;
@@ -238,7 +240,7 @@ const TextbookManager = () => {
         onOk={handleSubmit}
         okText={isLoading ? '处理中...' : '保存'}
         cancelText="取消"
-        okButtonProps={{ loading: isLoading }}
+        okButtonProps={{ loading: isLoading, disabled: isLoading }}
         width={700}
       >
         <div className="space-y-6">

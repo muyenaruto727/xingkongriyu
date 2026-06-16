@@ -12,6 +12,7 @@ const ArticleManager = ({ showToast }) => {
   const [showDeleteArticleConfirm, setShowDeleteArticleConfirm] = useState(false);
   const [currentEditArticleId, setCurrentEditArticleId] = useState(null);
   const [currentDeleteArticleId, setCurrentDeleteArticleId] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [articleForm, setArticleForm] = useState({
     title: '',
     content: '',
@@ -44,6 +45,7 @@ const ArticleManager = ({ showToast }) => {
 
   const handleSubmitAddArticle = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
     if (!articleForm.title || articleForm.title.trim() === '') {
       showToast('请填写标题', 'warning');
       return;
@@ -61,6 +63,7 @@ const ArticleManager = ({ showToast }) => {
       return;
     }
 
+    setIsSubmitting(true);
     try {
       const newArticle = await api.createArticle(articleForm);
       const updatedArticles = [...articleList, newArticle];
@@ -70,6 +73,8 @@ const ArticleManager = ({ showToast }) => {
       showToast('文章添加成功', 'success');
     } catch (error) {
       api.handleError('Failed to create article:', error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -86,6 +91,7 @@ const ArticleManager = ({ showToast }) => {
 
   const handleSubmitEditArticle = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
     if (!articleForm.title || articleForm.title.trim() === '') {
       showToast('请填写标题', 'warning');
       return;
@@ -103,6 +109,7 @@ const ArticleManager = ({ showToast }) => {
       return;
     }
 
+    setIsSubmitting(true);
     try {
       const updated = await api.updateArticle(currentEditArticleId, articleForm);
       const updatedArticles = articleList.map(item => 
@@ -114,6 +121,8 @@ const ArticleManager = ({ showToast }) => {
       showToast('文章更新成功', 'success');
     } catch (error) {
       api.handleError('Failed to update article:', error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -123,6 +132,8 @@ const ArticleManager = ({ showToast }) => {
   };
 
   const confirmDeleteArticle = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
       await api.deleteArticle(currentDeleteArticleId);
       const updatedArticles = articleList.filter(article => article.id !== currentDeleteArticleId);
@@ -131,6 +142,8 @@ const ArticleManager = ({ showToast }) => {
       showToast('文章删除成功', 'success');
     } catch (error) {
       api.handleError('Failed to delete article:', error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -208,7 +221,8 @@ const ArticleManager = ({ showToast }) => {
         onCancel={() => setShowAddArticleDrawer(false)}
         title="添加文章"
         onOk={handleSubmitAddArticle}
-        okText="保存"
+        okText={isSubmitting ? '保存中...' : '保存'}
+        okButtonProps={{ loading: isSubmitting, disabled: isSubmitting }}
       >
         <div className="space-y-4">
           <div>
@@ -262,7 +276,8 @@ const ArticleManager = ({ showToast }) => {
         onCancel={() => setShowEditArticleModal(false)}
         title="编辑文章"
         onOk={handleSubmitEditArticle}
-        okText="保存"
+        okText={isSubmitting ? '保存中...' : '保存'}
+        okButtonProps={{ loading: isSubmitting, disabled: isSubmitting }}
       >
         <div className="space-y-4">
           <div>
@@ -317,7 +332,7 @@ const ArticleManager = ({ showToast }) => {
         title="确认删除"
         onOk={confirmDeleteArticle}
         okText="确认删除"
-        okButtonProps={{ danger: true }}
+        okButtonProps={{ danger: true, loading: isSubmitting, disabled: isSubmitting }}
         cancelText="取消"
       >
         <p className="text-gray-600">您确定要删除这篇文章吗？此操作不可撤销。</p>

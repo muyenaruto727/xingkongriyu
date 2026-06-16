@@ -59,6 +59,13 @@ async function handler(req, res) {
         // 处理添加听力
         try {
           const { difficulty, audioUrl, exerciseType, groups, explanation } = body;
+          const duplicateResult = await pool.query(
+            'SELECT id FROM listening WHERE difficulty = $1 AND audio_url = $2 AND exercise_type = $3 LIMIT 1',
+            [difficulty, audioUrl, exerciseType]
+          );
+          if (duplicateResult.rows.length > 0) {
+            return res.status(409).json({ success: false, error: { code: 'DUPLICATE_RESOURCE', message: '听力材料已存在' } });
+          }
 
           // 插入数据
           const query = `

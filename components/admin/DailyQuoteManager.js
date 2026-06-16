@@ -11,6 +11,7 @@ const DailyQuoteManager = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [form] = Form.useForm();
   const [editingId, setEditingId] = useState(null);
 
@@ -49,6 +50,8 @@ const DailyQuoteManager = () => {
   };
 
   const handleOk = async () => {
+    if (submitting) return;
+
     let values;
     try {
       values = await form.validateFields();
@@ -56,6 +59,7 @@ const DailyQuoteManager = () => {
       return;
     }
 
+    setSubmitting(true);
     try {
       if (editingId) {
         await api.updateDailyQuote(editingId, values);
@@ -69,16 +73,22 @@ const DailyQuoteManager = () => {
       fetchQuotes();
     } catch {
       // API errors are shown by lib/api.js.
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleDelete = async (id) => {
+    if (submitting) return;
+    setSubmitting(true);
     try {
       await api.deleteDailyQuote(id);
       message.success('删除成功');
       fetchQuotes();
     } catch {
       // API errors are shown by lib/api.js.
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -179,6 +189,8 @@ const DailyQuoteManager = () => {
         open={isModalVisible}
         onOk={handleOk}
         onCancel={() => setIsModalVisible(false)}
+        okText={submitting ? '保存中...' : '确定'}
+        okButtonProps={{ loading: submitting, disabled: submitting }}
         width={600}
       >
         <Form form={form} layout="vertical">
