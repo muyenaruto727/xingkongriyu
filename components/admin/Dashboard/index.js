@@ -14,6 +14,7 @@ import CourseManager from '../CourseManager';
 import QuestionManager from '../QuestionManager';
 import TextbookManager from '../TextbookManager';
 import DailyQuoteManager from '../DailyQuoteManager';
+import OneOnOneBookingManager from '../OneOnOneBookingManager';
 
 const Dashboard = () => {
   const router = useRouter();
@@ -106,6 +107,8 @@ const Dashboard = () => {
         return <TextbookManager />;
       case 'dailyQuote':
         return <DailyQuoteManager />;
+      case 'oneOnOneBookings':
+        return <OneOnOneBookingManager />;
       default:
         return <DashboardStats />;
     }
@@ -133,7 +136,7 @@ const Dashboard = () => {
     <div className="min-h-screen bg-gray-50">
       {/* 侧边栏 */}
       <div className="flex">
-        <div className="w-64 bg-white shadow-sm h-screen fixed">
+        <div className="w-64 bg-white shadow-sm h-screen fixed overflow-y-auto">
           <div className="p-6 border-b border-gray-200">
             <h1 className="text-xl font-semibold text-dark">后台管理</h1>
           </div>
@@ -263,6 +266,17 @@ const Dashboard = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                   </svg>
                   每日一句
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => openTab('oneOnOneBookings', '1V1预约')}
+                  className={`w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-all ${activeTab === 'oneOnOneBookings' ? 'bg-primary text-white shadow-md' : 'hover:bg-gray-50'}`}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 4v-4z" />
+                  </svg>
+                  1V1预约
                 </button>
               </li>
               <li>
