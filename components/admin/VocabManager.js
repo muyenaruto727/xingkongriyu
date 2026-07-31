@@ -1,10 +1,16 @@
 import { useState, useEffect } from 'react';
-import { CATEGORIES, PITCH_ACCENTS, LEVELS, TAGS } from '../../config/config';
 import { api } from '../../lib/api';
 import { logError } from '../../utils.js';
 import { message, Cascader, Select, Input, Pagination, Upload, Modal } from 'antd';
 import { InboxOutlined } from '@ant-design/icons';
 import PaginationTable from '../common/PaginationTable';
+import {
+  VOCABULARY_FIELD_OPTIONS,
+  formatVocabularyField,
+  getVocabularyOptionValue,
+  normalizeVocabularyField,
+  normalizeVocabularyRecord,
+} from '../../lib/vocabularyOptions';
 
 const VocabManager = () => {
   const [vocabList, setVocabList] = useState([]);
@@ -29,7 +35,7 @@ const VocabManager = () => {
     chinese: '',
     level: '',
     examples: [''],
-    tag: '日常',
+    tag: 0,
     textbooks: [],
     lessons: []
   });
@@ -43,6 +49,7 @@ const VocabManager = () => {
     lessons: [],
     tag: ''
   });
+  const hasValue = (value) => value !== undefined && value !== null && value !== '';
 
   // 转换教材数据为级联选择格式
   // lesson value 使用教材名:课程名，确保选中后 Tag 显示 "综合日语1:第5课"
@@ -176,11 +183,11 @@ const VocabManager = () => {
       message.error('请输入中文');
       return false;
     }
-    if (!vocabForm.level) {
+    if (!hasValue(vocabForm.level)) {
       message.error('请选择级别');
       return false;
     }
-    if (!vocabForm.tag) {
+    if (!hasValue(vocabForm.tag)) {
       message.error('请选择标签');
       return false;
     }
@@ -216,7 +223,7 @@ const VocabManager = () => {
     setIsLoading(true);
     
     try {
-      const { pitchAccent, category, ...vocabData } = vocabForm;
+      const normalizedForm = normalizeVocabularyRecord(vocabForm);
       
       // 处理教材ID，确保包含所有课程中提到的教材
       const textbooksFromLessons = new Set(vocabForm.textbooks);
@@ -231,12 +238,16 @@ const VocabManager = () => {
       const textbooks = Array.from(textbooksFromLessons);
       
       await api.createVocab({
-        ...vocabData,
-        category: category.join(','),
-        pitch_accent: pitchAccent.join(','),
+        japanese: normalizedForm.japanese,
+        pronunciation: normalizedForm.pronunciation,
+        chinese: normalizedForm.chinese,
+        level: normalizedForm.level,
+        category: normalizedForm.category,
+        pitch_accent: normalizedForm.pitch_accent,
+        tag: normalizedForm.tag,
+        examples: normalizedForm.examples.filter(example => example.trim()),
         textbook: textbooks.length > 0 ? textbooks.join(',') : '',
         lesson: vocabForm.lessons.length > 0 ? vocabForm.lessons.join(',') : '',
-        examples: vocabForm.examples.filter(example => example.trim())
       });
       
       message.success('词汇添加成功');
@@ -275,15 +286,19 @@ const VocabManager = () => {
     setIsLoading(true);
     
     try {
-      const { pitchAccent, category, ...vocabData } = vocabForm;
+      const normalizedForm = normalizeVocabularyRecord(vocabForm);
       
       await api.updateVocab(currentEditId, {
-        ...vocabData,
-        category: category.join(','),
-        pitch_accent: pitchAccent.join(','),
+        japanese: normalizedForm.japanese,
+        pronunciation: normalizedForm.pronunciation,
+        chinese: normalizedForm.chinese,
+        level: normalizedForm.level,
+        category: normalizedForm.category,
+        pitch_accent: normalizedForm.pitch_accent,
+        tag: normalizedForm.tag,
+        examples: normalizedForm.examples.filter(example => example.trim()),
         textbook: vocabForm.textbooks.length > 0 ? vocabForm.textbooks.join(',') : '',
         lesson: vocabForm.lessons.length > 0 ? vocabForm.lessons.join(',') : '',
-        examples: vocabForm.examples.filter(example => example.trim())
       });
       
       message.success('词汇更新成功');
@@ -332,11 +347,11 @@ const VocabManager = () => {
       
       if (!useEmptyFilters) {
         // 确保读取最新的 searchForm 状态
-        if (searchForm.level && searchForm.level !== '') {
-          params.level = searchForm.level;
+        if (hasValue(searchForm.level)) {
+          params.level = getVocabularyOptionValue('level', searchForm.level);
         }
-        if (searchForm.tag && searchForm.tag !== '') {
-          params.tag = searchForm.tag;
+        if (hasValue(searchForm.tag)) {
+          params.tag = getVocabularyOptionValue('tag', searchForm.tag);
         }
         if (searchForm.japanese && searchForm.japanese !== '') {
           params.search = searchForm.japanese;
@@ -400,12 +415,12 @@ const VocabManager = () => {
     setVocabForm({
       japanese: vocab.japanese || '',
       pronunciation: vocab.pronunciation || '',
-      category: typeof vocab.category === 'string' ? vocab.category.split(',').map(item => item.trim()).filter(Boolean) : [],
-      pitchAccent: typeof vocab.pitch_accent === 'string' ? vocab.pitch_accent.split(',').map(item => item.trim()).filter(Boolean) : [],
+      category: normalizeVocabularyField('category', vocab.category),
+      pitchAccent: normalizeVocabularyField('pitchAccent', vocab.pitch_accent || vocab.pitchAccent),
       chinese: vocab.chinese || '',
-      level: vocab.level || '',
+      level: getVocabularyOptionValue('level', vocab.level) || '',
       examples: vocab.examples ? (Array.isArray(vocab.examples) ? vocab.examples : [vocab.examples]) : [''],
-      tag: vocab.tag || '日常',
+      tag: hasValue(vocab.tag) ? getVocabularyOptionValue('tag', vocab.tag) : 0,
       textbooks: textbooks,
       lessons: lessons
     });
@@ -428,7 +443,7 @@ const VocabManager = () => {
       chinese: '',
       level: '',
       examples: [''],
-      tag: '日常',
+      tag: 0,
       textbooks: [],
       lessons: []
     });
@@ -641,10 +656,10 @@ const VocabManager = () => {
         "japanese": "例えば",
         "pronunciation": "たとえば",
         "chinese": "例如",
-        "level": "N5",
-        "tag": "日常",
-        "category": ["副词"],
-        "pitchAccent": ["⓪"],
+        "level": 5,
+        "tag": 0,
+        "category": [12],
+        "pitchAccent": [0],
         "examples": ["例えば、日本語の勉強は毎日する必要があります。", "例えば、この本はとても面白いです。"],
         "textbooks": ["综合日语1", "大家的日语初级上"],
         "lessons": ["综合日语1:第1课", "大家的日语初级上:第3课"]
@@ -653,10 +668,10 @@ const VocabManager = () => {
         "japanese": "勉強する",
         "pronunciation": "べんきょうする",
         "chinese": "学习",
-        "level": "N5",
-        "tag": "学习",
-        "category": ["自他II"],
-        "pitchAccent": ["①"],
+        "level": 5,
+        "tag": 0,
+        "category": [10],
+        "pitchAccent": [1],
         "examples": ["私は毎日日本語を勉強しています。", "彼は一生懸命勉強しています。"],
         "textbooks": ["综合日语1"],
         "lessons": ["综合日语1:第1课"]
@@ -665,10 +680,10 @@ const VocabManager = () => {
         "japanese": "食べる",
         "pronunciation": "たべる",
         "chinese": "吃",
-        "level": "N5",
-        "tag": "日常",
-        "category": ["他I"],
-        "pitchAccent": ["②"],
+        "level": 5,
+        "tag": 0,
+        "category": [6],
+        "pitchAccent": [2],
         "examples": ["私は毎日三食食べます。", "彼はりんごを食べています。"],
         "textbooks": ["综合日语1"],
         "lessons": ["综合日语1:第2课"]
@@ -693,8 +708,8 @@ const VocabManager = () => {
   const downloadVocabTemplateCSV = () => {
     const headers = ['japanese', 'pronunciation', 'chinese', 'level', 'tag', 'category', 'pitchAccent', 'examples', 'textbooks', 'lessons'];
     const rows = [
-      ['例えば', 'たとえば', '例如', 'N5', '日常', '副词', '⓪', '例えば、日本語の勉強は毎日する必要があります。;例えば、この本はとても面白いです。', '综合日语1;大家的日语初级上', '综合日语1:第1课;大家的日语初级上:第3课'],
-      ['勉強する', 'べんきょうする', '学习', 'N5', '学习', '自他II', '①', '私は毎日日本語を勉強しています。;彼は一生懸命勉強しています。', '综合日语1', '综合日语1:第1课']
+      ['例えば', 'たとえば', '例如', '5', '0', '12', '0', '例えば、日本語の勉強は毎日する必要があります。;例えば、この本はとても面白いです。', '综合日语1;大家的日语初级上', '综合日语1:第1课;大家的日语初级上:第3课'],
+      ['勉強する', 'べんきょうする', '学习', '5', '0', '10', '1', '私は毎日日本語を勉強しています。;彼は一生懸命勉強しています。', '综合日语1', '综合日语1:第1课']
     ];
 
     const csvContent = [
@@ -736,11 +751,11 @@ const VocabManager = () => {
 
       // 如果选择的是当前筛选条件的数据，则添加筛选参数
       if (downloadOption === 'filtered') {
-        if (searchForm.level && searchForm.level !== '') {
-          params.level = searchForm.level;
+        if (hasValue(searchForm.level)) {
+          params.level = getVocabularyOptionValue('level', searchForm.level);
         }
-        if (searchForm.tag && searchForm.tag !== '') {
-          params.tag = searchForm.tag;
+        if (hasValue(searchForm.tag)) {
+          params.tag = getVocabularyOptionValue('tag', searchForm.tag);
         }
         if (searchForm.japanese && searchForm.japanese !== '') {
           params.search = searchForm.japanese;
@@ -801,11 +816,11 @@ const VocabManager = () => {
       };
 
       // 添加筛选参数
-      if (searchForm.level && searchForm.level !== '') {
-        params.level = searchForm.level;
+      if (hasValue(searchForm.level)) {
+        params.level = getVocabularyOptionValue('level', searchForm.level);
       }
-      if (searchForm.tag && searchForm.tag !== '') {
-        params.tag = searchForm.tag;
+      if (hasValue(searchForm.tag)) {
+        params.tag = getVocabularyOptionValue('tag', searchForm.tag);
       }
       if (searchForm.japanese && searchForm.japanese !== '') {
         params.search = searchForm.japanese;
@@ -905,7 +920,7 @@ const VocabManager = () => {
           <div>
             <label className="block text-sm font-medium text-dark mb-2">级别</label>
             <Select
-              options={LEVELS.map(level => ({ value: level, label: level }))}
+              options={VOCABULARY_FIELD_OPTIONS.level}
               value={searchForm.level}
               onChange={(value) => setSearchForm(prev => ({ ...prev, level: value }))}
               placeholder="请选择级别"
@@ -915,7 +930,7 @@ const VocabManager = () => {
           <div>
             <label className="block text-sm font-medium text-dark mb-2">标签</label>
             <Select
-              options={TAGS.map(tag => ({ value: tag, label: tag }))}
+              options={VOCABULARY_FIELD_OPTIONS.tag}
               value={searchForm.tag}
               onChange={(value) => setSearchForm(prev => ({ ...prev, tag: value }))}
               placeholder="请选择标签"
@@ -1020,25 +1035,9 @@ const VocabManager = () => {
           {
             title: '类别',
             render: (row) => {
-              let categories = row.category;
-              if (typeof categories === 'string') {
-                try {
-                  const parsed = JSON.parse(categories);
-                  if (Array.isArray(parsed)) {
-                    categories = parsed;
-                  } else if (typeof parsed === 'object') {
-                    categories = Object.values(parsed);
-                  } else {
-                    categories = categories.split(',').map(item => item.trim()).filter(Boolean);
-                  }
-                } catch (e) {
-                  categories = categories.split(',').map(item => item.trim()).filter(Boolean);
-                }
-              }
+              const categories = normalizeVocabularyField('category', row.category);
               if (Array.isArray(categories) && categories.length > 0) {
-                return categories.join(', ');
-              } else if (categories) {
-                return categories;
+                return categories.map((category) => formatVocabularyField('category', category)).join(', ');
               }
               return '-';
             },
@@ -1047,31 +1046,15 @@ const VocabManager = () => {
           {
             title: '声调',
             render: (row) => {
-              let categories = row.pitch_accent;
-              if (typeof categories === 'string') {
-                try {
-                  const parsed = JSON.parse(categories);
-                  if (Array.isArray(parsed)) {
-                    categories = parsed;
-                  } else if (typeof parsed === 'object') {
-                    categories = Object.values(parsed);
-                  } else {
-                    categories = categories.split(',').map(item => item.trim()).filter(Boolean);
-                  }
-                } catch (e) {
-                  categories = categories.split(',').map(item => item.trim()).filter(Boolean);
-                }
-              }
-              if (Array.isArray(categories) && categories.length > 0) {
+              const pitchAccents = normalizeVocabularyField('pitchAccent', row.pitch_accent || row.pitchAccent);
+              if (Array.isArray(pitchAccents) && pitchAccents.length > 0) {
                 return (
                   <div className="flex flex-wrap gap-1">
-                    {categories.map((cat, i) => (
-                      <span key={i} className="bg-blue-100 text-primary px-2 py-1 rounded text-xs">{cat}</span>
+                    {pitchAccents.map((accent, i) => (
+                      <span key={i} className="bg-blue-100 text-primary px-2 py-1 rounded text-xs">{formatVocabularyField('pitchAccent', accent)}</span>
                     ))}
                   </div>
                 );
-              } else if (categories) {
-                return <span className="bg-blue-100 text-primary px-2 py-1 rounded text-xs">{categories}</span>;
               }
               return '-';
             },
@@ -1080,13 +1063,13 @@ const VocabManager = () => {
           {
             title: '级别',
             key: 'level',
-            render: (row) => row.level || '-',
+            render: (row) => formatVocabularyField('level', row.level) || '-',
             cellClassName: 'text-dark'
           },
           {
             title: '标签',
             key: 'tag',
-            render: (row) => <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs">{row.tag || '日常'}</span>,
+            render: (row) => <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs">{formatVocabularyField('tag', row.tag) || '日常'}</span>,
             cellClassName: 'text-sm'
           },
           {
@@ -1185,7 +1168,7 @@ const VocabManager = () => {
               <label className="block text-sm font-medium text-dark mb-2">类别 <span className="text-red-500">*</span></label>
               <Select
                 mode="multiple"
-                options={CATEGORIES.map(cat => ({ value: cat, label: cat }))}
+                options={VOCABULARY_FIELD_OPTIONS.category}
                 value={vocabForm.category}
                 onChange={(value) => {
                   setVocabForm(prev => ({
@@ -1201,7 +1184,7 @@ const VocabManager = () => {
               <label className="block text-sm font-medium text-dark mb-2">声调 <span className="text-red-500">*</span></label>
               <Select
                 mode="multiple"
-                options={PITCH_ACCENTS.map(pa => ({ value: pa, label: pa }))}
+                options={VOCABULARY_FIELD_OPTIONS.pitchAccent}
                 value={vocabForm.pitchAccent}
                 onChange={(value) => {
                   setVocabForm(prev => ({
@@ -1220,7 +1203,7 @@ const VocabManager = () => {
             <div>
               <label className="block text-sm font-medium text-dark mb-2">级别 <span className="text-red-500">*</span></label>
               <Select
-                options={LEVELS.map(level => ({ value: level, label: level }))}
+                options={VOCABULARY_FIELD_OPTIONS.level}
                 value={vocabForm.level}
                 onChange={(value) => setVocabForm(prev => ({ ...prev, level: value }))}
                 placeholder="请选择级别"
@@ -1230,7 +1213,7 @@ const VocabManager = () => {
             <div>
               <label className="block text-sm font-medium text-dark mb-2">标签 <span className="text-red-500">*</span></label>
               <Select
-                options={TAGS.map(tag => ({ value: tag, label: tag }))}
+                options={VOCABULARY_FIELD_OPTIONS.tag}
                 value={vocabForm.tag}
                 onChange={(value) => setVocabForm(prev => ({ ...prev, tag: value }))}
                 placeholder="请选择标签"

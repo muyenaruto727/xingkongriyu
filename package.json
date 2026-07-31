@@ -10,6 +10,7 @@
     "init-db": "node scripts/init-db.js",
     "migrate-db": "node scripts/migrate-nhk-news.js",
     "migrate-nhk-news": "node scripts/migrate-nhk-news.js",
+    "migrate-vocab-values": "node migrations/migrate-vocabulary-values.js",
     "seed-data": "node scripts/seed-data.js"
   },
   "dependencies": {

@@ -3,6 +3,10 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import Navigation from '../components/layout/Navigation';
 import { api } from '../lib/api';
+import {
+  formatVocabularyField,
+  normalizeVocabularyField,
+} from '../lib/vocabularyOptions';
 
 const Profile = () => {
   const router = useRouter();
@@ -162,31 +166,14 @@ const Profile = () => {
                   <div key={vocab.id} className="card p-5 border border-gray-100 hover:border-primary/30 transition-all duration-300 flex flex-col h-[280px] justify-between">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-2">
-                        <span className="bg-gray-100 text-xs px-2 py-1 rounded">{vocab.level || 'N5'}</span>
+                        <span className="bg-gray-100 text-xs px-2 py-1 rounded">{formatVocabularyField('level', vocab.level) || 'N5'}</span>
                         <div className="flex flex-wrap gap-1">
                           {(() => {
-                            let categories = vocab.category;
-                            if (typeof categories === 'string') {
-                              try {
-                                // 尝试解析JSON
-                                const parsed = JSON.parse(categories);
-                                if (Array.isArray(parsed)) {
-                                  categories = parsed;
-                                } else if (typeof parsed === 'object') {
-                                  categories = Object.values(parsed);
-                                } else {
-                                  // 普通字符串，按逗号分割
-                                  categories = categories.split(',').map(item => item.trim()).filter(Boolean);
-                                }
-                              } catch (e) {
-                                // 解析失败，按逗号分割
-                                categories = categories.split(',').map(item => item.trim()).filter(Boolean);
-                              }
-                            }
+                            const categories = normalizeVocabularyField('category', vocab.category);
                             if (Array.isArray(categories) && categories.length > 0) {
                               return categories.map((cat, idx) => (
                                 <span key={idx} className="text-xs bg-blue-50 text-primary px-2 py-1 rounded">
-                                  {cat}
+                                  {formatVocabularyField('category', cat)}
                                 </span>
                               ));
                             }
@@ -205,25 +192,10 @@ const Profile = () => {
                     <div className="text-gray-500 text-sm">
                       <span className="text-xs text-gray-400 mr-2">声调：</span>
                       {(() => {
-                        let pitchAccent = vocab.pitch_accent || vocab.pitchAccent;
-                        if (typeof pitchAccent === 'string') {
-                          try {
-                            // 尝试解析JSON
-                            const parsed = JSON.parse(pitchAccent);
-                            if (Array.isArray(parsed)) {
-                              pitchAccent = parsed;
-                            } else if (typeof parsed === 'object') {
-                              pitchAccent = Object.values(parsed);
-                            } else {
-                              pitchAccent = [pitchAccent];
-                            }
-                          } catch (e) {
-                            pitchAccent = [pitchAccent];
-                          }
-                        }
+                        const pitchAccent = normalizeVocabularyField('pitchAccent', vocab.pitch_accent || vocab.pitchAccent);
                         if (Array.isArray(pitchAccent) && pitchAccent.length > 0) {
                           return pitchAccent.map((accent, idx) => (
-                            <span key={idx} className="inline-block mr-2">{accent}</span>
+                            <span key={idx} className="inline-block mr-2">{formatVocabularyField('pitchAccent', accent)}</span>
                           ));
                         } else {
                           return '-';

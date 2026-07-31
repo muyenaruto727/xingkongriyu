@@ -4,6 +4,9 @@ import { useRouter } from 'next/router';
 import { message, Select } from 'antd';
 import Navigation from '../../components/layout/Navigation';
 import { api } from '../../lib/api';
+import {
+  formatVocabularyField,
+} from '../../lib/vocabularyOptions';
 
 const Flashcards = () => {
   const router = useRouter();
@@ -263,16 +266,16 @@ const Flashcards = () => {
                     {currentVocab.pronunciation && (
                       <p className="text-sm text-indigo-400 mt-3 font-medium">{currentVocab.pronunciation}</p>
                     )}
-                    {(currentVocab.pitch_accent || currentVocab.category) && (
+                    {((currentVocab.pitch_accent !== undefined && currentVocab.pitch_accent !== null && currentVocab.pitch_accent !== '') || currentVocab.category) && (
                       <div className="flex flex-wrap justify-center gap-2 mt-5">
-                        {currentVocab.pitch_accent && (
+                        {currentVocab.pitch_accent !== undefined && currentVocab.pitch_accent !== null && currentVocab.pitch_accent !== '' && (
                           <span className="text-xs font-semibold text-rose-500 bg-rose-50 border border-rose-100 px-2.5 py-1 rounded-full">
-                            声调: {currentVocab.pitch_accent}
+                            声调: {formatVocabularyField('pitchAccent', currentVocab.pitch_accent)}
                           </span>
                         )}
                         {currentVocab.category && (
                           <span className="text-xs font-semibold text-indigo-500 bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded-full">
-                            {currentVocab.category}
+                            {formatVocabularyField('category', currentVocab.category)}
                           </span>
                         )}
                       </div>
@@ -294,7 +297,7 @@ const Flashcards = () => {
                     )}
                     {currentVocab.level && (
                       <span className="absolute bottom-4 text-xs font-medium text-blue-400 bg-blue-100 px-2 py-0.5 rounded-full">
-                        {currentVocab.level}
+                        {formatVocabularyField('level', currentVocab.level)}
                       </span>
                     )}
                   </div>

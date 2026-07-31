@@ -4,6 +4,11 @@ import { useRouter } from 'next/router';
 import { message, Modal } from 'antd';
 import dynamic from 'next/dynamic';
 import { api } from '../../lib/api';
+import {
+  formatVocabularyField,
+  getVocabularyOptionValue,
+  normalizeVocabularyField,
+} from '../../lib/vocabularyOptions';
 
 const Navigation = dynamic(() => import('../../components/layout/Navigation'), { ssr: true });
 const Footer = dynamic(() => import('../../components/layout/Footer'), { ssr: true });
@@ -79,8 +84,8 @@ const Vocabulary = () => {
     try {
       setLoading(true);
       const params = {
-        level: selectedLevel !== '全部' ? selectedLevel : '',
-        tag: selectedTag !== '全部' ? selectedTag : '',
+        level: selectedLevel !== '全部' ? getVocabularyOptionValue('level', selectedLevel) : '',
+        tag: selectedTag !== '全部' ? getVocabularyOptionValue('tag', selectedTag) : '',
         textbook: selectedTextbook !== '全部' ? selectedTextbook : '',
         lesson: selectedLesson !== '全部' ? selectedLesson : '',
         search: searchKeyword, page: pageNum, limit: itemsPerPage,
@@ -128,16 +133,6 @@ const Vocabulary = () => {
   const speakVocab = (japanese) => {
     const audio = new Audio(`/api/edge-tts?text=${encodeURIComponent(japanese)}&t=${Date.now()}`);
     audio.play().catch(() => showToast('语音播放失败，请重试', 'error'));
-  };
-
-  // Helper to parse fields that may be string, JSON, or array
-  const parseField = (val) => {
-    if (Array.isArray(val)) return val;
-    if (typeof val === 'string') {
-      try { const p = JSON.parse(val); if (Array.isArray(p)) return p; if (typeof p === 'object') return Object.values(p); return val.split(',').map(s => s.trim()).filter(Boolean); }
-      catch (e) { return val.split(',').map(s => s.trim()).filter(Boolean); }
-    }
-    return val;
   };
 
   return (
@@ -259,9 +254,10 @@ const Vocabulary = () => {
             {safeVocabList.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                 {safeVocabList.map((vocab) => {
-                  const lc = levelColors[vocab.level] || levelColors['N5'];
-                  const categories = parseField(vocab.category);
-                  const pitchAccent = parseField(vocab.pitch_accent || vocab.pitchAccent);
+                  const levelLabel = formatVocabularyField('level', vocab.level) || 'N5';
+                  const lc = levelColors[levelLabel] || levelColors['N5'];
+                  const categories = normalizeVocabularyField('category', vocab.category);
+                  const pitchAccent = normalizeVocabularyField('pitchAccent', vocab.pitch_accent || vocab.pitchAccent);
 
                   return (
                     <div key={vocab.id} className="group relative bg-white rounded-2xl border border-gray-100 p-5 hover:shadow-xl hover:shadow-blue-100/30 hover:-translate-y-1 hover:border-blue-200 transition-all duration-300">
@@ -271,9 +267,9 @@ const Vocabulary = () => {
                       {/* Row 1: Level + categories + favorite */}
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
-                          <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${lc.bg} ${lc.text}`}>{vocab.level || 'N5'}</span>
+                          <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${lc.bg} ${lc.text}`}>{levelLabel}</span>
                           {Array.isArray(categories) && categories.slice(0, 1).map((cat, i) => (
-                            <span key={i} className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">{cat}</span>
+                            <span key={i} className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">{formatVocabularyField('category', cat)}</span>
                           ))}
                         </div>
                         <button onClick={() => toggleFavorite(vocab.id)}
@@ -305,7 +301,7 @@ const Vocabulary = () => {
 
                       {/* Row 4: Pitch accent */}
                       <div className="text-xs text-gray-400 mb-5">
-                        声调: {Array.isArray(pitchAccent) && pitchAccent.length > 0 ? pitchAccent.join(', ') : '-'}
+                        声调: {formatVocabularyField('pitchAccent', pitchAccent) || '-'}
                       </div>
 
                       {/* Row 5: Example button */}
@@ -355,17 +351,17 @@ const Vocabulary = () => {
       >
         <div className="py-2">
           {currentVocab && (() => {
-            const cats = parseField(currentVocab.category);
-            const pitch = parseField(currentVocab.pitch_accent || currentVocab.pitchAccent);
+            const cats = normalizeVocabularyField('category', currentVocab.category);
+            const pitch = normalizeVocabularyField('pitchAccent', currentVocab.pitch_accent || currentVocab.pitchAccent);
             let examples = currentVocab.examples;
             if (typeof examples === 'string') { try { examples = JSON.parse(examples); } catch (e) {} }
 
             const infoItems = [];
             if (currentVocab.chinese) infoItems.push(currentVocab.chinese);
-            if (currentVocab.level) infoItems.push(currentVocab.level);
-            if (Array.isArray(cats) && cats.length > 0) infoItems.push(cats.join(' · '));
+            if (currentVocab.level !== undefined && currentVocab.level !== null && currentVocab.level !== '') infoItems.push(formatVocabularyField('level', currentVocab.level));
+            if (Array.isArray(cats) && cats.length > 0) infoItems.push(cats.map((cat) => formatVocabularyField('category', cat)).join(' · '));
             if (currentVocab.pronunciation) infoItems.push('发音: ' + currentVocab.pronunciation);
-            if (Array.isArray(pitch) && pitch.length > 0) infoItems.push('声调: ' + pitch.join(', '));
+            if (Array.isArray(pitch) && pitch.length > 0) infoItems.push('声调: ' + formatVocabularyField('pitchAccent', pitch));
 
             return (
               <div className="space-y-4">
