@@ -2,6 +2,7 @@ const pool = require('../../../lib/db');
 const { handleError, successResponse } = require('../../../lib/errorHandler');
 const { withAdminForMethods } = require('../../../lib/apiAuth');
 const { parseIntegerParam } = require('../../../lib/requestValidation');
+const { normalizeQuestionTagForType } = require('../../../lib/questionTags');
 
 async function handler(req, res) {
   const { method, query } = req;
@@ -102,6 +103,7 @@ async function handler(req, res) {
           level: qLevel, 
           is_real_exam: reqIsRealExam,
           category,
+          tag,
           passage,
           audio_url,
           grammarPassage,
@@ -122,12 +124,13 @@ async function handler(req, res) {
             if (await isDuplicateQuestion(item)) {
               continue;
             }
+            const normalizedTag = normalizeQuestionTagForType(item.question_type, item.tag);
             const insertResult = await pool.query(
               `INSERT INTO questions 
-               (question_text, question_type, options, correct_answer, explanation, level, is_real_exam, category, passage, audio_url) 
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
+               (question_text, question_type, options, correct_answer, explanation, level, is_real_exam, category, tag, passage, audio_url) 
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
                RETURNING *`,
-              [item.question_text, item.question_type, item.options, item.correct_answer, item.explanation, item.level, item.is_real_exam, item.category || '', item.passage || '', item.audio_url || '']
+              [item.question_text, item.question_type, item.options, item.correct_answer, item.explanation, item.level, item.is_real_exam, item.category || '', normalizedTag, item.passage || '', item.audio_url || '']
             );
             results.push(insertResult.rows[0]);
           }
@@ -135,6 +138,7 @@ async function handler(req, res) {
         } else if ((question_type === 'reading' || (question_type === 'grammar' && category === 'text_grammar')) && questions && questions.length > 0) {
           // 处理阅读题和文法题的文章语法类别的多个题目组
           const insertedQuestions = [];
+          const normalizedTag = normalizeQuestionTagForType(question_type, tag);
           for (const q of questions) {
             const currentPassage = (question_type === 'grammar' && category === 'text_grammar') ? grammarPassage : passage;
             if (await isDuplicateQuestion({ question_text: q.question_text, question_type, level: qLevel })) {
@@ -142,10 +146,10 @@ async function handler(req, res) {
             }
             const insertResult = await pool.query(
               `INSERT INTO questions 
-               (question_text, question_type, options, correct_answer, explanation, level, is_real_exam, category, passage, audio_url) 
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
+               (question_text, question_type, options, correct_answer, explanation, level, is_real_exam, category, tag, passage, audio_url) 
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
                RETURNING *`,
-              [q.question_text, question_type, q.options, q.correct_answer, q.explanation, qLevel, reqIsRealExam, category, currentPassage, audio_url]
+              [q.question_text, question_type, q.options, q.correct_answer, q.explanation, qLevel, reqIsRealExam, category, normalizedTag, currentPassage, audio_url]
             );
             insertedQuestions.push(insertResult.rows[0]);
           }
@@ -155,12 +159,13 @@ async function handler(req, res) {
             return res.status(409).json({ success: false, error: { code: 'DUPLICATE_RESOURCE', message: '题目已存在' } });
           }
           // 处理其他类型的题目
+          const normalizedTag = normalizeQuestionTagForType(question_type, tag);
           const insertResult = await pool.query(
             `INSERT INTO questions 
-             (question_text, question_type, options, correct_answer, explanation, level, is_real_exam, category, passage, audio_url) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
+             (question_text, question_type, options, correct_answer, explanation, level, is_real_exam, category, tag, passage, audio_url) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
              RETURNING *`,
-            [question_text, question_type, options, correct_answer, explanation, qLevel, reqIsRealExam, category, passage, audio_url]
+            [question_text, question_type, options, correct_answer, explanation, qLevel, reqIsRealExam, category, normalizedTag, passage, audio_url]
           );
           return successResponse(res, insertResult.rows[0], '题目添加成功');
         }
@@ -181,19 +186,21 @@ async function handler(req, res) {
           level: updateLevel, 
           is_real_exam: updateIsRealExam,
           category: updateCategory,
+          tag: updateTag,
           passage: updatePassage,
           audio_url: updateAudioUrl,
           grammarPassage: updateGrammarPassage
         } = req.body;
         
         const currentPassage = (updateType === 'grammar' && updateCategory === 'text_grammar') ? updateGrammarPassage : updatePassage;
+        const normalizedTag = normalizeQuestionTagForType(updateType, updateTag);
         const updateResult = await pool.query(
           `UPDATE questions 
            SET question_text = $1, question_type = $2, options = $3, correct_answer = $4, 
-               explanation = $5, level = $6, is_real_exam = $7, category = $8, passage = $9, audio_url = $10, updated_at = CURRENT_TIMESTAMP 
-           WHERE id = $11 
+               explanation = $5, level = $6, is_real_exam = $7, category = $8, tag = $9, passage = $10, audio_url = $11, updated_at = CURRENT_TIMESTAMP 
+           WHERE id = $12 
            RETURNING *`,
-          [updateText, updateType, updateOptions, updateAnswer, updateExplanation, updateLevel, updateIsRealExam, updateCategory, currentPassage, updateAudioUrl, parseInt(id)]
+          [updateText, updateType, updateOptions, updateAnswer, updateExplanation, updateLevel, updateIsRealExam, updateCategory, normalizedTag, currentPassage, updateAudioUrl, parseInt(id)]
         );
         return successResponse(res, updateResult.rows[0], '题目更新成功');
         break;

@@ -864,7 +864,7 @@ const GrammarManager = () => {
                 </div>
               </div>
             ))}
-            {grammarForm.translationExercises.length < 5 && (
+            {grammarForm.translationExercises.length < 8 && (
               <button 
                 type="button" 
                 onClick={addExercise}

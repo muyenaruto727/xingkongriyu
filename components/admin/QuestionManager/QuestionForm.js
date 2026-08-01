@@ -1,5 +1,6 @@
 
 import { Input, Select } from 'antd';
+import { QUESTION_TAG_OPTIONS } from '../../../lib/questionTags';
 
 const QuestionForm = ({ formData, onFormChange, onOptionChange, onSubmit, isEdit, onCancel }) => {
   const levels = ['N1', 'N2', 'N3', 'N4', 'N5'];
@@ -56,6 +57,7 @@ const QuestionForm = ({ formData, onFormChange, onOptionChange, onSubmit, isEdit
             onChange={(value) => {
               onFormChange({ target: { name: 'question_type', value } });
               onFormChange({ target: { name: 'category', value: '' } });
+              onFormChange({ target: { name: 'tag', value: '' } });
             }}
             style={{ width: '100%' }}
             placeholder="请选择题目类型"
@@ -103,6 +105,21 @@ const QuestionForm = ({ formData, onFormChange, onOptionChange, onSubmit, isEdit
             ))}
           </Select>
         </div>
+
+        {formData.question_type === 'grammar' && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">标签</label>
+            <Select
+              name="tag"
+              value={formData.tag || undefined}
+              onChange={(value) => onFormChange({ target: { name: 'tag', value: value || '' } })}
+              options={QUESTION_TAG_OPTIONS}
+              allowClear
+              style={{ width: '100%' }}
+              placeholder="请选择标签"
+            />
+          </div>
+        )}
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">真题</label>

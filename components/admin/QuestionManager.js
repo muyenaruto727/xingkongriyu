@@ -5,6 +5,7 @@ import QuestionList from './QuestionManager/QuestionList';
 import QuestionForm from './QuestionManager/QuestionForm';
 import Pagination from '../common/Pagination';
 import Filter from './QuestionManager/Filter';
+import { QUESTION_TAG_OPTIONS, normalizeQuestionTagForType } from '../../lib/questionTags';
 
 const { Dragger } = Upload;
 
@@ -49,6 +50,7 @@ const QuestionManager = ({ defaultType = '', defaultLevel = '' }) => {
     level: 'N3',
     is_real_exam: true,
     category: '',
+    tag: '',
     passage: '',
     audio_url: '',
     grammarPassage: '',
@@ -141,7 +143,7 @@ const QuestionManager = ({ defaultType = '', defaultLevel = '' }) => {
       ...prev,
       [name]: value,
       // 题型改变时重置类别
-      ...(name === 'question_type' ? { category: '' } : {})
+      ...(name === 'question_type' ? { category: '', tag: '' } : {})
     }));
   };
 
@@ -159,10 +161,13 @@ const QuestionManager = ({ defaultType = '', defaultLevel = '' }) => {
     if (isLoading) return;
     setIsLoading(true);
     try {
-      let submitData = questionForm;
+      let submitData = {
+        ...questionForm,
+        tag: normalizeQuestionTagForType(questionForm.question_type, questionForm.tag)
+      };
       if (questionForm.question_type === 'grammar' && questionForm.category === 'text_grammar') {
         submitData = {
-          ...questionForm,
+          ...submitData,
           questions: questionForm.grammarQuestions
         };
       }
@@ -184,10 +189,13 @@ const QuestionManager = ({ defaultType = '', defaultLevel = '' }) => {
     if (isLoading) return;
     setIsLoading(true);
     try {
-      let submitData = questionForm;
+      let submitData = {
+        ...questionForm,
+        tag: normalizeQuestionTagForType(questionForm.question_type, questionForm.tag)
+      };
       if (questionForm.question_type === 'grammar' && questionForm.category === 'text_grammar') {
         submitData = {
-          ...questionForm,
+          ...submitData,
           questions: questionForm.grammarQuestions
         };
       }
@@ -275,6 +283,7 @@ const QuestionManager = ({ defaultType = '', defaultLevel = '' }) => {
       level: question.level || 'N3',
       is_real_exam: question.is_real_exam !== undefined ? question.is_real_exam : true,
       category: question.category || '',
+      tag: normalizeQuestionTagForType(question.question_type, question.tag),
       passage: question.passage || '',
       audio_url: question.audio_url || '',
       grammarPassage: question.passage || '',
@@ -314,6 +323,7 @@ const QuestionManager = ({ defaultType = '', defaultLevel = '' }) => {
       level: 'N3',
       is_real_exam: true,
       category: '',
+      tag: '',
       passage: '',
       audio_url: '',
       questions: [
@@ -352,7 +362,8 @@ const QuestionManager = ({ defaultType = '', defaultLevel = '' }) => {
         "explanation": "题目解析",
         "level": "N3",
         "is_real_exam": true,
-        "category": "context"
+        "category": "context",
+        "tag": ""
       },
       {
         "question_text": "另一个测试题目",
@@ -362,7 +373,8 @@ const QuestionManager = ({ defaultType = '', defaultLevel = '' }) => {
         "explanation": "语法题解析",
         "level": "N2",
         "is_real_exam": true,
-        "category": "sentence_grammar_1"
+        "category": "sentence_grammar_1",
+        "tag": "敬语"
       }
     ];
 
@@ -712,6 +724,21 @@ const QuestionManager = ({ defaultType = '', defaultLevel = '' }) => {
               ))}
             </Select>
           </div>
+
+          {questionForm.question_type === 'grammar' && (
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-dark mb-2">标签</label>
+              <Select
+                name="tag"
+                value={questionForm.tag || undefined}
+                onChange={(value) => handleFormChange({ target: { name: 'tag', value: value || '' } })}
+                options={QUESTION_TAG_OPTIONS}
+                allowClear
+                style={{ width: '100%' }}
+                placeholder="请选择标签"
+              />
+            </div>
+          )}
 
           {(questionForm.question_type === 'reading') && (
             <div className="mb-4">
