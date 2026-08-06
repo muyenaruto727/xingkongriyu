@@ -35,7 +35,7 @@ const VocabManager = () => {
     chinese: '',
     level: '',
     examples: [''],
-    tag: 0,
+    tag: [],
     textbooks: [],
     lessons: []
   });
@@ -49,7 +49,10 @@ const VocabManager = () => {
     lessons: [],
     tag: ''
   });
-  const hasValue = (value) => value !== undefined && value !== null && value !== '';
+  const hasValue = (value) => {
+    if (Array.isArray(value)) return value.length > 0;
+    return value !== undefined && value !== null && value !== '';
+  };
 
   // 转换教材数据为级联选择格式
   // lesson value 使用教材名:课程名，确保选中后 Tag 显示 "综合日语1:第5课"
@@ -201,10 +204,6 @@ const VocabManager = () => {
     }
     if (vocabForm.textbooks.length === 0 && vocabForm.lessons.length === 0) {
       message.error('请选择教材和课程');
-      return false;
-    }
-    if (vocabForm.examples.length === 0 || !vocabForm.examples.some(example => example.trim())) {
-      message.error('请至少输入一个例句');
       return false;
     }
     return true;
@@ -420,7 +419,7 @@ const VocabManager = () => {
       chinese: vocab.chinese || '',
       level: getVocabularyOptionValue('level', vocab.level) || '',
       examples: vocab.examples ? (Array.isArray(vocab.examples) ? vocab.examples : [vocab.examples]) : [''],
-      tag: hasValue(vocab.tag) ? getVocabularyOptionValue('tag', vocab.tag) : 0,
+      tag: hasValue(vocab.tag) ? normalizeVocabularyField('tag', vocab.tag) : [],
       textbooks: textbooks,
       lessons: lessons
     });
@@ -443,7 +442,7 @@ const VocabManager = () => {
       chinese: '',
       level: '',
       examples: [''],
-      tag: 0,
+      tag: [],
       textbooks: [],
       lessons: []
     });
@@ -524,6 +523,10 @@ const VocabManager = () => {
                 }
                 // 处理多个声调（用分号分隔）
                 else if (header === 'pitchAccent' && value) {
+                  obj[header] = value.split(';').filter(item => item.trim());
+                }
+                // 处理多个标签（用分号分隔）
+                else if (header === 'tag' && value) {
                   obj[header] = value.split(';').filter(item => item.trim());
                 } else {
                   obj[header] = value;
@@ -657,7 +660,7 @@ const VocabManager = () => {
         "pronunciation": "たとえば",
         "chinese": "例如",
         "level": 5,
-        "tag": 0,
+        "tag": [0, 2],
         "category": [12],
         "pitchAccent": [0],
         "examples": ["例えば、日本語の勉強は毎日する必要があります。", "例えば、この本はとても面白いです。"],
@@ -669,7 +672,7 @@ const VocabManager = () => {
         "pronunciation": "べんきょうする",
         "chinese": "学习",
         "level": 5,
-        "tag": 0,
+        "tag": [0],
         "category": [10],
         "pitchAccent": [1],
         "examples": ["私は毎日日本語を勉強しています。", "彼は一生懸命勉強しています。"],
@@ -681,7 +684,7 @@ const VocabManager = () => {
         "pronunciation": "たべる",
         "chinese": "吃",
         "level": 5,
-        "tag": 0,
+        "tag": [0],
         "category": [6],
         "pitchAccent": [2],
         "examples": ["私は毎日三食食べます。", "彼はりんごを食べています。"],
@@ -708,7 +711,7 @@ const VocabManager = () => {
   const downloadVocabTemplateCSV = () => {
     const headers = ['japanese', 'pronunciation', 'chinese', 'level', 'tag', 'category', 'pitchAccent', 'examples', 'textbooks', 'lessons'];
     const rows = [
-      ['例えば', 'たとえば', '例如', '5', '0', '12', '0', '例えば、日本語の勉強は毎日する必要があります。;例えば、この本はとても面白いです。', '综合日语1;大家的日语初级上', '综合日语1:第1课;大家的日语初级上:第3课'],
+      ['例えば', 'たとえば', '例如', '5', '0;2', '12', '0', '例えば、日本語の勉強は毎日する必要があります。;例えば、この本はとても面白いです。', '综合日语1;大家的日语初级上', '综合日语1:第1课;大家的日语初级上:第3课'],
       ['勉強する', 'べんきょうする', '学习', '5', '0', '10', '1', '私は毎日日本語を勉強しています。;彼は一生懸命勉強しています。', '综合日语1', '综合日语1:第1课']
     ];
 
@@ -1213,6 +1216,7 @@ const VocabManager = () => {
             <div>
               <label className="block text-sm font-medium text-dark mb-2">标签 <span className="text-red-500">*</span></label>
               <Select
+                mode="multiple"
                 options={VOCABULARY_FIELD_OPTIONS.tag}
                 value={vocabForm.tag}
                 onChange={(value) => setVocabForm(prev => ({ ...prev, tag: value }))}
@@ -1223,7 +1227,7 @@ const VocabManager = () => {
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-dark mb-2">例句 <span className="text-red-500">*</span></label>
+            <label className="block text-sm font-medium text-dark mb-2">例句</label>
             {vocabForm.examples.map((example, index) => (
               <div key={index} className="flex gap-2 mb-2">
                 <Input 
@@ -1236,7 +1240,6 @@ const VocabManager = () => {
                   }}
                   className="flex-grow" 
                   placeholder="请输入例句"
-                  required
                 />
                 <button 
                   type="button" 

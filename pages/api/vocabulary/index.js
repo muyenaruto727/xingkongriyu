@@ -94,7 +94,10 @@ async function handler(req, res) {
         if (hasQueryValue(tag)) {
           const tagCandidates = buildVocabularyFilterCandidates('tag', tag);
           if (tagCandidates.length > 0) {
-            query += ` AND (${tagCandidates.map((_, index) => `tag = $${paramIndex + index}`).join(' OR ')})`;
+            query += ` AND (${tagCandidates.map((_, index) => {
+              const currentIndex = paramIndex + index;
+              return `(tag = $${currentIndex} OR tag LIKE $${currentIndex}||',%' OR tag LIKE '%,'||$${currentIndex} OR tag LIKE '%,'||$${currentIndex}||',%')`;
+            }).join(' OR ')})`;
             params.push(...tagCandidates);
             paramIndex += tagCandidates.length;
           }

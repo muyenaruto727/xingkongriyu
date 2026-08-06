@@ -156,6 +156,23 @@ const GrammarManager = () => {
     }
   };
 
+  const buildGrammarSubmitData = () => {
+    const pairedExercises = grammarForm.translationExercises
+      .map((exercise, index) => ({
+        exercise: (exercise || '').trim(),
+        answer: (grammarForm.referenceAnswers[index] || '').trim()
+      }))
+      .filter(item => item.exercise);
+
+    return {
+      ...grammarForm,
+      continuation: (grammarForm.continuation || '').trim(),
+      examples: grammarForm.examples.map(example => (example || '').trim()).filter(Boolean),
+      translationExercises: pairedExercises.map(item => item.exercise),
+      referenceAnswers: pairedExercises.map(item => item.answer)
+    };
+  };
+
   // 处理添加语法
   const handleSubmitAdd = async (e) => {
     e.preventDefault();
@@ -178,27 +195,11 @@ const GrammarManager = () => {
       message.error('请输入中文释义');
       return;
     }
-    if (!grammarForm.continuation || grammarForm.continuation.trim() === '') {
-      message.error('请输入接续方式');
-      return;
-    }
-    if (grammarForm.examples.length === 0 || !grammarForm.examples[0] || grammarForm.examples[0].trim() === '') {
-      message.error('请至少输入一个例句');
-      return;
-    }
-    if (grammarForm.translationExercises.length === 0 || !grammarForm.translationExercises[0] || grammarForm.translationExercises[0].trim() === '') {
-      message.error('请至少输入一个翻译练习');
-      return;
-    }
-    if (grammarForm.referenceAnswers.length === 0 || !grammarForm.referenceAnswers[0] || grammarForm.referenceAnswers[0].trim() === '') {
-      message.error('请至少输入一个参考答案');
-      return;
-    }
     
     setIsLoading(true);
     
     try {
-      await api.createGrammar(grammarForm);
+      await api.createGrammar(buildGrammarSubmitData());
       message.success('语法添加成功');
       setShowModal(false);
       resetForm();
@@ -232,27 +233,11 @@ const GrammarManager = () => {
       message.error('请输入中文释义');
       return;
     }
-    if (!grammarForm.continuation || grammarForm.continuation.trim() === '') {
-      message.error('请输入接续方式');
-      return;
-    }
-    if (grammarForm.examples.length === 0 || !grammarForm.examples[0] || grammarForm.examples[0].trim() === '') {
-      message.error('请至少输入一个例句');
-      return;
-    }
-    if (grammarForm.translationExercises.length === 0 || !grammarForm.translationExercises[0] || grammarForm.translationExercises[0].trim() === '') {
-      message.error('请至少输入一个翻译练习');
-      return;
-    }
-    if (grammarForm.referenceAnswers.length === 0 || !grammarForm.referenceAnswers[0] || grammarForm.referenceAnswers[0].trim() === '') {
-      message.error('请至少输入一个参考答案');
-      return;
-    }
     
     setIsLoading(true);
     
     try {
-      await api.updateGrammar(currentEditId, grammarForm);
+      await api.updateGrammar(currentEditId, buildGrammarSubmitData());
       message.success('语法更新成功');
       setShowModal(false);
       resetForm();
@@ -770,7 +755,7 @@ const GrammarManager = () => {
           </div>
 
           <div className="mb-5">
-            <label className="block text-sm font-medium text-dark mb-2">接续方式 <span className="text-red-500">*</span></label>
+            <label className="block text-sm font-medium text-dark mb-2">接续方式</label>
             <Input 
                 type="text" 
                 value={grammarForm.continuation}
@@ -791,7 +776,7 @@ const GrammarManager = () => {
 
           {/* 例句 */}
           <div className="mb-5">
-            <label className="block text-sm font-medium text-dark mb-3">例句（最多 5 句） <span className="text-red-500">*</span></label>
+            <label className="block text-sm font-medium text-dark mb-3">例句（最多 5 句）</label>
             {grammarForm.examples.map((example, exampleIndex) => (
               <div key={exampleIndex} className="flex gap-2 mb-3">
                 <Input 
@@ -830,7 +815,7 @@ const GrammarManager = () => {
 
           {/* 翻译练习 */}
           <div className="mb-5">
-            <label className="block text-sm font-medium text-dark mb-3">翻译练习（最多 8 组） <span className="text-red-500">*</span></label>
+            <label className="block text-sm font-medium text-dark mb-3">翻译练习（最多 8 组）</label>
             {grammarForm.translationExercises.map((exercise, exerciseIndex) => (
               <div key={exerciseIndex} className="mb-4">
                 <div className="flex gap-2 mb-3">
