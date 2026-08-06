@@ -20,6 +20,7 @@ const ListeningManager = ({ showToast }) => {
   const [listeningForm, setListeningForm] = useState({
     difficulty: '',
     audioUrl: '',
+    listeningText: '',
     exerciseType: '答题',
     explanation: '',
     groups: [{
@@ -110,10 +111,6 @@ const ListeningManager = ({ showToast }) => {
       showToast('请选择难度', 'error');
       return false;
     }
-    if (!listeningForm.audioUrl.trim()) {
-      showToast('请输入听力材料URL', 'error');
-      return false;
-    }
     if (!listeningForm.exerciseType) {
       showToast('请选择练习类型', 'error');
       return false;
@@ -185,6 +182,7 @@ const ListeningManager = ({ showToast }) => {
     setListeningForm({
       difficulty: '',
       audioUrl: '',
+      listeningText: '',
       exerciseType: '答题',
       explanation: '',
       groups: [{
@@ -214,6 +212,7 @@ const ListeningManager = ({ showToast }) => {
       const listeningData = {
         difficulty: listeningForm.difficulty,
         audioUrl: listeningForm.audioUrl.trim(),
+        listeningText: listeningForm.listeningText.trim(),
         exerciseType: listeningForm.exerciseType,
         groups: listeningForm.groups,
         explanation: listeningForm.explanation.trim()
@@ -250,6 +249,7 @@ const ListeningManager = ({ showToast }) => {
       const listeningData = {
         difficulty: listeningForm.difficulty,
         audioUrl: listeningForm.audioUrl.trim(),
+        listeningText: listeningForm.listeningText.trim(),
         exerciseType: listeningForm.exerciseType,
         groups: listeningForm.groups,
         explanation: listeningForm.explanation.trim()
@@ -288,6 +288,7 @@ const ListeningManager = ({ showToast }) => {
     setListeningForm({
       difficulty: listening.difficulty || '',
       audioUrl: listening.audio_url || '',
+      listeningText: listening.listening_text || '',
       exerciseType: listening.exercise_type || '答题',
       explanation: listening.explanation || '',
       groups: groups
@@ -441,7 +442,7 @@ const ListeningManager = ({ showToast }) => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-dark mb-2">听力材料URL <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-medium text-dark mb-2">听力材料URL</label>
               <Input 
                 type="text" 
                 name="audioUrl" 
@@ -449,7 +450,6 @@ const ListeningManager = ({ showToast }) => {
                 onChange={handleFormChange} 
                 placeholder="请输入听力材料URL"
                 style={{ width: '100%' }}
-                required 
               />
             </div>
             <div>
@@ -459,6 +459,17 @@ const ListeningManager = ({ showToast }) => {
                 value={listeningForm.exerciseType}
                 onChange={(value) => setListeningForm(prev => ({ ...prev, exerciseType: value }))}
                 placeholder="请选择练习类型"
+                style={{ width: '100%' }}
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-dark mb-2">听力文本</label>
+              <Input.TextArea
+                name="listeningText"
+                value={listeningForm.listeningText}
+                onChange={handleFormChange}
+                placeholder="请输入听力文本"
+                rows={6}
                 style={{ width: '100%' }}
               />
             </div>

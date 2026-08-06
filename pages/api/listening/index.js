@@ -58,22 +58,27 @@ async function handler(req, res) {
       case 'POST':
         // 处理添加听力
         try {
-          const { difficulty, audioUrl, exerciseType, groups, explanation } = body;
-          const duplicateResult = await pool.query(
-            'SELECT id FROM listening WHERE difficulty = $1 AND audio_url = $2 AND exercise_type = $3 LIMIT 1',
-            [difficulty, audioUrl, exerciseType]
-          );
-          if (duplicateResult.rows.length > 0) {
-            return res.status(409).json({ success: false, error: { code: 'DUPLICATE_RESOURCE', message: '听力材料已存在' } });
+          const { difficulty, audioUrl = '', listeningText = '', exerciseType, groups, explanation } = body;
+          const normalizedAudioUrl = audioUrl.trim();
+          const normalizedListeningText = listeningText.trim();
+
+          if (normalizedAudioUrl) {
+            const duplicateResult = await pool.query(
+              'SELECT id FROM listening WHERE difficulty = $1 AND audio_url = $2 AND exercise_type = $3 LIMIT 1',
+              [difficulty, normalizedAudioUrl, exerciseType]
+            );
+            if (duplicateResult.rows.length > 0) {
+              return res.status(409).json({ success: false, error: { code: 'DUPLICATE_RESOURCE', message: '听力材料已存在' } });
+            }
           }
 
           // 插入数据
           const query = `
-            INSERT INTO listening (difficulty, audio_url, exercise_type, groups, explanation)
-            VALUES ($1, $2, $3, $4, $5)
+            INSERT INTO listening (difficulty, audio_url, listening_text, exercise_type, groups, explanation)
+            VALUES ($1, $2, $3, $4, $5, $6)
             RETURNING *
           `;
-          const params = [difficulty, audioUrl, exerciseType, JSON.stringify(groups), explanation];
+          const params = [difficulty, normalizedAudioUrl, normalizedListeningText, exerciseType, JSON.stringify(groups), explanation];
 
           const result = await pool.query(query, params);
           return successResponse(res, result.rows[0], '听力添加成功');
@@ -86,16 +91,16 @@ async function handler(req, res) {
         // 处理更新听力
         try {
           const { id } = query;
-          const { difficulty, audioUrl, exerciseType, groups, explanation } = body;
+          const { difficulty, audioUrl = '', listeningText = '', exerciseType, groups, explanation } = body;
 
           // 更新数据
           const query = `
             UPDATE listening
-            SET difficulty = $1, audio_url = $2, exercise_type = $3, groups = $4, explanation = $5
-            WHERE id = $6
+            SET difficulty = $1, audio_url = $2, listening_text = $3, exercise_type = $4, groups = $5, explanation = $6
+            WHERE id = $7
             RETURNING *
           `;
-          const params = [difficulty, audioUrl, exerciseType, JSON.stringify(groups), explanation, id];
+          const params = [difficulty, audioUrl.trim(), listeningText.trim(), exerciseType, JSON.stringify(groups), explanation, id];
 
           const result = await pool.query(query, params);
           if (result.rows.length === 0) {
