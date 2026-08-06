@@ -3,6 +3,23 @@ import { logError } from '../../utils.js';
 import PaginationTable from '../common/PaginationTable';
 import api from '../../lib/api';
 
+const STATUS_LABELS = {
+  active: '有效',
+  expired: '已到期',
+  disabled: '已禁用',
+};
+
+const STATUS_STYLES = {
+  active: 'bg-green-100 text-green-800',
+  expired: 'bg-red-100 text-red-800',
+  disabled: 'bg-gray-100 text-gray-800',
+};
+
+function formatDate(value) {
+  if (!value) return '-';
+  return new Date(value).toLocaleString();
+}
+
 const UserManager = ({ showToast }) => {
   const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -73,9 +90,31 @@ const UserManager = ({ showToast }) => {
             cellClassName: 'text-sm'
           },
           {
+            title: '邀请码',
+            render: (row) => row.invitation_code || '-',
+            cellClassName: 'text-muted whitespace-nowrap'
+          },
+          {
+            title: '账号有效期',
+            render: (row) => formatDate(row.account_expires_at),
+            cellClassName: 'text-muted whitespace-nowrap'
+          },
+          {
+            title: '状态',
+            render: (row) => {
+              const status = row.status || 'active';
+              return (
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_STYLES[status] || STATUS_STYLES.active}`}>
+                  {STATUS_LABELS[status] || status}
+                </span>
+              );
+            },
+            cellClassName: 'text-sm whitespace-nowrap'
+          },
+          {
             title: '注册时间',
-            render: (row) => new Date(row.created_at).toLocaleString(),
-            cellClassName: 'text-muted'
+            render: (row) => formatDate(row.created_at),
+            cellClassName: 'text-muted whitespace-nowrap'
           }
         ]}
         isLoading={isLoading}

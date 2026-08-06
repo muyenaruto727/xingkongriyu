@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
+import { isAccountExpired } from '../lib/accountExpiry';
 
 const AuthContext = createContext(null);
 
@@ -16,7 +17,14 @@ export const AuthProvider = ({ children }) => {
 
       if (token && userData) {
         try {
-          setUser(JSON.parse(userData));
+          const parsedUser = JSON.parse(userData);
+          if (isAccountExpired(parsedUser.account_expires_at)) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            localStorage.removeItem('currentUser');
+          } else {
+            setUser(parsedUser);
+          }
         } catch (error) {
           console.error('Failed to parse user data:', error);
           localStorage.removeItem('token');

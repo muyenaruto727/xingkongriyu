@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
+import { Modal } from 'antd';
 import api from '../lib/api';
 
 const Register = () => {
@@ -9,12 +10,12 @@ const Register = () => {
     username: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    invitation_code: ''
   });
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
-  const [redirectCountdown, setRedirectCountdown] = useState(0);
+  const [registeredUser, setRegisteredUser] = useState(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -27,35 +28,29 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    setSuccess('');
+    if (formData.password !== formData.confirmPassword) {
+      setError('两次输入的密码不一致');
+      return;
+    }
+
     setLoading(true);
     
     try {
-      await api.register({
+      const user = await api.register({
         username: formData.username,
         email: formData.email,
         password: formData.password,
+        invitation_code: formData.invitation_code,
       });
       
       setFormData({
         username: '',
         email: '',
         password: '',
-        confirmPassword: ''
+        confirmPassword: '',
+        invitation_code: ''
       });
-      
-      // 设置倒计时
-      setRedirectCountdown(3);
-      const countdownInterval = setInterval(() => {
-        setRedirectCountdown(prev => {
-          if (prev <= 1) {
-            clearInterval(countdownInterval);
-            router.push('/login');
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+      setRegisteredUser(user);
     } catch (error) {
       api.handleError('Registration error:', error);
       setError(error.userMessage || error.message || '注册失败，请重试');
@@ -86,17 +81,6 @@ const Register = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-.633-1.964-.633-2.732 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
               <span>{error}</span>
-            </div>
-          </div>
-        )}
-        
-        {redirectCountdown > 0 && (
-          <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-lg mb-6" role="alert">
-            <div className="flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span>注册成功！即将跳转到登录页面... {redirectCountdown}秒</span>
             </div>
           </div>
         )}
@@ -157,6 +141,21 @@ const Register = () => {
               required
             />
           </div>
+
+          <div>
+            <label htmlFor="invitation_code" className="block text-sm font-medium text-dark mb-2">邀请码</label>
+            <input
+              type="text"
+              id="invitation_code"
+              name="invitation_code"
+              className="input"
+              value={formData.invitation_code}
+              onChange={handleChange}
+              placeholder="请输入8位邀请码"
+              maxLength={8}
+              required
+            />
+          </div>
           
           <button
             type="submit"
@@ -177,6 +176,22 @@ const Register = () => {
           <p>© 2026 日语学习网站</p>
         </div>
       </div>
+
+      <Modal
+        title="注册成功"
+        open={Boolean(registeredUser)}
+        onOk={() => router.push('/login')}
+        onCancel={() => router.push('/login')}
+        okText="去登录"
+        cancelButtonProps={{ style: { display: 'none' } }}
+      >
+        <p className="text-dark">
+          账号有效期至：
+          <span className="font-semibold ml-1">
+            {registeredUser?.account_expires_at ? new Date(registeredUser.account_expires_at).toLocaleString() : '-'}
+          </span>
+        </p>
+      </Modal>
     </div>
   );
 };

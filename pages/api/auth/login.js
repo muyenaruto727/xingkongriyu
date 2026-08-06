@@ -1,6 +1,7 @@
 const pool = require('../../../lib/db');
 const { comparePassword, generateToken } = require('../../../lib/auth');
 const { successResponse, ApiError, errorCodes, handleError } = require('../../../lib/errorHandler');
+const { ACCOUNT_STATUS, isAccountExpired } = require('../../../lib/accountExpiry');
 const Joi = require('joi');
 
 const loginSchema = Joi.object({
@@ -28,7 +29,10 @@ async function handler(req, res) {
       const { username, password } = value;
 
       const result = await pool.query(
-        'SELECT id, username, email, password, role, created_at, updated_at FROM users WHERE username = $1',
+        `SELECT id, username, email, password, role, invitation_code, account_expires_at,
+                status, created_at, updated_at
+           FROM users
+          WHERE username = $1`,
         [username]
       );
       
@@ -43,10 +47,21 @@ async function handler(req, res) {
         throw new ApiError(errorCodes.AUTHENTICATION_ERROR, '用户名或密码错误');
       }
 
+      if (user.status === ACCOUNT_STATUS.EXPIRED || isAccountExpired(user.account_expires_at)) {
+        await pool.query(
+          `UPDATE users
+              SET status = $1, updated_at = CURRENT_TIMESTAMP
+            WHERE id = $2 AND status <> $1`,
+          [ACCOUNT_STATUS.EXPIRED, user.id]
+        );
+        throw new ApiError(errorCodes.AUTHENTICATION_ERROR, '账号已到期，请联系管理员');
+      }
+
       const token = generateToken({
         userId: user.id,
         username: user.username,
         role: user.role,
+        accountExpiresAt: user.account_expires_at,
       });
 
       const { password: _, ...userWithoutPassword } = user;

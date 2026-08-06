@@ -16,6 +16,14 @@ async function handler(req, res) {
         if (parsedPage.error || parsedLimit.error) {
           return res.status(400).json({ error: parsedPage.error || parsedLimit.error });
         }
+
+        await pool.query(
+          `UPDATE users
+              SET status = 'expired', updated_at = CURRENT_TIMESTAMP
+            WHERE status = 'active'
+              AND account_expires_at IS NOT NULL
+              AND account_expires_at <= CURRENT_TIMESTAMP`
+        );
         
         // 获取总记录数
         const countResult = await pool.query('SELECT COUNT(*) FROM users');
@@ -24,7 +32,10 @@ async function handler(req, res) {
         // 添加分页
         const offset = (parsedPage.value - 1) * parsedLimit.value;
         const result = await pool.query(
-          'SELECT id, username, email, role, created_at, updated_at FROM users ORDER BY id DESC LIMIT $1 OFFSET $2',
+          `SELECT id, username, email, role, invitation_code, account_expires_at, status, created_at, updated_at
+             FROM users
+            ORDER BY id DESC
+            LIMIT $1 OFFSET $2`,
           [parsedLimit.value, offset]
         );
         
@@ -41,9 +52,9 @@ async function handler(req, res) {
         const hashedPassword = await hashUserPassword(password);
         
         const result = await pool.query(
-          `INSERT INTO users (username, email, password, role)
-           VALUES ($1, $2, $3, $4)
-           RETURNING id, username, email, role, created_at, updated_at`,
+          `INSERT INTO users (username, email, password, role, status)
+           VALUES ($1, $2, $3, $4, 'active')
+           RETURNING id, username, email, role, invitation_code, account_expires_at, status, created_at, updated_at`,
           [username, email, hashedPassword, role || 'user']
         );
         
@@ -56,7 +67,7 @@ async function handler(req, res) {
     case 'PUT':
       try {
         const { id } = req.query;
-        const { username, email, password, role } = req.body;
+        const { username, email, password, role, status } = req.body;
         
         let query = 'UPDATE users SET';
         const params = [];
@@ -83,8 +94,13 @@ async function handler(req, res) {
           params.push(role);
           paramIndex++;
         }
+        if (status) {
+          query += ` status = $${paramIndex},`;
+          params.push(status);
+          paramIndex++;
+        }
 
-        query += ` updated_at = CURRENT_TIMESTAMP WHERE id = $${paramIndex} RETURNING id, username, email, role, created_at, updated_at`;
+        query += ` updated_at = CURRENT_TIMESTAMP WHERE id = $${paramIndex} RETURNING id, username, email, role, invitation_code, account_expires_at, status, created_at, updated_at`;
         params.push(id);
 
         const result = await pool.query(query, params);

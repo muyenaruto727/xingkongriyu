@@ -1,6 +1,11 @@
 const pool = require('../../../lib/db');
 const { hashPassword } = require('../../../lib/auth');
 const { successResponse, ApiError, errorCodes, handleError } = require('../../../lib/errorHandler');
+const {
+  calculateAccountExpiry,
+  isValidInvitationCodeFormat,
+  normalizeInvitationCode,
+} = require('../../../lib/invitationCodes');
 const Joi = require('joi');
 
 const registerSchema = Joi.object({
@@ -18,6 +23,10 @@ const registerSchema = Joi.object({
     'string.min': '密码至少6个字符',
     'any.required': '密码不能为空',
   }),
+  invitation_code: Joi.string().required().messages({
+    'string.empty': '邀请码不能为空',
+    'any.required': '邀请码不能为空',
+  }),
 });
 
 async function handler(req, res) {
@@ -32,6 +41,11 @@ async function handler(req, res) {
       }
 
       const { username, email, password } = value;
+      const invitationCode = normalizeInvitationCode(value.invitation_code);
+
+      if (!isValidInvitationCodeFormat(invitationCode)) {
+        throw new ApiError(errorCodes.VALIDATION_ERROR, '邀请码格式错误');
+      }
 
       const existingUser = await pool.query(
         'SELECT id FROM users WHERE username = $1 OR email = $2',
@@ -43,15 +57,55 @@ async function handler(req, res) {
       }
 
       const hashedPassword = await hashPassword(password);
+      const client = await pool.connect();
 
-      const result = await pool.query(
-        'INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING id, username, email, role, created_at',
-        [username, email, hashedPassword]
-      );
+      try {
+        await client.query('BEGIN');
 
-      const user = result.rows[0];
+        const invitationResult = await client.query(
+          `SELECT id, code, duration_days, is_used
+             FROM invitation_codes
+            WHERE code = $1
+            FOR UPDATE`,
+          [invitationCode]
+        );
 
-      return successResponse(res, user, '注册成功');
+        if (invitationResult.rows.length === 0) {
+          throw new ApiError(errorCodes.VALIDATION_ERROR, '邀请码不存在');
+        }
+
+        const invitation = invitationResult.rows[0];
+        if (invitation.is_used) {
+          throw new ApiError(errorCodes.VALIDATION_ERROR, '邀请码已被使用');
+        }
+
+        const registeredAt = new Date();
+        const accountExpiresAt = calculateAccountExpiry(registeredAt, invitation.duration_days);
+        const result = await client.query(
+          `INSERT INTO users (username, email, password, invitation_code, invitation_code_id, account_expires_at, status)
+           VALUES ($1, $2, $3, $4, $5, $6, 'active')
+           RETURNING id, username, email, role, invitation_code, account_expires_at, status, created_at`,
+          [username, email, hashedPassword, invitation.code, invitation.id, accountExpiresAt]
+        );
+
+        const user = result.rows[0];
+
+        await client.query(
+          `UPDATE invitation_codes
+              SET is_used = TRUE, used_by = $1, used_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+            WHERE id = $2`,
+          [user.id, invitation.id]
+        );
+
+        await client.query('COMMIT');
+
+        return successResponse(res, user, '注册成功');
+      } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+      } finally {
+        client.release();
+      }
     } catch (error) {
       return handleError(error, req, res);
     }

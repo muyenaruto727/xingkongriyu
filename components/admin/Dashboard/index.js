@@ -4,6 +4,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { message } from 'antd';
 import DashboardStats from './DashboardStats';
 import UserManager from '../UserManager';
+import InvitationCodeManager from '../InvitationCodeManager';
 import VocabManager from '../VocabManager';
 import GrammarManager from '../GrammarManager';
 import ArticleManager from '../ArticleManager';
@@ -87,6 +88,8 @@ const Dashboard = () => {
         return <DashboardStats />;
       case 'users':
         return <UserManager showToast={showToast} />;
+      case 'invitationCodes':
+        return <InvitationCodeManager />;
       case 'vocabulary':
         return <VocabManager showToast={showToast} />;
       case 'grammar':
@@ -162,6 +165,17 @@ const Dashboard = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                   用户管理
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => openTab('invitationCodes', '邀请码管理')}
+                  className={`w-full text-left px-4 py-3 rounded-lg flex items-center gap-3 transition-all ${activeTab === 'invitationCodes' ? 'bg-primary text-white shadow-md' : 'hover:bg-gray-50'}`}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H3v-4.586l6.257-6.257A6 6 0 1121 9z" />
+                  </svg>
+                  邀请码管理
                 </button>
               </li>
               <li>
