@@ -2,6 +2,9 @@ const pool = require('../../../lib/db');
 const { handleError, successResponse } = require('../../../lib/errorHandler');
 const { withAdminForMethods } = require('../../../lib/apiAuth');
 const { parseIntegerParam } = require('../../../lib/requestValidation');
+const {
+  normalizeRelatedGrammars,
+} = require('../../../lib/grammarRelated');
 
 async function handler(req, res) {
   const { method } = req;
@@ -9,7 +12,7 @@ async function handler(req, res) {
   switch (method) {
     case 'GET':
       try {
-        const { level, search, page = 1, limit = 10, export: isExport } = req.query;
+        const { id, level, search, page = 1, limit = 10, export: isExport } = req.query;
         const parsedPage = parseIntegerParam(page, { name: 'page', min: 1, max: 10000, defaultValue: 1 });
         const parsedLimit = parseIntegerParam(limit, { name: 'limit', min: 1, max: 100, defaultValue: 10 });
         if (!isExport && (parsedPage.error || parsedLimit.error)) {
@@ -18,6 +21,12 @@ async function handler(req, res) {
         let whereClause = '1=1';
         const params = [];
         let paramIndex = 1;
+
+        if (id) {
+          whereClause += ` AND id = $${paramIndex}`;
+          params.push(parseInt(id, 10));
+          paramIndex++;
+        }
 
         if (level && level !== '全部' && level !== '') {
           whereClause += ` AND level = $${paramIndex}`;
@@ -53,7 +62,8 @@ async function handler(req, res) {
           attentionPoints: row.attention_points,
           translationExercises: row.translation_exercises || [],
           referenceAnswers: row.reference_answers || [],
-          examples: row.examples || []
+          examples: row.examples || [],
+          relatedGrammars: normalizeRelatedGrammars(row.related_grammars)
         }));
 
         // 如果是导出，直接返回所有数据
@@ -77,7 +87,7 @@ async function handler(req, res) {
 
     case 'POST':
       try {
-        const { batch, grammarPoint, level, japaneseMeaning, chineseMeaning, continuation, attentionPoints, translationExercises, referenceAnswers, examples } = req.body;
+        const { batch, grammarPoint, level, japaneseMeaning, chineseMeaning, continuation, attentionPoints, translationExercises, referenceAnswers, examples, relatedGrammars } = req.body;
         const isDuplicateGrammar = async (item) => {
           const duplicateResult = await pool.query(
             'SELECT id FROM grammar WHERE grammar_point = $1 AND level = $2 LIMIT 1',
@@ -94,10 +104,10 @@ async function handler(req, res) {
               continue;
             }
             const result = await pool.query(
-              `INSERT INTO grammar (grammar_point, level, japanese_meaning, chinese_meaning, continuation, attention_points, translation_exercises, reference_answers, examples)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+              `INSERT INTO grammar (grammar_point, level, japanese_meaning, chinese_meaning, continuation, attention_points, translation_exercises, reference_answers, examples, related_grammars)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
                RETURNING *`,
-              [item.grammarPoint, item.level, item.japaneseMeaning || '', item.chineseMeaning || '', item.continuation || '', item.attentionPoints || '', item.translationExercises || [], item.referenceAnswers || [], item.examples || []]
+              [item.grammarPoint, item.level, item.japaneseMeaning || '', item.chineseMeaning || '', item.continuation || '', item.attentionPoints || '', item.translationExercises || [], item.referenceAnswers || [], item.examples || [], JSON.stringify(normalizeRelatedGrammars(item.relatedGrammars || item.related_grammars))]
             );
             results.push(result.rows[0]);
           }
@@ -108,10 +118,10 @@ async function handler(req, res) {
           }
           // 处理单个语法添加
           const result = await pool.query(
-            `INSERT INTO grammar (grammar_point, level, japanese_meaning, chinese_meaning, continuation, attention_points, translation_exercises, reference_answers, examples)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            `INSERT INTO grammar (grammar_point, level, japanese_meaning, chinese_meaning, continuation, attention_points, translation_exercises, reference_answers, examples, related_grammars)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
              RETURNING *`,
-            [grammarPoint, level, japaneseMeaning || '', chineseMeaning || '', continuation || '', attentionPoints || '', translationExercises || [], referenceAnswers || [], examples || []]
+            [grammarPoint, level, japaneseMeaning || '', chineseMeaning || '', continuation || '', attentionPoints || '', translationExercises || [], referenceAnswers || [], examples || [], JSON.stringify(normalizeRelatedGrammars(relatedGrammars))]
           );
           
           const row = result.rows[0];
@@ -125,7 +135,8 @@ async function handler(req, res) {
             attentionPoints: row.attention_points,
             translationExercises: row.translation_exercises || [],
             referenceAnswers: row.reference_answers || [],
-            examples: row.examples || []
+            examples: row.examples || [],
+            relatedGrammars: normalizeRelatedGrammars(row.related_grammars)
           };
           return successResponse(res, grammarItem, '语法添加成功');
         }
@@ -137,16 +148,16 @@ async function handler(req, res) {
     case 'PUT':
       try {
         const { id } = req.query;
-        const { grammarPoint, level, japaneseMeaning, chineseMeaning, continuation, attentionPoints, translationExercises, referenceAnswers, examples } = req.body;
+        const { grammarPoint, level, japaneseMeaning, chineseMeaning, continuation, attentionPoints, translationExercises, referenceAnswers, examples, relatedGrammars } = req.body;
         
         const result = await pool.query(
           `UPDATE grammar 
            SET grammar_point = $1, level = $2, japanese_meaning = $3, chinese_meaning = $4, 
                continuation = $5, attention_points = $6, translation_exercises = $7, 
-               reference_answers = $8, examples = $9, updated_at = CURRENT_TIMESTAMP
-           WHERE id = $10
+               reference_answers = $8, examples = $9, related_grammars = $10, updated_at = CURRENT_TIMESTAMP
+           WHERE id = $11
            RETURNING *`,
-          [grammarPoint, level, japaneseMeaning || '', chineseMeaning || '', continuation || '', attentionPoints || '', translationExercises || [], referenceAnswers || [], examples || [], id]
+          [grammarPoint, level, japaneseMeaning || '', chineseMeaning || '', continuation || '', attentionPoints || '', translationExercises || [], referenceAnswers || [], examples || [], JSON.stringify(normalizeRelatedGrammars(relatedGrammars)), id]
         );
         
         const row = result.rows[0];
@@ -160,7 +171,8 @@ async function handler(req, res) {
           attentionPoints: row.attention_points,
           translationExercises: row.translation_exercises || [],
           referenceAnswers: row.reference_answers || [],
-          examples: row.examples || []
+          examples: row.examples || [],
+          relatedGrammars: normalizeRelatedGrammars(row.related_grammars)
         };
         return successResponse(res, grammarItem, '语法更新成功');
       } catch (error) {

@@ -4,6 +4,7 @@ import { useRouter } from 'next/router';
 import { message } from 'antd';
 import Navigation from '../../components/layout/Navigation';
 import { api } from '../../lib/api';
+import { normalizeRelatedGrammars } from '../../lib/grammarRelated';
 
 const levelConfig = {
   'N5': {
@@ -73,9 +74,11 @@ const GrammarDetail = () => {
     if (id) {
       const fetchGrammar = async () => {
         try {
-          const response = await api.getGrammarList();
+          setGrammar(null);
+          setShowAnswers({});
+          const response = await api.getGrammarList({ id, limit: 1 });
           const grammarList = response?.data || [];
-          const found = grammarList.find(g => g.id === parseInt(id));
+          const found = grammarList.find(g => g.id === parseInt(id, 10));
           if (found) setGrammar(found);
         } catch (error) {
           api.handleError('Failed to fetch grammar:', error);
@@ -150,6 +153,8 @@ const GrammarDetail = () => {
   const lc = levelConfig[grammar.level] || levelConfig['N5'];
   const hasExamples = grammar.examples && grammar.examples.length > 0 && grammar.examples.some(ex => ex && ex.trim() !== '');
   const hasExercises = grammar.translationExercises && grammar.translationExercises.length > 0 && grammar.translationExercises.some(ex => ex && ex.trim() !== '');
+  const relatedGrammars = normalizeRelatedGrammars(grammar.relatedGrammars || grammar.related_grammars);
+  const hasRelatedGrammars = relatedGrammars.length > 0;
   const isFavorited = favorites.includes(grammar.id);
 
   return (
@@ -262,7 +267,6 @@ const GrammarDetail = () => {
                     </div>
                     <div>
                       <span className="text-xs font-bold text-gray-400 uppercase tracking-[0.15em]">接续方式</span>
-                      <p className="text-xs text-gray-400 mt-0.5">この文法の接続のしかた</p>
                     </div>
                   </div>
                   <div className="bg-gradient-to-br from-purple-50/50 to-violet-50/50 rounded-xl px-5 py-4 border border-purple-100/50">
@@ -282,7 +286,6 @@ const GrammarDetail = () => {
                     </div>
                     <div>
                       <span className="text-xs font-bold text-amber-500 uppercase tracking-[0.15em]">注意事项</span>
-                      <p className="text-xs text-amber-400 mt-0.5">使用上の注意点</p>
                     </div>
                   </div>
                   <div className="bg-white/70 backdrop-blur-sm rounded-xl px-5 py-4 border border-amber-100/50">
@@ -290,6 +293,7 @@ const GrammarDetail = () => {
                   </div>
                 </div>
               )}
+
 
               {/* ── Examples ── */}
               {hasExamples && (
@@ -395,8 +399,40 @@ const GrammarDetail = () => {
                 </div>
               )}
 
+              {/* ── Related Grammars ── */}
+              {hasRelatedGrammars && (
+                <div className="mb-10">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-1 h-7 rounded-full bg-gradient-to-b from-violet-400 to-purple-500" />
+                    <h2 className="text-xl md:text-2xl font-bold text-gray-900">关联语法</h2>
+                    <span className="text-xs text-gray-400 bg-gray-100 px-2.5 py-0.5 rounded-full">
+                      {relatedGrammars.length} 个
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {relatedGrammars.map((item, index) => (
+                      <button
+                        key={`${item.id}-${index}`}
+                        type="button"
+                        onClick={() => router.push(`/grammar/${item.id}`)}
+                        className="group text-left bg-white rounded-xl border border-violet-100 p-5 hover:border-violet-300 hover:shadow-md hover:shadow-violet-50 hover:-translate-y-0.5 transition-all duration-300"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <p className="text-gray-900 font-semibold mt-1 group-hover:text-violet-700 transition-colors">
+                              {item.grammar}
+                            </p>
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* ── Empty State ── */}
-              {!grammar.japaneseMeaning && !grammar.chineseMeaning && !grammar.continuation && !grammar.attentionPoints && !hasExamples && !hasExercises && (
+              {!grammar.japaneseMeaning && !grammar.chineseMeaning && !grammar.continuation && !grammar.attentionPoints && !hasRelatedGrammars && !hasExamples && !hasExercises && (
                 <div className="text-center py-20 bg-gray-50 rounded-3xl">
                   <div className="w-20 h-20 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-5">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">

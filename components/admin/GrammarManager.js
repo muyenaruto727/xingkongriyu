@@ -4,6 +4,12 @@ import { message, Modal, Select, Input, Upload } from 'antd';
 import { InboxOutlined } from '@ant-design/icons';
 import Pagination from '../common/Pagination';
 import PaginationTable from '../common/PaginationTable';
+import {
+  MAX_RELATED_GRAMMAR_ROWS,
+  createEmptyRelatedGrammarRow,
+  ensureEditableRelatedGrammars,
+  normalizeRelatedGrammars,
+} from '../../lib/grammarRelated';
 
 const { Dragger } = Upload;
 
@@ -33,7 +39,8 @@ const GrammarManager = () => {
     attentionPoints: '',
     examples: [''],
     translationExercises: [''],
-    referenceAnswers: ['']
+    referenceAnswers: [''],
+    relatedGrammars: [createEmptyRelatedGrammarRow()]
   });
   
   const levels = ['N1', 'N2', 'N3', 'N4', 'N5'];
@@ -111,6 +118,18 @@ const GrammarManager = () => {
     }));
   };
 
+  const handleRelatedGrammarChange = (rowIndex, field, value) => {
+    const nextRows = [...grammarForm.relatedGrammars];
+    nextRows[rowIndex] = {
+      ...nextRows[rowIndex],
+      [field]: value,
+    };
+    setGrammarForm(prev => ({
+      ...prev,
+      relatedGrammars: nextRows,
+    }));
+  };
+
   // 添加示例
   const addExample = () => {
     if (grammarForm.examples.length < 5) {
@@ -143,6 +162,15 @@ const GrammarManager = () => {
     }
   };
 
+  const addRelatedGrammar = () => {
+    if (grammarForm.relatedGrammars.length < MAX_RELATED_GRAMMAR_ROWS) {
+      setGrammarForm(prev => ({
+        ...prev,
+        relatedGrammars: [...prev.relatedGrammars, createEmptyRelatedGrammarRow()]
+      }));
+    }
+  };
+
   // 删除翻译练习
   const removeExercise = (exerciseIndex) => {
     if (grammarForm.translationExercises.length > 1) {
@@ -152,6 +180,16 @@ const GrammarManager = () => {
         ...prev,
         translationExercises: newExercises,
         referenceAnswers: newAnswers
+      }));
+    }
+  };
+
+  const removeRelatedGrammar = (rowIndex) => {
+    if (grammarForm.relatedGrammars.length > 1) {
+      const nextRows = grammarForm.relatedGrammars.filter((_, index) => index !== rowIndex);
+      setGrammarForm(prev => ({
+        ...prev,
+        relatedGrammars: nextRows,
       }));
     }
   };
@@ -169,7 +207,8 @@ const GrammarManager = () => {
       continuation: (grammarForm.continuation || '').trim(),
       examples: grammarForm.examples.map(example => (example || '').trim()).filter(Boolean),
       translationExercises: pairedExercises.map(item => item.exercise),
-      referenceAnswers: pairedExercises.map(item => item.answer)
+      referenceAnswers: pairedExercises.map(item => item.answer),
+      relatedGrammars: normalizeRelatedGrammars(grammarForm.relatedGrammars)
     };
   };
 
@@ -262,7 +301,8 @@ const GrammarManager = () => {
       attentionPoints: grammar.attentionPoints || '',
       examples: grammar.examples || [''],
       translationExercises: grammar.translationExercises || [''],
-      referenceAnswers: grammar.referenceAnswers || ['']
+      referenceAnswers: grammar.referenceAnswers || [''],
+      relatedGrammars: ensureEditableRelatedGrammars(grammar.relatedGrammars || grammar.related_grammars)
     });
     setShowModal(true);
   };
@@ -300,7 +340,8 @@ const GrammarManager = () => {
       attentionPoints: '',
       examples: [''],
       translationExercises: [''],
-      referenceAnswers: ['']
+      referenceAnswers: [''],
+      relatedGrammars: [createEmptyRelatedGrammarRow()]
     });
     setCurrentEditId(null);
   };
@@ -336,7 +377,7 @@ const GrammarManager = () => {
           // 过滤无效数据
           message.info(`验证数据格式，共 ${data.length} 条数据...`);
           const filteredData = data.filter(item => {
-            return item.grammarPoint && item.level && item.japaneseMeaning && item.chineseMeaning && item.continuation;
+            return item.grammarPoint && item.level && item.japaneseMeaning && item.chineseMeaning;
           });
 
           if (filteredData.length === 0) {
@@ -425,7 +466,8 @@ const GrammarManager = () => {
         "attentionPoints": "状態を表す動詞と一緒に使うこともできる",
         "examples": ["私は日本語を勉強しています。", "彼はテレビを見ています。"],
         "translationExercises": ["我正在学习日语。", "他正在看电视。"],
-        "referenceAnswers": ["私は日本語を勉強しています。", "彼はテレビを見ています。"]
+        "referenceAnswers": ["私は日本語を勉強しています。", "彼はテレビを見ています。"],
+        "relatedGrammars": [{ "grammar": "〜てある", "id": "12" }]
       },
       {
         "grammarPoint": "~たい",
@@ -436,7 +478,8 @@ const GrammarManager = () => {
         "attentionPoints": "第一人称でしか使えない",
         "examples": ["私は日本に行きたいです。", "彼女は寿司を食べたいです。"],
         "translationExercises": ["我想去日本。", "她想吃寿司。"],
-        "referenceAnswers": ["私は日本に行きたいです。", "彼女は寿司を食べたいです。"]
+        "referenceAnswers": ["私は日本に行きたいです。", "彼女は寿司を食べたいです。"],
+        "relatedGrammars": []
       }
     ];
 
@@ -772,6 +815,43 @@ const GrammarManager = () => {
                 placeholder="请输入注意事项"
                 rows={6}
               />
+          </div>
+
+          <div className="mb-5">
+            <label className="block text-sm font-medium text-dark mb-3">关联语法（最多 10 行）</label>
+            {grammarForm.relatedGrammars.map((item, rowIndex) => (
+              <div key={rowIndex} className="grid grid-cols-1 md:grid-cols-[1fr_160px_auto] gap-2 mb-3">
+                <Input
+                  type="text"
+                  value={item.grammar}
+                  onChange={(e) => handleRelatedGrammarChange(rowIndex, 'grammar', e.target.value)}
+                  placeholder={`关联语法 ${rowIndex + 1}`}
+                />
+                <Input
+                  type="text"
+                  value={item.id}
+                  onChange={(e) => handleRelatedGrammarChange(rowIndex, 'id', e.target.value)}
+                  placeholder="ID"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeRelatedGrammar(rowIndex)}
+                  disabled={grammarForm.relatedGrammars.length <= 1}
+                  className="px-3 py-2 text-red-600 hover:text-red-700 border border-red-200 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  删除
+                </button>
+              </div>
+            ))}
+            {grammarForm.relatedGrammars.length < MAX_RELATED_GRAMMAR_ROWS && (
+              <button
+                type="button"
+                onClick={addRelatedGrammar}
+                className="text-primary hover:text-primary/80 text-sm px-4 py-2 border border-primary/20 rounded-lg hover:bg-primary/5 transition-colors"
+              >
+                添加关联语法
+              </button>
+            )}
           </div>
 
           {/* 例句 */}

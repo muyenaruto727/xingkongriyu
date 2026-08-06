@@ -12,6 +12,7 @@
     "migrate-nhk-news": "node scripts/migrate-nhk-news.js",
     "migrate-invitation-codes": "node db/updates/add-invitation-codes.js",
     "migrate-question-tag": "node db/updates/add-question-tag.js",
+    "migrate-grammar-related-grammars": "node db/updates/add-grammar-related-grammars.js",
     "migrate-vocab-values": "node migrations/migrate-vocabulary-values.js",
     "seed-data": "node scripts/seed-data.js"
   },
