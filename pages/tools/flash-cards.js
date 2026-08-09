@@ -120,7 +120,7 @@ const Flashcards = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-blue-50" onKeyDown={handleKeyDown} tabIndex={-1}>
+    <div className="tool-page" onKeyDown={handleKeyDown} tabIndex={-1}>
       <Head>
         <title>单词闪卡 — 星空日语</title>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -130,25 +130,23 @@ const Flashcards = () => {
 
       <Navigation />
 
-      <main className="pt-28 pb-8 md:pt-36 md:pb-12">
+      <main className="tool-main">
         <div className="container max-w-2xl">
 
           {/* ── Settings ── */}
           {!isPlaying && (
             <div>
-              <div className="text-center mb-10">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-600 ring-1 ring-indigo-200 mb-4">
-                  🃏 单词闪卡
-                </span>
-                <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-3 tracking-tight">
+              <div className="mb-8">
+                <span className="tool-eyebrow">单词闪卡</span>
+                <h1 className="tool-title">
                   闪卡记忆
                 </h1>
-                <p className="text-gray-500 max-w-lg mx-auto leading-relaxed">
+                <p className="tool-description">
                   选择教材和课程，通过翻转卡片反复记忆单词
                 </p>
               </div>
 
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 md:p-8 mb-8">
+              <div className="tool-panel mb-8">
                 <div className="mb-6">
                   <label className="block text-sm font-semibold text-gray-700 mb-2">选择教材</label>
                   <Select
@@ -185,19 +183,19 @@ const Flashcards = () => {
                 )}
 
                 {/* How to use */}
-                <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl p-5 border border-indigo-100 mb-8">
-                  <h4 className="text-sm font-bold text-indigo-600 mb-3">📖 使用方法</h4>
+                <div className="tool-panel-muted mb-8">
+                  <h4 className="tool-section-title">使用方法</h4>
                   <ul className="text-sm text-gray-600 space-y-1.5">
                     <li className="flex items-start gap-2">
-                      <span className="text-indigo-400 mt-0.5">•</span>
-                      点击卡片或按<span className="font-semibold text-indigo-600 mx-1">空格键</span>翻转卡片
+                      <span className="text-slate-400 mt-0.5">•</span>
+                      点击卡片或按<span className="font-semibold text-slate-800 mx-1">空格键</span>翻转卡片
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-indigo-400 mt-0.5">•</span>
-                      按<span className="font-semibold text-indigo-600 mx-1">← →</span>方向键切换卡片
+                      <span className="text-slate-400 mt-0.5">•</span>
+                      按<span className="font-semibold text-slate-800 mx-1">← →</span>方向键切换卡片
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-indigo-400 mt-0.5">•</span>
+                      <span className="text-slate-400 mt-0.5">•</span>
                       正面：日语单词 · 背面：中文释义 + 读音
                     </li>
                   </ul>
@@ -206,14 +204,14 @@ const Flashcards = () => {
                 <div className="flex gap-3">
                   <button
                     onClick={() => router.push('/tools')}
-                    className="flex-1 py-4 rounded-2xl text-lg font-bold text-gray-500 bg-white border border-gray-200 hover:text-gray-700 hover:border-gray-300 hover:shadow-sm transition-all duration-300"
+                    className="tool-button-secondary flex-1"
                   >
                     ← 返回
                   </button>
                   <button
                     onClick={startFlashcards}
                     disabled={!selectedTextbook || !selectedLesson || loading}
-                    className="flex-1 py-4 bg-gradient-to-r from-indigo-500 to-blue-500 text-white text-lg font-bold rounded-2xl hover:from-indigo-600 hover:to-blue-600 hover:shadow-lg hover:shadow-indigo-200/50 hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="tool-button-primary flex-1"
                   >
                     {loading ? '加载中...' : '开始记忆'}
                   </button>
@@ -228,15 +226,15 @@ const Flashcards = () => {
               {/* Progress */}
               <div className="flex items-center justify-between mb-4 text-sm text-gray-400">
                 <span>{currentIndex + 1} / {vocabList.length}</span>
-                <span className="text-xs bg-indigo-50 text-indigo-500 px-3 py-1 rounded-full font-medium">
+                <span className="tool-chip px-3 py-1 text-xs">
                   {selectedLesson}
                 </span>
               </div>
 
               {/* Progress bar */}
-              <div className="h-1.5 bg-gray-100 rounded-full mb-8 overflow-hidden">
+              <div className="tool-progress mb-8">
                 <div
-                  className="h-full bg-gradient-to-r from-indigo-400 to-blue-500 rounded-full transition-all duration-300"
+                  className="tool-progress-fill"
                   style={{ width: `${((currentIndex + 1) / vocabList.length) * 100}%` }}
                 />
               </div>
@@ -256,25 +254,25 @@ const Flashcards = () => {
                 >
                   {/* Front — Japanese */}
                   <div
-                    className="absolute inset-0 rounded-3xl bg-white border-2 border-indigo-200 shadow-lg shadow-indigo-100/50 flex flex-col items-center justify-center p-8"
+                    className="absolute inset-0 rounded-lg bg-white border border-slate-200 shadow-[0_1px_0_rgba(15,23,42,0.04)] flex flex-col items-center justify-center p-8"
                     style={{ backfaceVisibility: 'hidden' }}
                   >
-                    <span className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-4">日本語</span>
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">日本語</span>
                     <p className="text-2xl md:text-3xl font-extrabold text-gray-900 leading-relaxed">
                       {currentVocab.japanese}
                     </p>
                     {currentVocab.pronunciation && (
-                      <p className="text-sm text-indigo-400 mt-3 font-medium">{currentVocab.pronunciation}</p>
+                      <p className="text-sm text-slate-500 mt-3 font-medium">{currentVocab.pronunciation}</p>
                     )}
                     {((currentVocab.pitch_accent !== undefined && currentVocab.pitch_accent !== null && currentVocab.pitch_accent !== '') || currentVocab.category) && (
                       <div className="flex flex-wrap justify-center gap-2 mt-5">
                         {currentVocab.pitch_accent !== undefined && currentVocab.pitch_accent !== null && currentVocab.pitch_accent !== '' && (
-                          <span className="text-xs font-semibold text-rose-500 bg-rose-50 border border-rose-100 px-2.5 py-1 rounded-full">
+                          <span className="tool-chip px-2.5 py-1 text-xs">
                             声调: {formatVocabularyField('pitchAccent', currentVocab.pitch_accent)}
                           </span>
                         )}
                         {currentVocab.category && (
-                          <span className="text-xs font-semibold text-indigo-500 bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded-full">
+                          <span className="tool-chip px-2.5 py-1 text-xs">
                             {formatVocabularyField('category', currentVocab.category)}
                           </span>
                         )}
@@ -285,18 +283,18 @@ const Flashcards = () => {
 
                   {/* Back — Chinese */}
                   <div
-                    className="absolute inset-0 rounded-3xl bg-gradient-to-br from-indigo-50 to-blue-50 border-2 border-blue-200 shadow-lg shadow-blue-100/50 flex flex-col items-center justify-center p-8"
+                    className="absolute inset-0 rounded-lg bg-[#fafaf7] border border-slate-200 shadow-[0_1px_0_rgba(15,23,42,0.04)] flex flex-col items-center justify-center p-8"
                     style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
                   >
-                    <span className="text-xs font-bold text-blue-400 uppercase tracking-widest mb-4">中文</span>
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">中文</span>
                     <p className="text-2xl md:text-3xl font-extrabold text-gray-900 leading-relaxed">
                       {currentVocab.chinese}
                     </p>
                     {currentVocab.pronunciation && (
-                      <p className="text-sm text-blue-400 mt-3 font-medium">{currentVocab.pronunciation}</p>
+                      <p className="text-sm text-slate-500 mt-3 font-medium">{currentVocab.pronunciation}</p>
                     )}
                     {currentVocab.level && (
-                      <span className="absolute bottom-4 text-xs font-medium text-blue-400 bg-blue-100 px-2 py-0.5 rounded-full">
+                      <span className="absolute bottom-4 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-600">
                         {formatVocabularyField('level', currentVocab.level)}
                       </span>
                     )}
@@ -309,7 +307,8 @@ const Flashcards = () => {
                 <button
                   onClick={goPrev}
                   disabled={currentIndex === 0}
-                  className="w-12 h-12 rounded-xl bg-white border border-gray-200 flex items-center justify-center hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  className="tool-icon-button"
+                  aria-label="上一张"
                 >
                   <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -318,7 +317,7 @@ const Flashcards = () => {
 
                 <button
                   onClick={() => setIsFlipped(!isFlipped)}
-                  className="px-6 py-3 bg-indigo-500 text-white font-semibold rounded-xl hover:bg-indigo-600 transition-colors shadow-sm"
+                  className="tool-button-primary"
                 >
                   {isFlipped ? '显示日语' : '显示中文'}
                 </button>
@@ -326,7 +325,8 @@ const Flashcards = () => {
                 <button
                   onClick={goNext}
                   disabled={currentIndex >= vocabList.length - 1}
-                  className="w-12 h-12 rounded-xl bg-white border border-gray-200 flex items-center justify-center hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                  className="tool-icon-button"
+                  aria-label="下一张"
                 >
                   <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -338,7 +338,7 @@ const Flashcards = () => {
               <div className="flex gap-3">
                 <button
                   onClick={goBackToSettings}
-                  className="flex-1 py-4 bg-white text-gray-600 font-bold rounded-2xl border border-gray-200 hover:bg-gray-50 transition-all duration-300"
+                  className="tool-button-secondary flex-1"
                 >
                   返回
                 </button>

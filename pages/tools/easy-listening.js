@@ -94,7 +94,7 @@ const EasyListening = () => {
   const accuracy = stats.total === 0 ? 0 : Math.round((stats.correct / stats.total) * 100);
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-b from-cyan-50 via-white to-blue-50">
+    <div className="tool-page-shell">
       <Head>
         <title>听力入门 — 星空日语</title>
         <meta name="description" content="日语入门听力练习，使用 Edge TTS 合成单词和句子音频" />
@@ -103,20 +103,20 @@ const EasyListening = () => {
       <Navigation />
 
       <main className="flex-grow">
-        <section className="pt-24 pb-12 md:pt-32 md:pb-20">
+        <section className="tool-main">
           <div className="container max-w-4xl">
             <div className="mb-6">
               <button
                 type="button"
                 onClick={() => router.push('/tools')}
-                className="inline-flex items-center gap-2 text-sm font-semibold text-cyan-600 hover:text-cyan-700 transition-colors"
+                className="tool-back"
               >
                 <span aria-hidden="true">←</span>
                 返回小工具
               </button>
             </div>
 
-            <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+            <div className="tool-panel overflow-hidden">
               <div className="p-6 md:p-8 border-b border-gray-100">
                 <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-5">
                   <div>
@@ -127,16 +127,16 @@ const EasyListening = () => {
                   </div>
 
                   <div className="grid grid-cols-3 gap-3 min-w-[240px]">
-                    <div className="rounded-lg bg-cyan-50 border border-cyan-100 p-3 text-center">
-                      <div className="text-xl font-extrabold text-cyan-600">{stats.correct}</div>
+                    <div className="tool-stat">
+                      <div className="text-xl font-extrabold text-slate-900">{stats.correct}</div>
                       <div className="text-xs text-gray-500">正确</div>
                     </div>
-                    <div className="rounded-lg bg-blue-50 border border-blue-100 p-3 text-center">
-                      <div className="text-xl font-extrabold text-blue-600">{accuracy}%</div>
+                    <div className="tool-stat">
+                      <div className="text-xl font-extrabold text-slate-900">{accuracy}%</div>
                       <div className="text-xs text-gray-500">正确率</div>
                     </div>
-                    <div className="rounded-lg bg-emerald-50 border border-emerald-100 p-3 text-center">
-                      <div className="text-xl font-extrabold text-emerald-600">{stats.streak}</div>
+                    <div className="tool-stat">
+                      <div className="text-xl font-extrabold text-slate-900">{stats.streak}</div>
                       <div className="text-xs text-gray-500">连击</div>
                     </div>
                   </div>
@@ -150,10 +150,10 @@ const EasyListening = () => {
                       key={type}
                       type="button"
                       onClick={() => setSelectedType(type)}
-                      className={`px-5 py-3 rounded-xl font-bold border transition-all ${
+                      className={`tool-chip ${
                         selectedType === type
-                          ? 'bg-cyan-500 text-white border-cyan-500 shadow-sm'
-                          : 'bg-white text-gray-600 border-gray-200 hover:bg-cyan-50 hover:border-cyan-200'
+                          ? 'tool-chip-active'
+                          : ''
                       }`}
                     >
                       {listeningTypeLabels[type]}
@@ -161,8 +161,8 @@ const EasyListening = () => {
                   ))}
                 </div>
 
-                <div className="bg-gradient-to-br from-cyan-50 to-blue-50 rounded-2xl border border-cyan-100 p-6 md:p-8 mb-6 text-center">
-                  <div className="text-xs font-bold text-cyan-500 mb-2">当前题型</div>
+                <div className="tool-panel-muted mb-6 text-center">
+                  <div className="text-xs font-bold text-slate-500 mb-2">当前题型</div>
                   <div className="text-2xl font-extrabold text-gray-900 mb-5">
                     {listeningTypeLabels[selectedType]}
                   </div>
@@ -170,7 +170,7 @@ const EasyListening = () => {
                     type="button"
                     onClick={playAudio}
                     disabled={isPlaying}
-                    className="inline-flex items-center justify-center px-8 py-4 rounded-2xl bg-cyan-500 text-white font-extrabold hover:bg-cyan-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="tool-button-primary"
                   >
                     {isPlaying ? '播放中...' : '播放音频'}
                   </button>
@@ -186,12 +186,12 @@ const EasyListening = () => {
                       value={answer}
                       onChange={(event) => setAnswer(event.target.value)}
                       placeholder={selectedType === '数字' ? '例如：53 或 ごじゅうさん' : '例如：どうぞよろしくお願いします'}
-                      className="flex-1 px-4 py-4 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-cyan-100 focus:border-cyan-300 text-lg"
+                      className="tool-input flex-1 text-lg"
                     />
                     <button
                       type="submit"
                       disabled={!answer.trim()}
-                      className="px-6 py-4 rounded-xl bg-gray-900 text-white font-bold hover:bg-gray-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="tool-button-primary"
                     >
                       校对
                     </button>
@@ -199,7 +199,7 @@ const EasyListening = () => {
                 </form>
 
                 {feedback && (
-                  <div className={`rounded-xl border p-5 mb-6 ${
+                  <div className={`rounded-md border p-5 mb-6 ${
                     feedback.correct ? 'bg-emerald-50 border-emerald-100' : 'bg-amber-50 border-amber-100'
                   }`}>
                     <div className={`text-lg font-extrabold mb-2 ${
@@ -216,7 +216,7 @@ const EasyListening = () => {
                     <button
                       type="button"
                       onClick={() => createQuestion(selectedType)}
-                      className="px-5 py-2.5 rounded-lg bg-cyan-500 text-white font-semibold hover:bg-cyan-600 transition-colors"
+                      className="tool-button-primary"
                     >
                       下一题
                     </button>

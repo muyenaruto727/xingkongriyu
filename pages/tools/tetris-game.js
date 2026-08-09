@@ -6,12 +6,8 @@ import Navigation from '../../components/layout/Navigation';
 import { api } from '../../lib/api';
 
 const cardColors = [
-  { from: 'from-indigo-400', to: 'to-blue-500', bg: 'bg-indigo-50', border: 'border-indigo-200', text: 'text-indigo-600' },
-  { from: 'from-emerald-400', to: 'to-teal-500', bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-600' },
-  { from: 'from-amber-400', to: 'to-orange-500', bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-600' },
-  { from: 'from-purple-400', to: 'to-violet-500', bg: 'bg-purple-50', border: 'border-purple-200', text: 'text-purple-600' },
-  { from: 'from-rose-400', to: 'to-pink-500', bg: 'bg-rose-50', border: 'border-rose-200', text: 'text-rose-600' },
-  { from: 'from-cyan-400', to: 'to-sky-500', bg: 'bg-cyan-50', border: 'border-cyan-200', text: 'text-cyan-600' },
+  { bg: 'bg-white', border: 'border-slate-200', text: 'text-slate-800' },
+  { bg: 'bg-[#fafaf7]', border: 'border-slate-200', text: 'text-slate-800' },
 ];
 
 const shuffleArray = (arr) => {
@@ -175,7 +171,7 @@ const TetrisGame = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-rose-50">
+    <div className="tool-page">
       <Head>
         <title>单词消消乐 — 星空日语</title>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -185,32 +181,30 @@ const TetrisGame = () => {
 
       <Navigation />
 
-      <main className="pt-28 pb-8 md:pt-36 md:pb-12">
+      <main className="tool-main">
         <div className="container max-w-4xl">
 
           {/* ── Settings ── */}
           {!isPlaying && !showResult && (
             <div>
-              <div className="text-center mb-10">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-pink-100 text-pink-600 ring-1 ring-pink-200 mb-4">
-                  💎 单词消消乐
-                </span>
-                <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-3 tracking-tight">
+              <div className="mb-8">
+                <span className="tool-eyebrow">单词消消乐</span>
+                <h1 className="tool-title">
                   单词配对消除
                 </h1>
-                <p className="text-gray-500 max-w-lg mx-auto leading-relaxed">
+                <p className="tool-description">
                   将日语单词与中文释义配对消除，在游戏中巩固单词记忆
                 </p>
               </div>
 
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 md:p-8 mb-8">
+              <div className="tool-panel mb-8">
                 <div className="grid grid-cols-2 gap-4 mb-8">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">词汇等级</label>
                     <select
                       value={selectedLevel}
                       onChange={(e) => setSelectedLevel(e.target.value)}
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:border-pink-300 focus:ring-4 focus:ring-pink-50 transition-all"
+                      className="tool-input"
                     >
                       {levels.map(level => (
                         <option key={level} value={level}>{level}</option>
@@ -222,7 +216,7 @@ const TetrisGame = () => {
                     <select
                       value={pairCount}
                       onChange={(e) => setPairCount(Number(e.target.value))}
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:border-pink-300 focus:ring-4 focus:ring-pink-50 transition-all"
+                      className="tool-input"
                     >
                       {pairOptions.map(count => (
                         <option key={count} value={count}>{count} 对</option>
@@ -232,24 +226,24 @@ const TetrisGame = () => {
                 </div>
 
                 {/* How to play */}
-                <div className="bg-gradient-to-r from-pink-50 to-rose-50 rounded-xl p-5 border border-pink-100 mb-8">
-                  <h4 className="text-sm font-bold text-pink-600 mb-3">🎮 游戏规则</h4>
+                <div className="tool-panel-muted mb-8">
+                  <h4 className="tool-section-title">游戏规则</h4>
                   <ul className="text-sm text-gray-600 space-y-1.5">
                     <li className="flex items-start gap-2">
-                      <span className="text-pink-400 mt-0.5">•</span>
-                      点击一张<span className="font-semibold text-indigo-600">日语单词</span>卡片，再点击对应的<span className="font-semibold text-emerald-600">中文释义</span>卡片
+                      <span className="text-slate-400 mt-0.5">•</span>
+                      点击一张<span className="font-semibold text-slate-800">日语单词</span>卡片，再点击对应的<span className="font-semibold text-slate-800">中文释义</span>卡片
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-pink-400 mt-0.5">•</span>
+                      <span className="text-slate-400 mt-0.5">•</span>
                       配对正确：+10分，两张卡片消除
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-pink-400 mt-0.5">•</span>
+                      <span className="text-slate-400 mt-0.5">•</span>
                       配对错误：-2分，重新选择
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="text-pink-400 mt-0.5">•</span>
-                      消除所有卡片即为胜利！
+                      <span className="text-slate-400 mt-0.5">•</span>
+                      消除所有卡片即为胜利
                     </li>
                   </ul>
                 </div>
@@ -257,14 +251,14 @@ const TetrisGame = () => {
                 <div className="flex gap-3">
                   <button
                     onClick={() => router.push('/tools')}
-                    className="flex-1 py-4 rounded-2xl text-lg font-bold text-gray-500 bg-white border border-gray-200 hover:text-gray-700 hover:border-gray-300 hover:shadow-sm transition-all duration-300"
+                    className="tool-button-secondary flex-1"
                   >
                     ← 返回
                   </button>
                   <button
                     onClick={startGame}
                     disabled={isLoadingData}
-                    className="flex-1 py-4 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-lg font-bold rounded-2xl hover:from-pink-600 hover:to-rose-600 hover:shadow-lg hover:shadow-pink-200/50 hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                    className="tool-button-primary flex-1"
                   >
                     {isLoadingData ? '准备中...' : '开始游戏'}
                   </button>
@@ -277,27 +271,23 @@ const TetrisGame = () => {
           {isPlaying && !showResult && (
             <div>
               {/* Stats bar */}
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 mb-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-6">
-                    <div className="text-center">
-                      <div className="text-xs text-gray-400 uppercase tracking-wider font-semibold">得分</div>
-                      <div className="text-xl font-extrabold text-pink-600">{score}</div>
-                    </div>
-                    <div className="w-px h-8 bg-gray-100" />
-                    <div className="text-center">
-                      <div className="text-xs text-gray-400 uppercase tracking-wider font-semibold">步数</div>
-                      <div className="text-xl font-extrabold text-gray-700">{moves}</div>
-                    </div>
-                    <div className="w-px h-8 bg-gray-100" />
-                    <div className="text-center">
-                      <div className="text-xs text-gray-400 uppercase tracking-wider font-semibold">已配对</div>
-                      <div className="text-xl font-extrabold text-emerald-500">{correctMatches}/{cards.length / 2}</div>
-                    </div>
+              <div className="tool-panel mb-6 p-4 md:p-5">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  <div className="tool-stat">
+                    <div className="tool-stat-label">得分</div>
+                    <div className="tool-stat-value">{score}</div>
                   </div>
-                  <div className="text-center px-4 py-2 rounded-xl bg-gray-50">
-                    <div className="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-0.5">用时</div>
-                    <div className="text-xl font-extrabold font-mono text-gray-700">{formatTime(elapsedTime)}</div>
+                  <div className="tool-stat">
+                    <div className="tool-stat-label">步数</div>
+                    <div className="tool-stat-value">{moves}</div>
+                  </div>
+                  <div className="tool-stat">
+                    <div className="tool-stat-label">已配对</div>
+                    <div className="tool-stat-value">{correctMatches}/{cards.length / 2}</div>
+                  </div>
+                  <div className="tool-stat">
+                    <div className="tool-stat-label">用时</div>
+                    <div className="tool-stat-value font-mono">{formatTime(elapsedTime)}</div>
                   </div>
                 </div>
               </div>
@@ -314,21 +304,21 @@ const TetrisGame = () => {
                     onClick={() => handleCardClick(card)}
                     disabled={card.matched}
                     className={`
-                      relative aspect-square rounded-xl font-bold transition-all duration-300
+                      relative aspect-square rounded-md font-bold transition-all duration-200
                       flex flex-col items-center justify-center p-1.5 text-center
                       ${card.matched
                         ? 'opacity-0 scale-75 pointer-events-none'
                         : selectedCard?.id === card.id
-                        ? 'ring-4 ring-pink-400 scale-105 shadow-lg z-10'
+                        ? 'ring-2 ring-blue-300 bg-blue-50 scale-[1.02] z-10'
                         : card.type === 'japanese'
-                        ? 'bg-gradient-to-br from-indigo-50 to-blue-50 border-2 border-indigo-200 hover:border-indigo-400 hover:shadow-md hover:-translate-y-0.5'
-                        : 'bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200 hover:border-emerald-400 hover:shadow-md hover:-translate-y-0.5'
+                        ? 'bg-white border border-slate-200 hover:border-slate-400 hover:-translate-y-0.5'
+                        : 'bg-[#fafaf7] border border-slate-200 hover:border-slate-400 hover:-translate-y-0.5'
                       }
                       ${shakeCard === card.id ? 'animate-[shake_0.5s_ease-in-out]' : ''}
                     `}
                   >
                     <span className={`text-[11px] md:text-xs font-bold leading-tight ${
-                      card.type === 'japanese' ? 'text-indigo-700' : 'text-emerald-700'
+                      card.type === 'japanese' ? 'text-slate-900' : 'text-slate-700'
                     }`}>
                       {card.text}
                     </span>
@@ -336,10 +326,10 @@ const TetrisGame = () => {
                       <span className="text-[9px] text-gray-400 mt-0.5">{card.subText}</span>
                     )}
                     {/* Type indicator */}
-                    <span className={`absolute top-1 right-1 text-[8px] font-bold px-1 py-0 rounded-full ${
+                    <span className={`absolute top-1 right-1 rounded-sm px-1 py-0 text-[8px] font-bold ${
                       card.type === 'japanese'
-                      ? 'bg-indigo-100 text-indigo-500'
-                      : 'bg-emerald-100 text-emerald-500'
+                      ? 'bg-slate-100 text-slate-500'
+                      : 'bg-stone-100 text-stone-500'
                     }`}>
                       {card.type === 'japanese' ? '日' : '中'}
                     </span>
@@ -353,9 +343,9 @@ const TetrisGame = () => {
                   <span>进度</span>
                   <span>{Math.round((correctMatches / (cards.length / 2)) * 100)}%</span>
                 </div>
-                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div className="tool-progress">
                   <div
-                    className="h-full bg-gradient-to-r from-pink-400 to-rose-500 rounded-full transition-all duration-500"
+                    className="tool-progress-fill"
                     style={{ width: `${(correctMatches / (cards.length / 2)) * 100}%` }}
                   />
                 </div>
@@ -368,7 +358,7 @@ const TetrisGame = () => {
                     setIsPlaying(false);
                     setShowResult(false);
                   }}
-                  className="px-5 py-3 bg-red-50 text-red-500 font-medium rounded-2xl hover:bg-red-100 transition-all duration-300"
+                  className="tool-button-danger"
                 >
                   结束游戏
                 </button>
@@ -377,7 +367,7 @@ const TetrisGame = () => {
                     setIsPlaying(false);
                     setShowResult(false);
                   }}
-                  className="px-5 py-3 bg-white text-gray-600 font-medium rounded-2xl border border-gray-200 hover:bg-gray-50 transition-all duration-300"
+                  className="tool-button-secondary"
                 >
                   返回
                 </button>
@@ -389,15 +379,12 @@ const TetrisGame = () => {
           {showResult && (
             <div>
               <div className="text-center mb-8">
-                <span className="inline-block text-4xl mb-4">
-                  {correctMatches === cards.length / 2 ? '🏆' : score > 50 ? '🎉' : '💪'}
-                </span>
                 <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 mb-2">
-                  {correctMatches === cards.length / 2 ? '恭喜通关！' : '游戏结束'}
+                  {correctMatches === cards.length / 2 ? '完成配对' : '游戏结束'}
                 </h2>
                 <p className="text-gray-500">
                   {correctMatches === cards.length / 2
-                    ? '所有单词都已正确配对，太棒了！'
+                    ? '所有单词都已正确配对。'
                     : `已配对 ${correctMatches}/${cards.length / 2} 对单词`
                   }
                 </p>
@@ -405,21 +392,21 @@ const TetrisGame = () => {
 
               {/* Stats */}
               <div className="grid grid-cols-2 gap-4 mb-8">
-                <div className="bg-gradient-to-br from-pink-50 to-rose-50 rounded-2xl p-5 text-center border border-pink-100">
-                  <div className="text-xs text-pink-400 uppercase tracking-wider font-semibold mb-1">最终得分</div>
-                  <div className="text-3xl font-extrabold text-pink-600">{score}</div>
+                <div className="tool-stat p-5">
+                  <div className="tool-stat-label">最终得分</div>
+                  <div className="tool-stat-value text-3xl">{score}</div>
                 </div>
-                <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl p-5 text-center border border-emerald-100">
-                  <div className="text-xs text-emerald-400 uppercase tracking-wider font-semibold mb-1">正确配对</div>
-                  <div className="text-3xl font-extrabold text-emerald-600">{correctMatches}</div>
+                <div className="tool-stat p-5">
+                  <div className="tool-stat-label">正确配对</div>
+                  <div className="tool-stat-value text-3xl">{correctMatches}</div>
                 </div>
-                <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-5 text-center border border-amber-100">
-                  <div className="text-xs text-amber-400 uppercase tracking-wider font-semibold mb-1">总步数</div>
-                  <div className="text-3xl font-extrabold text-amber-600">{moves}</div>
+                <div className="tool-stat p-5">
+                  <div className="tool-stat-label">总步数</div>
+                  <div className="tool-stat-value text-3xl">{moves}</div>
                 </div>
-                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl p-5 text-center border border-blue-100">
-                  <div className="text-xs text-blue-400 uppercase tracking-wider font-semibold mb-1">用时</div>
-                  <div className="text-3xl font-extrabold text-blue-600 font-mono">{formatTime(elapsedTime)}</div>
+                <div className="tool-stat p-5">
+                  <div className="tool-stat-label">用时</div>
+                  <div className="tool-stat-value text-3xl font-mono">{formatTime(elapsedTime)}</div>
                 </div>
               </div>
 
@@ -429,13 +416,13 @@ const TetrisGame = () => {
                     setIsPlaying(false);
                     setShowResult(false);
                   }}
-                  className="flex-1 py-4 bg-white text-gray-600 font-bold rounded-2xl border border-gray-200 hover:bg-gray-50 transition-all duration-300"
+                  className="tool-button-secondary flex-1"
                 >
                   返回
                 </button>
                 <button
                   onClick={startGame}
-                  className="flex-1 py-4 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-bold rounded-2xl hover:from-pink-600 hover:to-rose-600 hover:shadow-lg hover:shadow-pink-200/50 transition-all duration-300"
+                  className="tool-button-primary flex-1"
                 >
                   再玩一次
                 </button>

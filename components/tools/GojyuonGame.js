@@ -188,10 +188,10 @@ const GojyuonGame = ({ className = '' }) => {
             <button
               key={row}
               type="button"
-              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+              className={`tool-chip ${
                 selectedRow === row
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  ? 'tool-chip-active'
+                  : ''
               }`}
               onClick={() => startGame(row)}
             >
@@ -202,11 +202,11 @@ const GojyuonGame = ({ className = '' }) => {
       </div>
 
       {!gameStarted || gameCards.length === 0 ? (
-        <div className="bg-gray-50 p-6 rounded-lg text-center border border-gray-100">
+        <div className="tool-panel-muted text-center">
           <p className="text-gray-600 mb-4">选择行后点击开始游戏按钮开始游戏</p>
           <button
             type="button"
-            className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
+            className="tool-button-primary"
             onClick={() => startGame(selectedRow)}
           >
             开始游戏
@@ -214,13 +214,22 @@ const GojyuonGame = ({ className = '' }) => {
         </div>
       ) : (
         <div>
-          <div className="flex flex-wrap justify-between items-center gap-3 mb-6">
-            <div className="text-lg font-semibold text-gray-800">分数: {score}</div>
-            <div className="text-lg font-semibold text-gray-800">配对: {matchedCount}/{pairCount}</div>
-            <div className="text-lg font-semibold text-gray-800">用时: {currentTime}秒</div>
+          <div className="grid grid-cols-2 gap-3 mb-6 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-stretch">
+            <div className="tool-stat">
+              <div className="tool-stat-label">分数</div>
+              <div className="tool-stat-value">{score}</div>
+            </div>
+            <div className="tool-stat">
+              <div className="tool-stat-label">配对</div>
+              <div className="tool-stat-value">{matchedCount}/{pairCount}</div>
+            </div>
+            <div className="tool-stat">
+              <div className="tool-stat-label">用时</div>
+              <div className="tool-stat-value">{currentTime}秒</div>
+            </div>
             <button
               type="button"
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              className="tool-button-secondary col-span-2 sm:col-span-1"
               onClick={resetGame}
             >
               重新开始
@@ -236,12 +245,12 @@ const GojyuonGame = ({ className = '' }) => {
                 <button
                   type="button"
                   key={card.id}
-                  className={`aspect-square flex items-center justify-center rounded-lg cursor-pointer transition-all duration-300 border ${
+                  className={`aspect-square flex items-center justify-center rounded-md cursor-pointer transition-all duration-200 border ${
                     isMatched
-                      ? 'bg-green-100 text-green-600 border-green-200'
+                      ? 'bg-slate-100 text-slate-400 border-slate-200'
                       : isSelected
-                        ? 'bg-blue-100 text-blue-600 border-blue-500 ring-2 ring-blue-100'
-                        : 'bg-white border-gray-200 hover:bg-gray-50 hover:border-blue-200'
+                        ? 'bg-blue-500 text-white border-blue-500 ring-2 ring-blue-100'
+                        : 'bg-white border-gray-200 hover:bg-blue-50 hover:border-blue-200'
                   }`}
                   onClick={() => handleCardClick(card)}
                 >
@@ -250,18 +259,18 @@ const GojyuonGame = ({ className = '' }) => {
               );
             })}
             {['や行', 'わ行'].includes(selectedRow) && gameCards.length < 10 && Array.from({ length: 10 - gameCards.length }).map((_, index) => (
-              <div key={`empty-${index}`} className="aspect-square bg-gray-50 rounded-lg border border-gray-100" />
+              <div key={`empty-${index}`} className="aspect-square rounded-md border border-gray-100 bg-gray-50" />
             ))}
           </div>
 
           {gameOver && (
-            <div className="bg-green-50 p-6 rounded-lg text-center border border-green-100">
-              <h4 className="text-xl font-semibold mb-2 text-gray-800">游戏结束！</h4>
+            <div className="tool-panel-muted text-center">
+              <h4 className="text-xl font-semibold mb-2 text-gray-800">游戏结束</h4>
               <p className="text-gray-700 mb-2">你的得分: {score}</p>
               <p className="text-gray-700 mb-4">总共用时: {totalTime}秒</p>
               <button
                 type="button"
-                className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
+                className="tool-button-primary"
                 onClick={() => startGame(selectedRow)}
               >
                 再玩一次

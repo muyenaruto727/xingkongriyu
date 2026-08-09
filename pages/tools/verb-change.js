@@ -84,7 +84,7 @@ const VerbChangeGame = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-b from-amber-50 via-white to-rose-50">
+    <div className="tool-page-shell">
       <Head>
         <title>动词变变变 — 星空日语</title>
         <meta name="description" content="日语动词变形练习游戏，支持ます形、ない形、て形、た形、可能形等形式" />
@@ -93,13 +93,13 @@ const VerbChangeGame = () => {
       <Navigation />
 
       <main className="flex-grow">
-        <section className="pt-24 pb-12 md:pt-32 md:pb-20">
+        <section className="tool-main">
           <div className="container max-w-5xl">
             <div className="mb-6">
               <button
                 type="button"
                 onClick={() => router.push('/tools')}
-                className="inline-flex items-center gap-2 text-sm font-semibold text-rose-600 hover:text-rose-700 transition-colors"
+                className="tool-back"
               >
                 <span aria-hidden="true">←</span>
                 返回小工具
@@ -107,7 +107,7 @@ const VerbChangeGame = () => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6">
-              <aside className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 h-fit">
+              <aside className="tool-panel h-fit">
                 <div className="mb-6">
                   <h1 className="text-2xl font-extrabold text-gray-900 mb-2">动词变变变</h1>
                   <p className="text-sm text-gray-500 leading-relaxed">
@@ -116,31 +116,31 @@ const VerbChangeGame = () => {
                 </div>
 
                 <div className="grid grid-cols-3 gap-3 mb-6">
-                  <div className="bg-amber-50 rounded-lg p-3 text-center border border-amber-100">
-                    <div className="text-xl font-extrabold text-amber-600">{stats.correct}</div>
+                  <div className="tool-stat">
+                    <div className="text-xl font-extrabold text-slate-900">{stats.correct}</div>
                     <div className="text-xs text-gray-500">正确</div>
                   </div>
-                  <div className="bg-rose-50 rounded-lg p-3 text-center border border-rose-100">
-                    <div className="text-xl font-extrabold text-rose-600">{accuracy}%</div>
+                  <div className="tool-stat">
+                    <div className="text-xl font-extrabold text-slate-900">{accuracy}%</div>
                     <div className="text-xs text-gray-500">正确率</div>
                   </div>
-                  <div className="bg-blue-50 rounded-lg p-3 text-center border border-blue-100">
-                    <div className="text-xl font-extrabold text-blue-600">{stats.streak}</div>
+                  <div className="tool-stat">
+                    <div className="text-xl font-extrabold text-slate-900">{stats.streak}</div>
                     <div className="text-xs text-gray-500">连击</div>
                   </div>
                 </div>
 
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-sm font-bold text-gray-700">练习形式</h2>
-                  <button
-                    type="button"
-                    onClick={selectAllForms}
-                    className={`text-xs font-semibold px-2.5 py-1 rounded-full transition-colors ${
-                      allSelected
-                        ? 'bg-rose-100 text-rose-600'
-                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                    }`}
-                  >
+                    <button
+                      type="button"
+                      onClick={selectAllForms}
+                      className={`text-xs font-semibold px-2.5 py-1 rounded-md transition-colors ${
+                        allSelected
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
+                      }`}
+                    >
                     全部形式
                   </button>
                 </div>
@@ -151,10 +151,10 @@ const VerbChangeGame = () => {
                       key={form}
                       type="button"
                       onClick={() => toggleForm(form)}
-                      className={`px-3 py-2 rounded-lg text-sm font-semibold border transition-all ${
+                      className={`tool-chip ${
                         selectedForms.includes(form)
-                          ? 'bg-rose-500 text-white border-rose-500 shadow-sm'
-                          : 'bg-white text-gray-600 border-gray-200 hover:border-rose-200 hover:bg-rose-50'
+                          ? 'tool-chip-active'
+                          : ''
                       }`}
                     >
                       {conJpName[form]}
@@ -163,12 +163,12 @@ const VerbChangeGame = () => {
                 </div>
               </aside>
 
-              <section className="bg-white rounded-xl shadow-lg p-6 md:p-8 border border-gray-100">
+              <section className="tool-panel">
                 {challenge && (
                   <>
                     <div className="flex flex-wrap items-center justify-between gap-3 mb-8">
                       <div>
-                        <span className="inline-flex items-center px-3 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-bold mb-3">
+                        <span className="tool-eyebrow">
                           {groupName[challenge.verb.group]}
                         </span>
                         <div className="text-sm text-gray-400">请写出</div>
@@ -177,9 +177,9 @@ const VerbChangeGame = () => {
                         </h2>
                         <p className="text-lg text-gray-400 mt-2">{challenge.verb.pro}</p>
                       </div>
-                      <div className="bg-rose-50 border border-rose-100 rounded-xl px-5 py-4 text-center">
-                        <div className="text-xs font-bold text-rose-400 mb-1">目标形式</div>
-                        <div className="text-2xl font-extrabold text-rose-600">{conJpName[challenge.form]}</div>
+                      <div className="tool-panel-muted px-5 py-4 text-center">
+                        <div className="text-xs font-bold text-slate-500 mb-1">目标形式</div>
+                        <div className="text-2xl font-extrabold text-slate-950">{conJpName[challenge.form]}</div>
                       </div>
                     </div>
 
@@ -190,12 +190,12 @@ const VerbChangeGame = () => {
                           value={answer}
                           onChange={(event) => setAnswer(event.target.value)}
                           placeholder="输入假名或标准写法，例如 書きます / かきます"
-                          className="flex-1 px-4 py-4 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-100 focus:border-rose-300 text-lg"
+                          className="tool-input flex-1 text-lg"
                         />
                         <button
                           type="submit"
                           disabled={!answer.trim()}
-                          className="px-6 py-4 rounded-xl bg-rose-500 text-white font-bold hover:bg-rose-600 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                          className="tool-button-primary"
                         >
                           校对
                         </button>
@@ -203,7 +203,7 @@ const VerbChangeGame = () => {
                     </form>
 
                     {feedback && (
-                      <div className={`rounded-xl border p-5 mb-6 ${
+                      <div className={`rounded-md border p-5 mb-6 ${
                         feedback.correct
                           ? 'bg-green-50 border-green-100'
                           : 'bg-amber-50 border-amber-100'
@@ -221,7 +221,7 @@ const VerbChangeGame = () => {
                         <button
                           type="button"
                           onClick={nextQuestion}
-                          className="px-5 py-2.5 rounded-lg bg-gray-900 text-white font-semibold hover:bg-gray-800 transition-colors"
+                          className="tool-button-primary"
                         >
                           下一题
                         </button>
@@ -229,13 +229,13 @@ const VerbChangeGame = () => {
                     )}
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm text-gray-500">
-                      <div className="bg-gray-50 border border-gray-100 rounded-lg p-3">
+                      <div className="tool-panel-muted p-3">
                         支持输入标准写法或假名读法。
                       </div>
-                      <div className="bg-gray-50 border border-gray-100 rounded-lg p-3">
+                      <div className="tool-panel-muted p-3">
                         当前题库：{verbs.length} 个动词。
                       </div>
-                      <div className="bg-gray-50 border border-gray-100 rounded-lg p-3">
+                      <div className="tool-panel-muted p-3">
                         最佳连击：{stats.bestStreak}
                       </div>
                     </div>

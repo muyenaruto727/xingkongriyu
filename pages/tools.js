@@ -20,7 +20,7 @@ const Tools = () => {
         <title>小工具 - 星空日语</title>
         <meta
           name="description"
-          content="小工具，提供打字游戏、单词消消乐、单词闪卡、五十音消消乐、动词变形练习和听力入门"
+          content="小工具，提供打字游戏、单词消消乐、单词闪卡、警察抓小偷、五十音消消乐、动词变形练习和听力入门"
         />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
@@ -172,6 +172,43 @@ const Tools = () => {
                   className="bg-indigo-500 hover:bg-indigo-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium"
                 >
                   开始记忆
+                </Link>
+              </div>
+
+              <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+                <div className="bg-blue-100 text-blue-600 rounded-full w-16 h-16 flex items-center justify-center mb-6">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-8 w-8"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 3l7 4v5c0 4.2-2.8 7.5-7 9-4.2-1.5-7-4.8-7-9V7l7-4z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 13h8M9 10h6M10 16h4"
+                    />
+                  </svg>
+                </div>
+                <h4 className="text-xl font-semibold mb-3 text-gray-800">
+                  警察抓小偷
+                </h4>
+                <p className="text-gray-600 mb-6 leading-relaxed">
+                  从教材课程或 N1-N5 词汇中抽题，答对就追近一步，用追逐玩法巩固单词。
+                </p>
+                <Link
+                  href="/tools/police-catch-thief"
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium"
+                >
+                  开始追捕
                 </Link>
               </div>
 
