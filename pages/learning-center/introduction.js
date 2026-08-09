@@ -5,6 +5,234 @@ import Navigation from '../../components/layout/Navigation';
 import Footer from '../../components/layout/Footer';
 import GojyuonGame from '../../components/tools/GojyuonGame';
 
+const readingPracticeSections = [
+  {
+    title: 'あ行',
+    items: [
+      '愛（あい）①', '会う（あう）①', '青（あお）①',
+      '家（いえ）②', '上（うえ）⓪', 'いいえ③',
+      'エア①', '言い合う（いいあう）③', 'いい①'
+    ]
+  },
+  {
+    title: 'か行',
+    items: [
+      '駅（えき）①', '億（おく）①', '秋（あき）①',
+      '苔（こけ）②', '機会（きかい）②', 'ケア①',
+      '帰国（きこく）⓪', '記憶（きおく）⓪', 'キウイ①'
+    ]
+  },
+  {
+    title: 'さ行',
+    items: [
+      '今朝（けさ）①', '好き（すき）②', '誘い（さそい）⓪',
+      '西瓜（すいか）⓪', 'お菓子（おかし）②', '基礎（きそ）①',
+      'お酒（おさけ）⓪', 'あそこ⓪', '国籍（こくせき）⓪'
+    ]
+  },
+  {
+    title: 'た行',
+    items: [
+      '竹（たけ）⓪', '外（そと）①', 'いくつ①',
+      '近い（ちかい）②', '大切（たいせつ）⓪', '口（くち）⓪',
+      '靴（くつ）⓪', '暑い（あつい）②', '知識（ちしき）①'
+    ]
+  },
+  {
+    title: 'な行',
+    items: [
+      '肉（にく）②', '兄（あに）①', '姉（あね）⓪',
+      '西（にし）⓪', '熱意（ねつい）①', '中（なか）①',
+      '素直（すなお）①', '絹（きぬ）①', '九日（ここのか）⓪'
+    ]
+  },
+  {
+    title: 'は行',
+    items: [
+      'はい①', '花（はな）②', '一つ（ひとつ）②',
+      '骨（ほね）②', '八（はち）②', '臍（へそ）⓪',
+      '船（ふね）①', '箱（はこ）⓪', '太い（ふとい）②'
+    ]
+  },
+  {
+    title: 'ま行',
+    items: [
+      '暇（ひま）⓪', '道（みち）⓪', '胸（むね）②',
+      '娘（むすめ）③', '雲（くも）①', '頭（あたま）③',
+      '秘密（ひみつ）', 'もしもし①', '寒い（さむい）②'
+    ]
+  },
+  {
+    title: 'や行',
+    items: [
+      '山（やま）②', '予約（よやく）⓪', '浴衣（ゆかた）⓪',
+      '読む（よむ）①', '夢（ゆめ）②', '安い（やすい）②',
+      '休み（やすみ）③', '意欲（いよく）①', '約束（やくそく）⓪'
+    ]
+  },
+  {
+    title: 'ら行',
+    items: [
+      '鳥（とり）⓪', '留守（るす）①', '後ろ（うしろ）⓪',
+      '二人（ふたり）③', '彼（かれ）①', '色（いろ）②',
+      '村（むら）②', '履歴（りれき）⓪', '丸い（まるい）⓪'
+    ]
+  },
+  {
+    title: 'わ行',
+    items: [
+      '庭（にわ）⓪', '終わり（おわり）⓪', '笑い（わらい）⓪',
+      '悪い（わるい）②', 'ひまわり②', '柔らかい（やわらかい）④'
+    ]
+  },
+  {
+    title: '濁音',
+    items: [
+      '海外（かいがい）①', '不思議（ふしぎ）⓪', '来月（らいげつ）①',
+      '家族（かぞく）①', '同じ（おなじ）⓪', '必ず（かならず）⓪',
+      '果物（くだもの）②', '窓（まど）①', '思い出（おもいで）⓪',
+      '首（くび）⓪', '祖母（そぼ）', '例えば（たとえば）②',
+      'ポスト①', 'ぺこぺこ⓪', 'ぽかぽか①'
+    ]
+  },
+  {
+    title: '拗音',
+    items: [
+      '中国（ちゅうごく）①', '入学（にゅうがく）⓪', '資料（しりょう）①',
+      '病院（びょういん）⓪', '会社（かいしゃ）⓪', '勉強（べんきょう）⓪',
+      '努力（どりょく）①', '小説（しょうせつ）⓪', '優秀（ゆうしゅう）⓪',
+      '入学（にゅうがく）⓪', 'チョコレート③'
+    ]
+  },
+  {
+    title: '撥音',
+    items: [
+      '日本語（にほんご）⓪', '人気（にんき）⓪', '簡単（かんたん）⓪',
+      '新年（しんねん）①', '天安門（てんあんもん）③', '新幹線（しんかんせん）③',
+      'すみません④', '新鮮（しんせん）⓪', '安心（あんしん）⓪',
+      '温泉（おんせん）⓪', '会員（かいいん）⓪', '人気（にんき）⓪',
+      '運転（うんてん）⓪'
+    ]
+  },
+  {
+    title: '長音',
+    items: [
+      '高校（こうこう）⓪', '空気（くうき）①', '相談（そうだん）⓪',
+      '小さい（ちいさい）③', '可愛い（かわいい）③', '先生（せんせい）③',
+      '最高（さいこう）⓪', '大勢（おおぜい）③', '大きい（おおきい）③',
+      '有名（ゆうめい）⓪', '必要（ひつよう）⓪'
+    ]
+  },
+  {
+    title: '促音',
+    items: [
+      'とっても⓪', '喫茶店（きっさてん）③⓪', '結婚（けっこん）⓪',
+      '実際（じっさい）⓪', '切符（きっぷ）⓪', 'サッカー①',
+      'インターネット⑤', '一人っ子（ひとりっこ）③', '結果（けっか）⓪',
+      '立派（りっぱ）⓪', '北京（ぺきん）ダック④', '学校（がっこう）⓪'
+    ]
+  }
+];
+
+const readingTestSections = [
+  {
+    title: '平仮名',
+    items: [
+      'はな②', 'ひと⓪', 'ふね①', 'ほね⓪', 'わすれもの⓪',
+      'らいげつ①', 'ひどい②', 'ともだち⓪', 'かいがい①', 'かぜぐすり③',
+      'これから⓪', 'さしみ③', 'まわり⓪', 'だいじ③', 'げつまつ⓪',
+      'りれき⓪', 'おかし②', 'かぞく①', 'こくせき⓪', 'こたえ②',
+      'しばらく②', 'たとえば②', 'つぼみ⓪', 'なるほど⓪', 'やくそく⓪',
+      'かいわ⓪', 'あざやか②', 'ふんいき③', 'いちねん②', 'めんせつ⓪',
+      'まんなか⓪', 'へんか①', 'すうがく⓪', 'そうだん⓪', 'そうだん⓪',
+      'どうも①', 'ぼうし⓪', 'しつれい②', 'よっか⓪', 'みっつ⓪',
+      'さっき①', 'すっぱい③', 'ぜったい⓪', 'はってん⓪', 'しんぴょうせい⓪',
+      'ひょうし⓪', 'びょうどう⓪', 'でんぴょう⓪', 'とうきょう⓪', 'にゅうがく⓪',
+      'じょせい⓪', 'りょかん⓪', 'ちゅうごくご⓪', 'きょねん①', 'しょうりゃく⓪'
+    ]
+  },
+  {
+    title: '片仮名',
+    items: [
+      'アイス①', 'エキス①', 'ネクタイ①', 'ケア①', 'サウナ①',
+      'アクセス①', 'テニス①', 'ピアノ⓪', 'プライド⓪', 'プロ①',
+      'パスタ①', 'アンテナ⓪', 'ミクロ①', 'トマト①', 'タイトル①',
+      'サラダ①', 'イタリア⓪', 'クラス①', 'システム①', 'アメリカ⓪',
+      'アジア①', 'ハンサム①', 'リンク①', 'コーヒー③', 'ノート①',
+      'タクシー①', 'デパート②', 'スポーツ②', 'スタート②', 'デビュー①',
+      'インタビュー①', 'コンピューター③', 'チェック①', 'スケジュール③②', 'ギャップ⓪',
+      'ジャーナリスト④', 'キャンセル①', 'チャット⓪', 'ディスカッション③', 'ファックス①',
+      'ニュース①', 'パーティー①', 'パートナー①', 'ストーリー②', 'ホームページ④'
+    ]
+  },
+  {
+    title: '促音比较练习',
+    pairs: [
+      ['きて⓪', 'きって⓪'], ['もと①', 'もっと①'], ['うた②', 'うった①'],
+      ['おと②', 'おっと⓪'], ['さか②', 'サッカー①'], ['おもて③', 'おもって②'],
+      ['とても⓪', 'とっても⓪'], ['わかて⓪', 'わかって②'], ['いたって⓪', 'いったって③']
+    ]
+  },
+  {
+    title: '长音比较练习',
+    pairs: [
+      ['ここ⓪', 'こうこう⓪'], ['こし⓪', 'こうし①'], ['こうふ①', 'こふう①'],
+      ['ほし⓪', 'ほしい②'], ['そこ⓪', 'そうこ①'], ['こどう⓪', 'こうど①'],
+      ['こつ⓪', 'こうつう⓪'], ['きぼ①', 'きぼう⓪'], ['おき⓪', 'おおきい③'],
+      ['ふと①', 'ふうとう⓪'], ['すじ①', 'すうじ⓪'], ['くつ②', 'くつう⓪']
+    ]
+  },
+  {
+    title: '拗音比较练习',
+    pairs: [
+      ['ひゃく②', 'ひやく⓪'], ['しょう①', 'しよう⓪'], ['りょう①', 'りよう⓪'],
+      ['きゃく⓪', 'きやく⓪'], ['ひょう①', 'ひよう⓪'], ['りゅう⓪', 'りゆう①'],
+      ['びょういん⓪', 'びよういん②'], ['りゅうこう⓪', 'りょこう⓪'], ['しゅるい①', 'しょるい⓪'],
+      ['しゅうり①', 'しょうり①'], ['にゅうがく⓪', 'りゅうがく⓪'], ['ひょうじ⓪', 'しょうじ⓪'],
+      ['しゅうかん⓪', 'ちゅうかん⓪'], ['ごひゃく③', 'ごしゃく⓪']
+    ]
+  },
+  {
+    title: 'アクセント比较练习',
+    pairs: [
+      ['あき⓪', 'あき①'], ['いじ①', 'いじ②'], ['うむ①', 'うむ⓪'],
+      ['かた①', 'かた⓪'], ['がくし①', 'がくし⓪'], ['さす①', 'さす⓪'],
+      ['たおる②', 'タオル①'], ['とし①', 'とし②'], ['じそく①', 'じそく⓪'],
+      ['さいかく①', 'さいかく⓪'], ['さぎ①', 'さぎ⓪'], ['たき②', 'たき①']
+    ]
+  }
+];
+
+const PitchPatternDiagram = ({ morae, levels }) => {
+  const points = morae.map((mora, index) => ({
+    mora,
+    x: 44 + index * 76,
+    y: levels[index] === 'high' ? 34 : 84
+  }));
+  const width = Math.max(260, 88 + (morae.length - 1) * 76);
+  const path = points.map(point => `${point.x},${point.y}`).join(' ');
+
+  return (
+    <div className="mt-4 rounded-md border border-gray-200 bg-white px-4 py-3">
+      <svg viewBox={`0 0 ${width} 126`} className="h-32 w-full" role="img" aria-label={`${morae.join('')} 的高低音示意`}>
+        <line x1="24" y1="34" x2={width - 20} y2="34" stroke="#DBEAFE" strokeWidth="2" strokeDasharray="5 5" />
+        <line x1="24" y1="84" x2={width - 20} y2="84" stroke="#E5E7EB" strokeWidth="2" strokeDasharray="5 5" />
+        <text x="2" y="39" fontSize="14" fill="#2563EB">高</text>
+        <text x="2" y="89" fontSize="14" fill="#6B7280">低</text>
+        <polyline points={path} fill="none" stroke="#2563EB" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+        {points.map(point => (
+          <g key={`${point.mora}-${point.x}`}>
+            <circle cx={point.x} cy={point.y} r="6" fill="#2563EB" />
+            <text x={point.x} y="116" textAnchor="middle" fontSize="17" fill="#111827" fontWeight="600">
+              {point.mora}
+            </text>
+          </g>
+        ))}
+      </svg>
+    </div>
+  );
+};
+
 const Introduction = () => {
   const [activeTab, setActiveTab] = useState('japanese-characters');
   const [showModal, setShowModal] = useState(false);
@@ -18,6 +246,8 @@ const Introduction = () => {
     { id: 'youon', label: '拗音' },
     { id: 'special', label: '特殊音' },
     { id: 'intonation', label: '声调和节拍' },
+    { id: 'reading-practice', label: '拼读练习' },
+    { id: 'reading-test', label: '拼读测试' },
     { id: 'greetings', label: '日常问候语' },
     { id: 'learning-tips', label: '学习建议' },
   ];
@@ -327,6 +557,71 @@ const Introduction = () => {
                         </div>
                       );
                     })}
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'reading-practice' && (
+                <div>
+                  <h3 className="text-2xl font-semibold mb-6 text-gray-800">拼读练习</h3>
+                  <div className="mx-auto max-w-6xl">
+                    <div className="space-y-8">
+                      {readingPracticeSections.map((section) => (
+                        <section
+                          key={section.title}
+                          className="break-inside-avoid rounded-lg border border-gray-200 bg-gray-50/70 px-6 py-6 md:px-8 md:py-7"
+                        >
+                          <h4 className="mb-6 border-b border-gray-200 pb-4 text-2xl font-semibold tracking-tight text-gray-900">{section.title}</h4>
+                          <div className="grid grid-cols-1 gap-x-16 gap-y-7 sm:grid-cols-2 xl:grid-cols-3">
+                            {section.items.map((item, index) => (
+                              <div key={`${section.title}-${index}`} className="min-w-0 text-[16px] leading-8 text-gray-800 md:text-[17px]">
+                                {item}
+                              </div>
+                            ))}
+                          </div>
+                        </section>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'reading-test' && (
+                <div>
+                  <h3 className="text-2xl font-semibold mb-6 text-gray-800">拼读测试</h3>
+                  <div className="mx-auto max-w-6xl">
+                    <div className="space-y-8">
+                      {readingTestSections.map((section) => (
+                        <section
+                          key={section.title}
+                          className="break-inside-avoid rounded-lg border border-gray-200 bg-gray-50/70 px-6 py-6 md:px-8 md:py-7"
+                        >
+                          <h4 className="mb-6 border-b border-gray-200 pb-4 text-2xl font-semibold tracking-tight text-gray-900">{section.title}</h4>
+                          {section.pairs ? (
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                              {section.pairs.map(([left, right], index) => (
+                                <div
+                                  key={`${section.title}-${index}`}
+                                  className="flex min-h-[52px] items-center justify-between gap-4 rounded-md border border-gray-200 bg-white px-4 py-3 text-[16px] leading-7 text-gray-800 md:text-[17px]"
+                                >
+                                  <span className="min-w-0 flex-1 whitespace-nowrap">{left}</span>
+                                  <span className="shrink-0 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-blue-600">vs</span>
+                                  <span className="min-w-0 flex-1 whitespace-nowrap text-right">{right}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="grid grid-cols-1 gap-x-12 gap-y-7 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                              {section.items.map((item, index) => (
+                                <div key={`${section.title}-${index}`} className="min-w-0 text-[16px] leading-8 text-gray-800 md:text-[17px]">
+                                  {item}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </section>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}
@@ -1509,14 +1804,14 @@ const Introduction = () => {
               
               {activeTab === 'intonation' && (
                 <div>
-                  <h3 className="text-2xl font-semibold mb-6 text-gray-800">声调和节拍</h3>
+                  <h3 className="text-2xl font-semibold mb-6 text-gray-800">声调（アクセント）和音拍（モーラ）</h3>
                   <p className="text-gray-600 mb-6 leading-relaxed">
                     日语听起来不像中文那样有明显的四声，它更像“高低起伏 + 稳定节奏”。零基础阶段先掌握两件事：每个假名按一拍读，单词里有高低变化，但不要把它读成中文声调。
                   </p>
 
                   <div className="space-y-6">
                     <div className="bg-blue-50 border border-blue-100 p-5 rounded-lg">
-                      <h4 className="text-lg font-semibold mb-3 text-blue-800">一、节拍：日语不是按汉字数读，而是按“拍”读</h4>
+                      <h4 className="text-lg font-semibold mb-3 text-blue-800">一、音拍：日语不是按汉字数读，而是按“拍”读</h4>
                       <p className="text-gray-700 mb-4 leading-relaxed">
                         拍可以理解成读单词时的“格子”。普通假名一拍，ん 一拍，小 っ 一拍，长音一拍，拗音合起来一拍。读得像节拍器一样稳定，日语会自然很多。
                       </p>
@@ -1533,34 +1828,76 @@ const Introduction = () => {
                     <div className="bg-gray-50 p-5 rounded-lg">
                       <h4 className="font-semibold mb-3 text-gray-800">二、声调：日语是“高低”，不是中文的“一声二声三声四声”</h4>
                       <p className="text-gray-600 mb-4 leading-relaxed">
-                        日语单词通常会在某个位置从高变低，或者一直保持后面较高。你不用一开始就背所有重音编号，但要养成听“哪里开始掉下来”的习惯。
+                        日语声调叫アクセント，核心不是“第几声”，而是每一拍处在高位还是低位。一个词通常只会有一次从高到低的下降；如果后面一直不掉，就叫平板型。学习时先看曲线，再听录音，会比直接背编号容易。
                       </p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="bg-white rounded-md p-4">
-                          <h5 className="font-medium text-gray-800 mb-2">平板型：低 → 高，然后保持</h5>
-                          <p className="text-gray-600">例：さくら。第一个音较低，后面抬起来，接助词时也不掉。</p>
-                          <p className="mt-2 text-sm text-blue-700">感觉：sa 低，ku-ra 稍高。</p>
+                      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                        <div className="rounded-lg border border-gray-200 bg-white p-5">
+                          <h5 className="mb-2 text-lg font-semibold text-gray-900">平板型 ⓪：低 → 高，然后保持</h5>
+                          <p className="text-gray-600 leading-relaxed">例：さくら⓪。第一拍低，后面升高；接助词 が 时，が 也保持高位。</p>
+                          <PitchPatternDiagram morae={['さ', 'く', 'ら', 'が']} levels={['low', 'high', 'high', 'high']} />
+                          <p className="mt-3 text-sm text-blue-700">读法感觉：sa 低，ku-ra-ga 稍高。</p>
                         </div>
-                        <div className="bg-white rounded-md p-4">
-                          <h5 className="font-medium text-gray-800 mb-2">头高型：高 → 低</h5>
-                          <p className="text-gray-600">例：あめ。第一个音高，后面马上掉下来。</p>
-                          <p className="mt-2 text-sm text-blue-700">感觉：a 高，me 低。</p>
+                        <div className="rounded-lg border border-gray-200 bg-white p-5">
+                          <h5 className="mb-2 text-lg font-semibold text-gray-900">头高型 ①：高 → 低</h5>
+                          <p className="text-gray-600 leading-relaxed">例：あめ①。第一拍高，第二拍马上掉下来；后面接助词也保持低位。</p>
+                          <PitchPatternDiagram morae={['あ', 'め', 'が']} levels={['high', 'low', 'low']} />
+                          <p className="mt-3 text-sm text-blue-700">读法感觉：a 高，me-ga 低。</p>
                         </div>
-                        <div className="bg-white rounded-md p-4">
-                          <h5 className="font-medium text-gray-800 mb-2">中高型：中间高，后面掉</h5>
-                          <p className="text-gray-600">例：たまご。前面抬起来，中途掉下去。</p>
-                          <p className="mt-2 text-sm text-blue-700">感觉：ta 低，ma 高，go 低。</p>
+                        <div className="rounded-lg border border-gray-200 bg-white p-5">
+                          <h5 className="mb-2 text-lg font-semibold text-gray-900">中高型 ②③...：中间高，后面掉</h5>
+                          <p className="text-gray-600 leading-relaxed">例：たまご②。第一拍低，第二拍升高，第三拍开始掉下去。数字表示“第几拍后下降”。</p>
+                          <PitchPatternDiagram morae={['た', 'ま', 'ご', 'が']} levels={['low', 'high', 'low', 'low']} />
+                          <p className="mt-3 text-sm text-blue-700">读法感觉：ta 低，ma 高，go-ga 低。</p>
                         </div>
-                        <div className="bg-white rounded-md p-4">
-                          <h5 className="font-medium text-gray-800 mb-2">尾高型：词尾高，接助词后掉</h5>
-                          <p className="text-gray-600">例：はな。单词最后高，但后面接 が、は 等助词时会掉。</p>
-                          <p className="mt-2 text-sm text-blue-700">感觉：ha 低，na 高，助词低。</p>
+                        <div className="rounded-lg border border-gray-200 bg-white p-5">
+                          <h5 className="mb-2 text-lg font-semibold text-gray-900">尾高型：词尾高，接助词后掉</h5>
+                          <p className="text-gray-600 leading-relaxed">例：はな②。单词最后一拍高，单独读时不明显；接 が、は 等助词时，助词会掉到低位。</p>
+                          <PitchPatternDiagram morae={['は', 'な', 'が']} levels={['low', 'high', 'low']} />
+                          <p className="mt-3 text-sm text-blue-700">读法感觉：ha 低，na 高，ga 低。</p>
                         </div>
                       </div>
                     </div>
 
                     <div className="bg-gray-50 p-5 rounded-lg">
-                      <h4 className="font-semibold mb-3 text-gray-800">三、为什么要注意声调：同样的假名，意思可能不同</h4>
+                      <h4 className="font-semibold mb-3 text-gray-800">三、单词声调常见标记方式</h4>
+                      <p className="text-gray-600 mb-4 leading-relaxed">
+                        教材、词典和老师板书常用两种方式标记声调：数字式适合快速记录，划线式适合看出高低走势。两种方式表达的是同一件事。
+                      </p>
+                      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                        <div className="rounded-lg border border-gray-200 bg-white p-5">
+                          <h5 className="mb-3 text-lg font-semibold text-gray-900">数字式：⓪①②③...</h5>
+                          <div className="space-y-3 text-gray-700">
+                            <p><span className="font-semibold">⓪</span> 表示平板型：词内不下降，接助词也不下降。例：さくら⓪。</p>
+                            <p><span className="font-semibold">①</span> 表示第一拍后下降。例：あめ①。</p>
+                            <p><span className="font-semibold">②</span> 表示第二拍后下降。例：はな②、たまご②。</p>
+                          </div>
+                        </div>
+                        <div className="rounded-lg border border-gray-200 bg-white p-5">
+                          <h5 className="mb-3 text-lg font-semibold text-gray-900">划线式：高的部分画线，下降处断开</h5>
+                          <div className="space-y-4 text-gray-700">
+                            <div>
+                              <span className="mr-3 font-medium">さくらが：</span>
+                              <span>さ</span><span className="border-t-2 border-blue-600 px-1 pt-1">く</span><span className="border-t-2 border-blue-600 px-1 pt-1">ら</span><span className="border-t-2 border-blue-600 px-1 pt-1">が</span>
+                              <span className="ml-3 text-sm text-gray-500">平板型</span>
+                            </div>
+                            <div>
+                              <span className="mr-3 font-medium">あめが：</span>
+                              <span className="border-t-2 border-blue-600 px-1 pt-1">あ</span><span>め</span><span>が</span>
+                              <span className="ml-3 text-sm text-gray-500">头高型</span>
+                            </div>
+                            <div>
+                              <span className="mr-3 font-medium">はなが：</span>
+                              <span>は</span><span className="border-t-2 border-blue-600 px-1 pt-1">な</span><span>が</span>
+                              <span className="ml-3 text-sm text-gray-500">尾高型</span>
+                            </div>
+                          </div>
+                          <p className="mt-4 text-sm text-blue-700">看划线时只记一个规则：线在高的位置，线断开的地方就是音高掉下来的地方。</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-gray-50 p-5 rounded-lg">
+                      <h4 className="font-semibold mb-3 text-gray-800">四、为什么要注意声调：同样的假名，意思可能不同</h4>
                       <p className="text-gray-600 mb-4 leading-relaxed">
                         初学者先不用害怕，说错声调通常还能沟通，但有些词只靠高低来区分。知道这件事，会让你从一开始就更愿意听标准发音。
                       </p>
@@ -1572,7 +1909,7 @@ const Introduction = () => {
                     </div>
 
                     <div className="bg-gray-50 p-5 rounded-lg">
-                      <h4 className="font-semibold mb-3 text-gray-800">四、助词会帮你听出声调</h4>
+                      <h4 className="font-semibold mb-3 text-gray-800">五、助词会帮你听出声调</h4>
                       <p className="text-gray-600 mb-4 leading-relaxed">
                         日语单词后面常接 は、が、を、に 等助词。很多时候，单词本身听起来差不多，接上助词以后，高低变化会更明显。
                       </p>
