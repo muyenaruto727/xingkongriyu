@@ -186,100 +186,10 @@ const ExamTest = () => {
       setQuestions(data.questions || []);
     } catch (error) {
       api.handleError('Error fetching questions:', error);
-      // 如果API调用失败，使用模拟数据
-      generateMockQuestions(config);
     }
   };
 
-  const generateMockQuestions = (config) => {
-    const mockQuestions = [];
-    const sections = config.sections || ['vocabulary', 'grammar', 'reading', 'listening'];
-    const level = config.level || 'N3';
-    
-    let questionId = 1;
-    sections.forEach(section => {
-      const count = levelConfig[level][section] ? levelConfig[level][section].count : 10;
-      for (let i = 0; i < count; i++) {
-        let question;
-
-        switch (section) {
-          case 'vocabulary':
-            const vocabCategories = ['kanji_reading', 'kanji_writing', 'word_formation', 'word_relation', 'synonym_replacement', 'usage'];
-            const vocabCategory = vocabCategories[i % vocabCategories.length];
-            question = {
-              id: questionId++,
-              type: 'vocabulary',
-              typeName: '文字・語彙',
-              category: vocabCategory,
-              question: `词汇题目 ${i + 1}：请选择正确的读音`,
-              options: ['选项A', '选项B', '选项C', '选项D'],
-              correctAnswer: 0,
-              explanation: `这是词汇题目 ${i + 1} 的解析。`
-            };
-            break;
-          case 'grammar':
-            const grammarCategories = ['sentence_grammar1', 'sentence_grammar2', 'text_grammar'];
-            const grammarCategory = grammarCategories[i % grammarCategories.length];
-            question = {
-              id: questionId++,
-              type: 'grammar',
-              typeName: '文法',
-              category: grammarCategory,
-              question: `「彼は約束を守る（ ）、信頼できる人だ。」`,
-              options: ['だけあって', 'ばかりか', 'ことから', 'ものだから'],
-              correctAnswer: 2,
-              explanation: `这是文法题目 ${i + 1} 的解析。正确答案是「ことから」，表示根据前面的事实得出结论。`
-            };
-            break;
-          case 'reading':
-            const readingCategories = ['short_content', 'medium_content', 'long_content', 'comprehensive', 'argument', 'information_retrieval'];
-            const readingCategory = readingCategories[i % readingCategories.length];
-            question = {
-              id: questionId++,
-              type: 'reading',
-              typeName: '読解',
-              category: readingCategory,
-              passage: `阅读文章 ${Math.floor(i / 3) + 1}：这是一篇模拟的阅读理解文章。文章内容包括各种话题，用于测试学生的阅读理解能力。`,
-              question: `阅读题目 ${(i % 3) + 1}：根据文章内容，选择正确的答案。`,
-              options: ['选项A', '选项B', '选项C', '选项D'],
-              correctAnswer: 1,
-              explanation: `这是阅读题目 ${(i % 3) + 1} 的解析。根据文章内容，正确答案是选项B。`
-            };
-            break;
-          case 'listening':
-            const listeningCategories = ['problem_understanding', 'point_understanding', 'summary_understanding', 'language_expression', 'immediate_response', 'listening_comprehensive'];
-            const listeningCategory = listeningCategories[i % listeningCategories.length];
-            question = {
-              id: questionId++,
-              type: 'listening',
-              typeName: '聴解',
-              category: listeningCategory,
-              audioUrl: null,
-              question: `听力题目 ${i + 1}：请听音频，选择正确的答案。`,
-              options: ['选项A', '选项B', '选项C', '选项D'],
-              correctAnswer: 3,
-              explanation: `这是听力题目 ${i + 1} 的解析。根据听力内容，正确答案是选项A。`
-            };
-            break;
-          default:
-            question = {
-              id: questionId++,
-              type: 'vocabulary',
-              typeName: '文字・語彙',
-              category: 'kanji_reading',
-              question: `题目 ${i + 1}`,
-              options: ['选项A', '选项B', '选项C', '选项D'],
-              correctAnswer: 0,
-              explanation: `这是题目 ${i + 1} 的解析。`
-            };
-        }
-
-        mockQuestions.push(question);
-      }
-    });
-
-    setQuestions(mockQuestions);
-  };
+ 
 
   const formatTime = (seconds) => {
     const hours = Math.floor(seconds / 3600);
@@ -318,15 +228,6 @@ const ExamTest = () => {
   const handleSubmitExam = async () => {
     setIsExamFinished(true);
     
-    // 计算成绩
-    let correctCount = 0;
-    questions.forEach(q => {
-      if (answers[q.id] === parseInt(q.correctAnswer)) {
-        correctCount++;
-      }
-    });
-
-    const score = Math.round((correctCount / questions.length) * 100);
     const duration = formatTime(examConfig.timeLimit * 60 - timeLeft);
 
     const currentUser = JSON.parse(localStorage.getItem('currentUser'));
@@ -336,32 +237,31 @@ const ExamTest = () => {
       return;
     }
 
+    if (questions.some((question) => !question.sourceId)) {
+      showToast('题目来源无效，请重新生成试卷', 'error');
+      router.push('/exam');
+      return;
+    }
+
     const examRecord = {
       level: examConfig.level,
       sections: examConfig.sections,
-      score,
-      correct_count: correctCount,
-      total_count: questions.length,
       duration: examConfig.timeLimit * 60 - timeLeft,
       answers,
       questions: questions.map(q => ({
         id: q.id,
+        sourceId: q.sourceId,
         type: q.type,
         typeName: q.typeName,
         question: q.question,
         options: q.options,
-        correctAnswer: q.correctAnswer,
-        explanation: q.explanation,
         passage: q.passage
       }))
     };
 
     try {
-      await api.createExamRecord({
-        user_id: currentUser.id,
-        ...examRecord
-      });
-      showToast(`考试完成！\n得分：${score}\n正确：${correctCount}/${questions.length}\n用时：${duration}`, 'success');
+      const savedRecord = await api.createExamRecord(examRecord);
+      showToast(`考试完成！\n得分：${savedRecord.score}\n正确：${savedRecord.correct_count}/${savedRecord.total_count}\n用时：${duration}`, 'success');
       router.push('/exam');
     } catch (error) {
       logError(error, 'Save Exam Record');

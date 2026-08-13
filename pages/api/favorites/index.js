@@ -1,5 +1,6 @@
 const pool = require('../../../lib/db');
 const { handleError, successResponse } = require('../../../lib/errorHandler');
+const { requireAuth } = require('../../../lib/apiAuth');
 
 async function handler(req, res) {
   const { method } = req;
@@ -7,17 +8,8 @@ async function handler(req, res) {
   switch (method) {
     case 'GET':
       try {
-        const { user_id, item_type } = req.query;
-        
-        if (!user_id) {
-          return res.status(400).json({ success: false, error: { code: 'MISSING_USER_ID', message: 'User ID is required' } });
-        }
-
-        // 转换为正确的类型
-        const userId = parseInt(user_id, 10);
-        if (isNaN(userId)) {
-          return res.status(400).json({ success: false, error: { code: 'INVALID_USER_ID', message: 'Invalid User ID' } });
-        }
+        const { item_type } = req.query;
+        const userId = req.user.userId;
 
         let query = 'SELECT item_id FROM favorites WHERE user_id = $1';
         const params = [userId];
@@ -38,17 +30,17 @@ async function handler(req, res) {
 
     case 'POST':
       try {
-        const { user_id, item_type, item_id } = req.body;
+        const { item_type, item_id } = req.body;
         
-        if (!user_id || !item_type || !item_id) {
-          return res.status(400).json({ success: false, error: { code: 'MISSING_PARAMS', message: 'User ID, item type, and item ID are required' } });
+        if (!item_type || !item_id) {
+          return res.status(400).json({ success: false, error: { code: 'MISSING_PARAMS', message: 'Item type and item ID are required' } });
         }
 
         // 转换为正确的类型
-        const userId = parseInt(user_id, 10);
+        const userId = req.user.userId;
         const itemId = parseInt(item_id, 10);
-        if (isNaN(userId) || isNaN(itemId)) {
-          return res.status(400).json({ success: false, error: { code: 'INVALID_IDS', message: 'Invalid User ID or Item ID' } });
+        if (isNaN(itemId)) {
+          return res.status(400).json({ success: false, error: { code: 'INVALID_IDS', message: 'Invalid Item ID' } });
         }
 
         const result = await pool.query(
@@ -67,17 +59,17 @@ async function handler(req, res) {
 
     case 'DELETE':
       try {
-        const { user_id, item_type, item_id } = req.query;
+        const { item_type, item_id } = req.query;
         
-        if (!user_id || !item_type || !item_id) {
-          return res.status(400).json({ success: false, error: { code: 'MISSING_PARAMS', message: 'User ID, item type, and item ID are required' } });
+        if (!item_type || !item_id) {
+          return res.status(400).json({ success: false, error: { code: 'MISSING_PARAMS', message: 'Item type and item ID are required' } });
         }
 
         // 转换为正确的类型
-        const userId = parseInt(user_id, 10);
+        const userId = req.user.userId;
         const itemId = parseInt(item_id, 10);
-        if (isNaN(userId) || isNaN(itemId)) {
-          return res.status(400).json({ success: false, error: { code: 'INVALID_IDS', message: 'Invalid User ID or Item ID' } });
+        if (isNaN(itemId)) {
+          return res.status(400).json({ success: false, error: { code: 'INVALID_IDS', message: 'Invalid Item ID' } });
         }
 
         const result = await pool.query(
@@ -99,4 +91,4 @@ async function handler(req, res) {
   }
 }
 
-export default handler;
+export default requireAuth(handler);

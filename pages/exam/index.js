@@ -121,7 +121,7 @@ const ExamIndex = () => {
       }
 
       try {
-        const data = await api.getExamRecords({ user_id: currentUser.id });
+        const data = await api.getExamRecords();
         setExamRecords(data.data || []);
       } catch (error) {
         api.handleError('Error fetching exam records:', error);
@@ -389,7 +389,7 @@ const ExamIndex = () => {
                     }
                     const fetchExamRecords = async () => {
                       try {
-                        const data = await api.getExamRecords({ user_id: currentUser.id });
+                        const data = await api.getExamRecords();
                         setExamRecords(data.data || []);
                       } catch (error) {
                         api.handleError('Error fetching exam records:', error);

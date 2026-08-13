@@ -2,6 +2,7 @@ const pool = require('../../../lib/db');
 const rateLimit = require('../../../lib/rateLimit');
 const { handleError, successResponse } = require('../../../lib/errorHandler');
 const { validateExamGenerateRequest } = require('../../../lib/examValidation');
+const { requireAuth } = require('../../../lib/apiAuth');
 
 const limiter = rateLimit({
   windowMs: 60 * 1000,
@@ -276,6 +277,7 @@ async function handler(req, res) {
         for (const q of sectionQuestions) {
           questions.push({
             id: questionId++,
+            sourceId: q.id,
             type: section,
             typeName: {
               vocabulary: '文字・語彙',
@@ -286,8 +288,6 @@ async function handler(req, res) {
             category: q.category || category,
             question: q.question_text,
             options: q.options,
-            correctAnswer: q.correct_answer,
-            explanation: q.explanation,
             passage: q.passage,
             audioUrl: q.audio_url
           });
@@ -301,4 +301,4 @@ async function handler(req, res) {
   }
 }
 
-export default handler;
+export default requireAuth(handler);

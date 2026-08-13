@@ -517,30 +517,29 @@ const VocabManager = () => {
             return;
           }
 
-          // 与数据库中已有的词汇进行去重
-          try {
-            const existingVocab = await api.getVocabList({ limit: 10000 });
             const existingKeys = new Set();
+            let dedupeAvailable = true;
+            try {
+              const existingVocab = await api.getVocabList({ limit: 10000 });
+              const existingRows = Array.isArray(existingVocab)
+                ? existingVocab
+                : existingVocab.data || [];
 
-            if (Array.isArray(existingVocab)) {
-              existingVocab.forEach((vocab) => {
+              existingRows.forEach((vocab) => {
                 if (vocab.japanese && vocab.pronunciation) {
                   const key = `${vocab.japanese}-${vocab.pronunciation}`;
                   existingKeys.add(key);
                 }
               });
-            } else if (existingVocab.data) {
-              existingVocab.data.forEach((vocab) => {
-                if (vocab.japanese && vocab.pronunciation) {
-                  const key = `${vocab.japanese}-${vocab.pronunciation}`;
-                  existingKeys.add(key);
-                }
-              });
+            } catch (error) {
+              dedupeAvailable = false;
+              logError(error, 'Batch Import Deduplication');
             }
 
-            // 过滤掉与数据库中重复的词汇
-            const uniqueData = filteredData.filter((item) => {
-              const key = `${item.japanese}-${item.pronunciation}`;
+            if (dedupeAvailable) {
+              // 过滤掉与数据库中重复的词汇
+              const uniqueData = filteredData.filter((item) => {
+                const key = `${item.japanese}-${item.pronunciation}`;
               return !existingKeys.has(key);
             });
             const duplicateInDatabaseCount =
@@ -590,13 +589,12 @@ const VocabManager = () => {
                   ))}
                 </div>
               ),
-              okText: '知道了',
-            });
-          } catch (error) {
-            logError(error, 'Batch Import Deduplication');
-            // 如果去重失败，仍然尝试导入数据
-            await api.importVocab({ batch: filteredData });
-            Modal.success({
+                okText: '知道了',
+              });
+            } else {
+              // 如果去重失败，仍然尝试导入数据
+              await api.importVocab({ batch: filteredData });
+              Modal.success({
               title: '批量导入完成',
               content: (
                 <div className="space-y-2">

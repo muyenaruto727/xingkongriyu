@@ -6,6 +6,10 @@ import QuestionForm from './QuestionManager/QuestionForm';
 import Pagination from '../common/Pagination';
 import Filter from './QuestionManager/Filter';
 import { QUESTION_TAG_OPTIONS, normalizeQuestionTagForType } from '../../lib/questionTags';
+import {
+  getPageSizeChangeState,
+  getPaginationRequestParams,
+} from '../../lib/adminPagination';
 
 const { Dragger } = Upload;
 
@@ -120,11 +124,14 @@ const QuestionManager = ({ defaultType = '', defaultLevel = '' }) => {
     fetchQuestions();
   }, [page, limit, filterLevel, filterType, filterId]);
 
-  const fetchQuestions = async () => {
+  const fetchQuestions = async (pagination = {}) => {
     try {
       const params = {
-        page,
-        limit,
+        ...getPaginationRequestParams({
+          currentPage: page,
+          itemsPerPage: limit,
+          ...pagination,
+        }),
         ...(filterLevel && { level: filterLevel }),
         ...(filterType && { type: filterType }),
         ...(filterId && { id: filterId })
@@ -607,10 +614,22 @@ const QuestionManager = ({ defaultType = '', defaultLevel = '' }) => {
         level={filterLevel}
         type={filterType}
         id={filterId}
-        onLevelChange={setFilterLevel}
-        onTypeChange={setFilterType}
-        onIdChange={setFilterId}
-        onSearch={fetchQuestions}
+        onLevelChange={(value) => {
+          setFilterLevel(value);
+          setPage(1);
+        }}
+        onTypeChange={(value) => {
+          setFilterType(value);
+          setPage(1);
+        }}
+        onIdChange={(value) => {
+          setFilterId(value);
+          setPage(1);
+        }}
+        onSearch={() => {
+          setPage(1);
+          fetchQuestions({ page: 1 });
+        }}
         onReset={() => {
           setFilterLevel('');
           setFilterType('');
@@ -631,10 +650,15 @@ const QuestionManager = ({ defaultType = '', defaultLevel = '' }) => {
         page={page}
         limit={limit}
         total={total}
-        onPageChange={setPage}
+        onPageChange={(newPage) => {
+          setPage(newPage);
+          fetchQuestions({ page: newPage });
+        }}
         onLimitChange={(newLimit) => {
+          const nextPagination = getPageSizeChangeState(newLimit);
           setLimit(newLimit);
-          setPage(1);
+          setPage(nextPagination.page);
+          fetchQuestions(nextPagination);
         }}
       />
 

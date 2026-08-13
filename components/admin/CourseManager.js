@@ -15,6 +15,10 @@ import {
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { api } from '../../lib/api';
 import { logError } from '../../utils.js';
+import {
+  getPageSizeChangeState,
+  getPaginationRequestParams,
+} from '../../lib/adminPagination';
 
 // 动态导入 WangEditor，确保只在客户端加载
 const WangEditor = dynamic(() => import('../common/WangEditor'), {
@@ -82,13 +86,16 @@ const CourseManager = ({ showToast }) => {
   ];
 
   // 加载课程列表
-  const fetchCourseList = async (useEmptyFilters = false) => {
+  const fetchCourseList = async (useEmptyFilters = false, pagination = {}) => {
     setIsLoading(true);
     try {
       // 构建查询参数
       const params = {
-        page: currentPage,
-        limit: itemsPerPage,
+        ...getPaginationRequestParams({
+          currentPage,
+          itemsPerPage,
+          ...pagination,
+        }),
       };
 
       // 添加搜索参数
@@ -707,7 +714,8 @@ const CourseManager = ({ showToast }) => {
                 onChange={(e) => setSearchId(e.target.value)}
                 onKeyPress={(e) => {
                   if (e.key === 'Enter') {
-                    fetchCourseList();
+                    setCurrentPage(1);
+                    fetchCourseList(false, { page: 1 });
                   }
                 }}
                 className="w-full"
@@ -729,10 +737,15 @@ const CourseManager = ({ showToast }) => {
             totalItems={totalItems}
             currentPage={currentPage}
             itemsPerPage={itemsPerPage}
-            onPageChange={setCurrentPage}
+            onPageChange={(newPage) => {
+              setCurrentPage(newPage);
+              fetchCourseList(false, { page: newPage });
+            }}
             onLimitChange={(newLimit) => {
+              const nextPagination = getPageSizeChangeState(newLimit);
               setItemsPerPage(newLimit);
-              setCurrentPage(1);
+              setCurrentPage(nextPagination.page);
+              fetchCourseList(false, nextPagination);
             }}
           />
         </div>

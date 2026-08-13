@@ -51,14 +51,16 @@ const GrammarManager = () => {
   const levels = ['N1', 'N2', 'N3', 'N4', 'N5'];
 
   // 加载语法数据
-  const fetchGrammarList = async () => {
+  const fetchGrammarList = async (pagination = {}) => {
     setIsLoading(true);
     try {
+      const page = pagination.page || currentPage;
+      const limit = pagination.limit || itemsPerPage;
       const params = {
         ...(searchKeyword && { search: searchKeyword }),
         ...(selectedLevel && { level: selectedLevel }),
-        page: currentPage,
-        limit: itemsPerPage,
+        page,
+        limit,
       };
       const response = await api.getGrammarList(params);
       // 检查响应是否为数组（直接返回的数据）或包含 data 属性的对象
@@ -424,27 +426,26 @@ const GrammarManager = () => {
             return;
           }
 
-          // 与数据库中已有的语法进行去重
+          const existingKeys = new Set();
+          let dedupeAvailable = true;
           try {
             const existingGrammar = await api.getGrammarList({ limit: 10000 });
-            const existingKeys = new Set();
+            const existingRows = Array.isArray(existingGrammar)
+              ? existingGrammar
+              : existingGrammar.data || [];
 
-            if (Array.isArray(existingGrammar)) {
-              existingGrammar.forEach((grammar) => {
-                if (grammar.grammarPoint && grammar.level) {
-                  const key = `${grammar.grammarPoint}-${grammar.level}`;
-                  existingKeys.add(key);
-                }
-              });
-            } else if (existingGrammar.data) {
-              existingGrammar.data.forEach((grammar) => {
-                if (grammar.grammarPoint && grammar.level) {
-                  const key = `${grammar.grammarPoint}-${grammar.level}`;
-                  existingKeys.add(key);
-                }
-              });
-            }
+            existingRows.forEach((grammar) => {
+              if (grammar.grammarPoint && grammar.level) {
+                const key = `${grammar.grammarPoint}-${grammar.level}`;
+                existingKeys.add(key);
+              }
+            });
+          } catch (error) {
+            dedupeAvailable = false;
+            api.handleError('去重失败:', error);
+          }
 
+          if (dedupeAvailable) {
             // 过滤掉与数据库中重复的语法
             const uniqueData = filteredData.filter((item) => {
               const key = `${item.grammarPoint}-${item.level}`;
@@ -491,8 +492,7 @@ const GrammarManager = () => {
               ),
               okText: '知道了',
             });
-          } catch (error) {
-            api.handleError('去重失败:', error);
+          } else {
             // 如果去重失败，仍然尝试导入数据
             await api.importGrammar({ batch: filteredData });
             Modal.success({
@@ -796,7 +796,10 @@ const GrammarManager = () => {
             重置
           </button>
           <button
-            onClick={fetchGrammarList}
+            onClick={() => {
+              setCurrentPage(1);
+              fetchGrammarList({ page: 1 });
+            }}
             className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             搜索
@@ -848,10 +851,14 @@ const GrammarManager = () => {
         totalItems={totalItems}
         currentPage={currentPage}
         itemsPerPage={itemsPerPage}
-        onPageChange={setCurrentPage}
+        onPageChange={(newPage) => {
+          setCurrentPage(newPage);
+          fetchGrammarList({ page: newPage });
+        }}
         onLimitChange={(newLimit) => {
           setItemsPerPage(newLimit);
           setCurrentPage(1);
+          fetchGrammarList({ page: 1, limit: newLimit });
         }}
         emptyMessage="暂无语法数据"
         emptyIcon="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"

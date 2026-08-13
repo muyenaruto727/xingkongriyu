@@ -47,6 +47,10 @@ async function handler(req, res) {
         throw new ApiError(errorCodes.AUTHENTICATION_ERROR, '用户名或密码错误');
       }
 
+      if (user.status === ACCOUNT_STATUS.DISABLED) {
+        throw new ApiError(errorCodes.AUTHENTICATION_ERROR, '账号已禁用，请联系管理员');
+      }
+
       if (user.status === ACCOUNT_STATUS.EXPIRED || isAccountExpired(user.account_expires_at)) {
         await pool.query(
           `UPDATE users
@@ -61,6 +65,7 @@ async function handler(req, res) {
         userId: user.id,
         username: user.username,
         role: user.role,
+        status: user.status,
         accountExpiresAt: user.account_expires_at,
       });
 

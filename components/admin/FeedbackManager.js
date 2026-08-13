@@ -2,6 +2,10 @@ import { useState, useEffect } from 'react';
 import { logError } from '../../utils.js';
 import PaginationTable from '../common/PaginationTable';
 import api from '../../lib/api';
+import {
+  getPageSizeChangeState,
+  getPaginationRequestParams,
+} from '../../lib/adminPagination';
 
 const FeedbackManager = () => {
   const [feedbackList, setFeedbackList] = useState([]);
@@ -16,12 +20,17 @@ const FeedbackManager = () => {
     fetchFeedback();
   }, [currentPage, itemsPerPage, searchType, searchStatus]);
 
-  const fetchFeedback = async () => {
+  const fetchFeedback = async (pagination = {}) => {
     setIsFeedbackLoading(true);
     try {
       const params = new URLSearchParams();
-      params.append('page', currentPage);
-      params.append('limit', itemsPerPage);
+      const paginationParams = getPaginationRequestParams({
+        currentPage,
+        itemsPerPage,
+        ...pagination,
+      });
+      params.append('page', paginationParams.page);
+      params.append('limit', paginationParams.limit);
       if (searchType) params.append('type', searchType);
       if (searchStatus) params.append('status', searchStatus);
       
@@ -62,7 +71,10 @@ const FeedbackManager = () => {
             <label className="block text-sm font-medium text-gray-700 mb-1">反馈类型</label>
             <select
               value={searchType}
-              onChange={(e) => setSearchType(e.target.value)}
+              onChange={(e) => {
+                setSearchType(e.target.value);
+                setCurrentPage(1);
+              }}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="">全部类型</option>
@@ -76,7 +88,10 @@ const FeedbackManager = () => {
             <label className="block text-sm font-medium text-gray-700 mb-1">状态</label>
             <select
               value={searchStatus}
-              onChange={(e) => setSearchStatus(e.target.value)}
+              onChange={(e) => {
+                setSearchStatus(e.target.value);
+                setCurrentPage(1);
+              }}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="">全部状态</option>
@@ -93,7 +108,10 @@ const FeedbackManager = () => {
             重置
           </button>
           <button 
-            onClick={fetchFeedback}
+            onClick={() => {
+              setCurrentPage(1);
+              fetchFeedback({ page: 1 });
+            }}
             className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             搜索
@@ -180,10 +198,15 @@ const FeedbackManager = () => {
         totalItems={totalItems}
         currentPage={currentPage}
         itemsPerPage={itemsPerPage}
-        onPageChange={setCurrentPage}
+        onPageChange={(newPage) => {
+          setCurrentPage(newPage);
+          fetchFeedback({ page: newPage });
+        }}
         onLimitChange={(newLimit) => {
+          const nextPagination = getPageSizeChangeState(newLimit);
           setItemsPerPage(newLimit);
-          setCurrentPage(1);
+          setCurrentPage(nextPagination.page);
+          fetchFeedback(nextPagination);
         }}
         emptyMessage="暂无反馈记录"
         emptyIcon="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
