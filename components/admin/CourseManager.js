@@ -1,7 +1,17 @@
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import PaginationTable from '../common/PaginationTable';
-import { Input, Button, Table, Form, Select, message, Tree, Radio, Modal } from 'antd';
+import {
+  Input,
+  Button,
+  Table,
+  Form,
+  Select,
+  message,
+  Tree,
+  Radio,
+  Modal,
+} from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { api } from '../../lib/api';
 import { logError } from '../../utils.js';
@@ -9,7 +19,21 @@ import { logError } from '../../utils.js';
 // 动态导入 WangEditor，确保只在客户端加载
 const WangEditor = dynamic(() => import('../common/WangEditor'), {
   ssr: false,
-  loading: () => <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f5f5', borderRadius: '6px', color: '#999' }}>编辑器加载中...</div>
+  loading: () => (
+    <div
+      style={{
+        height: '300px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: '#f5f5f5',
+        borderRadius: '6px',
+        color: '#999',
+      }}
+    >
+      编辑器加载中...
+    </div>
+  ),
 });
 
 const CourseManager = ({ showToast }) => {
@@ -24,7 +48,7 @@ const CourseManager = ({ showToast }) => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
   const [searchId, setSearchId] = useState('');
-  
+
   // 章节管理相关状态
   const [chapters, setChapters] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -38,29 +62,25 @@ const CourseManager = ({ showToast }) => {
   const [sectionForm] = Form.useForm();
   const [expandedKeys, setExpandedKeys] = useState([]);
   const [sectionType, setSectionType] = useState('article'); // article 或 video
-  
+
   // 课程表单状态
   const [courseForm, setCourseForm] = useState({
     name: '',
     format: '',
     description: '',
     isFree: '否',
-    status: '未上架'
+    status: '未上架',
   });
-  
+
   // 课程形式选项
-  const formatOptions = [
-    '文本课程',
-    '视频课程',
-    '1V1辅导'
-  ];
-  
+  const formatOptions = ['文本课程', '视频课程', '1V1辅导'];
+
   // 是否免费选项
   const freeOptions = [
     { value: '是', label: '是' },
-    { value: '否', label: '否' }
+    { value: '否', label: '否' },
   ];
-  
+
   // 加载课程列表
   const fetchCourseList = async (useEmptyFilters = false) => {
     setIsLoading(true);
@@ -68,16 +88,16 @@ const CourseManager = ({ showToast }) => {
       // 构建查询参数
       const params = {
         page: currentPage,
-        limit: itemsPerPage
+        limit: itemsPerPage,
       };
-      
+
       // 添加搜索参数
       if (!useEmptyFilters && searchId) {
         params.id = searchId;
       }
-      
+
       const data = await api.getCourseList(params);
-      
+
       if (typeof setCourseList === 'function') {
         // 处理不同的数据结构
         if (data && data.data && Array.isArray(data.data)) {
@@ -99,21 +119,21 @@ const CourseManager = ({ showToast }) => {
       setIsLoading(false);
     }
   };
-  
+
   // 初始化时加载课程列表
   useEffect(() => {
     fetchCourseList();
   }, [currentPage, itemsPerPage]);
-  
+
   // 处理表单输入变化
   const handleFormChange = (e) => {
     const { name, value } = e.target;
-    setCourseForm(prev => ({
+    setCourseForm((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
-  
+
   // 重置表单
   const resetForm = () => {
     setCourseForm({
@@ -121,12 +141,12 @@ const CourseManager = ({ showToast }) => {
       format: '',
       description: '',
       isFree: '否',
-      status: '未上架'
+      status: '未上架',
     });
     setCurrentEditId(null);
     setIsEditMode(false);
   };
-  
+
   // 表单验证
   const validateForm = () => {
     if (!courseForm.name.trim()) {
@@ -147,17 +167,17 @@ const CourseManager = ({ showToast }) => {
     }
     return true;
   };
-  
+
   // 处理添加课程
   const handleSubmitAdd = async (e) => {
     e.preventDefault();
     if (isLoading) return;
-    
+
     // 表单验证
     if (!validateForm()) {
       return;
     }
-    
+
     setIsLoading(true);
     try {
       // 构建发送到 API 的数据
@@ -166,11 +186,11 @@ const CourseManager = ({ showToast }) => {
         format: courseForm.format,
         description: courseForm.description.trim(),
         isFree: courseForm.isFree,
-        status: courseForm.status
+        status: courseForm.status,
       };
-      
+
       await api.createCourse(courseData);
-      
+
       showToast('课程添加成功', 'success');
       setShowModal(false);
       // 重置表单
@@ -183,17 +203,17 @@ const CourseManager = ({ showToast }) => {
       setIsLoading(false);
     }
   };
-  
+
   // 处理更新课程
   const handleSubmitEdit = async (e) => {
     e.preventDefault();
     if (isLoading) return;
-    
+
     // 表单验证
     if (!validateForm()) {
       return;
     }
-    
+
     setIsLoading(true);
     try {
       // 构建发送到 API 的数据
@@ -202,11 +222,11 @@ const CourseManager = ({ showToast }) => {
         format: courseForm.format,
         description: courseForm.description.trim(),
         isFree: courseForm.isFree,
-        status: courseForm.status
+        status: courseForm.status,
       };
-      
+
       await api.updateCourse(currentEditId, courseData);
-      
+
       showToast('课程更新成功', 'success');
       setShowModal(false);
       // 重置表单
@@ -219,14 +239,14 @@ const CourseManager = ({ showToast }) => {
       setIsLoading(false);
     }
   };
-  
+
   // 打开添加课程模态框
   const openAddModal = () => {
     resetForm();
     setIsEditMode(false);
     setShowModal(true);
   };
-  
+
   // 打开编辑课程模态框
   const openEditModal = (course) => {
     setCurrentEditId(course.id);
@@ -236,25 +256,25 @@ const CourseManager = ({ showToast }) => {
       format: course.format || '',
       description: course.description || '',
       isFree: course.is_free || '否',
-      status: course.status || '未上架'
+      status: course.status || '未上架',
     });
     setShowModal(true);
   };
-  
+
   // 打开删除确认模态框
   const openDeleteConfirm = (id) => {
     setCurrentEditId(id);
     setShowDeleteConfirm(true);
   };
-  
+
   // 处理删除课程
   const confirmDelete = async () => {
     if (isLoading) return;
     setIsLoading(true);
-    
+
     try {
       await api.deleteCourse(currentEditId);
-      
+
       showToast('课程删除成功', 'success');
       setShowDeleteConfirm(false);
       setCurrentEditId(null);
@@ -268,19 +288,19 @@ const CourseManager = ({ showToast }) => {
       setIsLoading(false);
     }
   };
-  
+
   // 处理课程状态变更
   const handleStatusChange = async (id, newStatus) => {
     setIsLoading(true);
-    
+
     try {
       // 构建发送到 API 的数据
       const courseData = {
-        status: newStatus
+        status: newStatus,
       };
-      
+
       await api.updateCourse(id, courseData);
-      
+
       showToast(`课程已${newStatus}`, 'success');
       // 重新加载课程列表
       fetchCourseList();
@@ -290,7 +310,7 @@ const CourseManager = ({ showToast }) => {
       setIsLoading(false);
     }
   };
-  
+
   // 章节管理相关函数
   // 获取章节列表
   const fetchChapters = async (courseId) => {
@@ -301,7 +321,7 @@ const CourseManager = ({ showToast }) => {
       const chapterData = Array.isArray(response) ? response : [];
       setChapters(chapterData);
       // 展开所有节点
-      const keys = chapterData.map(chapter => `chapter-${chapter.id}`);
+      const keys = chapterData.map((chapter) => `chapter-${chapter.id}`);
       setExpandedKeys(keys);
     } catch (error) {
       api.handleError('获取章节列表失败:', error);
@@ -321,7 +341,7 @@ const CourseManager = ({ showToast }) => {
     try {
       await api.createChapter({
         ...values,
-        courseId: currentEditId
+        courseId: currentEditId,
       });
       message.success('章节添加成功');
       setShowAddModal(false);
@@ -370,7 +390,7 @@ const CourseManager = ({ showToast }) => {
         } finally {
           setIsLoading(false);
         }
-      }
+      },
     });
   };
 
@@ -388,7 +408,7 @@ const CourseManager = ({ showToast }) => {
         ...values,
         chapterId: selectedChapter.id,
         content: values.content || null,
-        videoUrl: values.videoUrl || null
+        videoUrl: values.videoUrl || null,
       };
       await api.createSection(sectionData);
       message.success('小节添加成功');
@@ -412,7 +432,7 @@ const CourseManager = ({ showToast }) => {
       const sectionData = {
         ...values,
         content: values.content || null,
-        videoUrl: values.videoUrl || null
+        videoUrl: values.videoUrl || null,
       };
       await api.updateSection(editingSection.id, sectionData);
       message.success('小节更新成功');
@@ -445,7 +465,7 @@ const CourseManager = ({ showToast }) => {
         } finally {
           setIsLoading(false);
         }
-      }
+      },
     });
   };
 
@@ -484,10 +504,19 @@ const CourseManager = ({ showToast }) => {
   };
 
   // 树形数据转换
-  const treeData = chapters.map(chapter => ({
+  const treeData = chapters.map((chapter) => ({
     title: (
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-        <span>{chapter.name} ({chapter.sections?.length || 0}讲)</span>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          width: '100%',
+        }}
+      >
+        <span>
+          {chapter.name} ({chapter.sections?.length || 0}讲)
+        </span>
         <div style={{ display: 'flex', gap: '8px' }}>
           <Button
             type="text"
@@ -512,66 +541,85 @@ const CourseManager = ({ showToast }) => {
       </div>
     ),
     key: `chapter-${chapter.id}`,
-    children: chapter.sections?.sort((a, b) => (a.order || 0) - (b.order || 0)).filter(section => section && section.id).map(section => ({
-      title: (
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-          <span>{section.order ? `${section.order.toString().padStart(2, '0')} | ` : ''}{section.name}</span>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <Button
-              type="text"
-              icon={<EditOutlined />}
-              onClick={() => openEditSectionModal(section)}
-              style={{ color: '#64748B' }}
-            />
-            <Button
-              type="text"
-              danger
-              icon={<DeleteOutlined />}
-              onClick={() => handleDeleteSection(section.id)}
-              style={{ color: '#EF4444' }}
-            />
+    children: chapter.sections
+      ?.sort((a, b) => (a.order || 0) - (b.order || 0))
+      .filter((section) => section && section.id)
+      .map((section) => ({
+        title: (
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              width: '100%',
+            }}
+          >
+            <span>
+              {section.order
+                ? `${section.order.toString().padStart(2, '0')} | `
+                : ''}
+              {section.name}
+            </span>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <Button
+                type="text"
+                icon={<EditOutlined />}
+                onClick={() => openEditSectionModal(section)}
+                style={{ color: '#64748B' }}
+              />
+              <Button
+                type="text"
+                danger
+                icon={<DeleteOutlined />}
+                onClick={() => handleDeleteSection(section.id)}
+                style={{ color: '#EF4444' }}
+              />
+            </div>
           </div>
-        </div>
-      ),
-      key: `section-${chapter.id}-${section.id}`
-    }))
+        ),
+        key: `section-${chapter.id}-${section.id}`,
+      })),
   }));
-  
+
   // 表格列配置
   const columns = [
     {
       title: 'ID',
       key: 'id',
       width: 80,
-      render: (row) => <span className="text-gray-600">{row.id}</span>
+      render: (row) => <span className="text-gray-600">{row.id}</span>,
     },
     {
       title: '课程名称',
       key: 'name',
-      render: (row) => <span className="font-medium">{row.name}</span>
+      render: (row) => <span className="font-medium">{row.name}</span>,
     },
     {
       title: '课程形式',
       key: 'format',
-      render: (row) => <span>{row.format}</span>
+      render: (row) => <span>{row.format}</span>,
     },
     {
       title: '是否免费',
       key: 'isFree',
       render: (row) => (
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${row.isFree === '是' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+        <span
+          className={`px-2 py-1 rounded-full text-xs font-medium ${row.isFree === '是' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}
+        >
           {row.isFree}
         </span>
-      )
+      ),
     },
     {
       title: '状态',
       key: 'status',
       render: (row) => (
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${row.status === '上架' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+        <span
+          className={`px-2 py-1 rounded-full text-xs font-medium ${row.status === '上架' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}
+        >
           {row.status}
         </span>
-      )
+      ),
     },
     {
       title: '操作',
@@ -580,53 +628,53 @@ const CourseManager = ({ showToast }) => {
       fixed: 'right',
       render: (row) => (
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => openEditModal(row)}
+            className="px-2 py-1 bg-blue-100 text-blue-600 rounded text-xs hover:bg-blue-200 transition-colors"
+          >
+            编辑
+          </button>
+          {row.format !== '1V1辅导' && (
             <button
-              onClick={() => openEditModal(row)}
-              className="px-2 py-1 bg-blue-100 text-blue-600 rounded text-xs hover:bg-blue-200 transition-colors"
+              onClick={() => {
+                setCurrentEditId(row.id);
+                setActiveTab('chapters');
+                fetchChapters(row.id);
+              }}
+              className="px-2 py-1 bg-purple-100 text-purple-600 rounded text-xs hover:bg-purple-200 transition-colors"
             >
-              编辑
+              章节管理
             </button>
-            {row.format !== '1V1辅导' && (
+          )}
+          {row.status === '未上架' ? (
+            <>
               <button
-                onClick={() => {
-                  setCurrentEditId(row.id);
-                  setActiveTab('chapters');
-                  fetchChapters(row.id);
-                }}
-                className="px-2 py-1 bg-purple-100 text-purple-600 rounded text-xs hover:bg-purple-200 transition-colors"
+                onClick={() => handleStatusChange(row.id, '上架')}
+                className="px-2 py-1 bg-green-100 text-green-600 rounded text-xs hover:bg-green-200 transition-colors"
               >
-                章节管理
+                上架
               </button>
-            )}
-            {row.status === '未上架' ? (
-              <>
-                <button
-                  onClick={() => handleStatusChange(row.id, '上架')}
-                  className="px-2 py-1 bg-green-100 text-green-600 rounded text-xs hover:bg-green-200 transition-colors"
-                >
-                  上架
-                </button>
-                <button
-                  onClick={() => openDeleteConfirm(row.id)}
-                  className="px-2 py-1 bg-red-100 text-red-600 rounded text-xs hover:bg-red-200 transition-colors"
-                >
-                  删除
-                </button>
-              </>
-            ) : (
               <button
-                onClick={() => handleStatusChange(row.id, '未上架')}
-                className="px-2 py-1 bg-yellow-100 text-yellow-600 rounded text-xs hover:bg-yellow-200 transition-colors"
+                onClick={() => openDeleteConfirm(row.id)}
+                className="px-2 py-1 bg-red-100 text-red-600 rounded text-xs hover:bg-red-200 transition-colors"
               >
-                下架
+                删除
               </button>
-            )}
-          </div>
+            </>
+          ) : (
+            <button
+              onClick={() => handleStatusChange(row.id, '未上架')}
+              className="px-2 py-1 bg-yellow-100 text-yellow-600 rounded text-xs hover:bg-yellow-200 transition-colors"
+            >
+              下架
+            </button>
+          )}
+        </div>
       ),
-      cellClassName: 'text-sm'
-    }
+      cellClassName: 'text-sm',
+    },
   ];
-  
+
   return (
     <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
       {/* 标签页切换 */}
@@ -672,7 +720,7 @@ const CourseManager = ({ showToast }) => {
               添加新课程
             </button>
           </div>
-          
+
           {/* 课程列表 */}
           <PaginationTable
             data={courseList}
@@ -685,7 +733,6 @@ const CourseManager = ({ showToast }) => {
             onLimitChange={(newLimit) => {
               setItemsPerPage(newLimit);
               setCurrentPage(1);
-              fetchCourseList();
             }}
           />
         </div>
@@ -706,11 +753,14 @@ const CourseManager = ({ showToast }) => {
                 }}
                 value={currentEditId}
               >
-                {Array.isArray(courseList) && courseList.filter(c => c.format !== '1V1辅导').map(course => (
-                  <Select.Option key={course.id} value={course.id}>
-                    {course.name}
-                  </Select.Option>
-                ))}
+                {Array.isArray(courseList) &&
+                  courseList
+                    .filter((c) => c.format !== '1V1辅导')
+                    .map((course) => (
+                      <Select.Option key={course.id} value={course.id}>
+                        {course.name}
+                      </Select.Option>
+                    ))}
               </Select>
               <Button
                 type="primary"
@@ -726,7 +776,9 @@ const CourseManager = ({ showToast }) => {
 
           {currentEditId && (
             <div className="mt-6">
-              <h3 className="text-lg font-semibold mb-4">{courseList.find(c => c.id === currentEditId)?.name} 的章节</h3>
+              <h3 className="text-lg font-semibold mb-4">
+                {courseList.find((c) => c.id === currentEditId)?.name} 的章节
+              </h3>
               <Tree
                 treeData={treeData}
                 expandedKeys={expandedKeys}
@@ -737,7 +789,7 @@ const CourseManager = ({ showToast }) => {
           )}
         </div>
       )}
-      
+
       {/* 添加/编辑课程模态框 */}
       <Modal
         title={isEditMode ? '编辑课程' : '添加新课程'}
@@ -747,24 +799,38 @@ const CourseManager = ({ showToast }) => {
           resetForm();
         }}
         footer={[
-          <Button key="cancel" disabled={isLoading} onClick={() => {
-            setShowModal(false);
-            resetForm();
-          }}>
+          <Button
+            key="cancel"
+            disabled={isLoading}
+            onClick={() => {
+              setShowModal(false);
+              resetForm();
+            }}
+          >
             取消
           </Button>,
-          <Button key="submit" type="primary" onClick={(e) => {
-            e.preventDefault();
-            isEditMode ? handleSubmitEdit(e) : handleSubmitAdd(e);
-          }} loading={isLoading} disabled={isLoading} style={{ backgroundColor: '#3B82F6', borderColor: '#3B82F6' }}>
+          <Button
+            key="submit"
+            type="primary"
+            onClick={(e) => {
+              e.preventDefault();
+              isEditMode ? handleSubmitEdit(e) : handleSubmitAdd(e);
+            }}
+            loading={isLoading}
+            disabled={isLoading}
+            style={{ backgroundColor: '#3B82F6', borderColor: '#3B82F6' }}
+          >
             {isLoading ? '保存中...' : '保存'}
-          </Button>
+          </Button>,
         ]}
       >
-        <form onSubmit={(e) => {
-          e.preventDefault();
-          isEditMode ? handleSubmitEdit(e) : handleSubmitAdd(e);
-        }} className="space-y-4">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            isEditMode ? handleSubmitEdit(e) : handleSubmitAdd(e);
+          }}
+          className="space-y-4"
+        >
           {/* 课程名称 */}
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -778,21 +844,26 @@ const CourseManager = ({ showToast }) => {
               className="w-full"
             />
           </div>
-          
+
           {/* 课程形式 */}
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               课程形式 <span className="text-red-500">*</span>
             </label>
             <Select
-              options={formatOptions.map(option => ({ value: option, label: option }))}
+              options={formatOptions.map((option) => ({
+                value: option,
+                label: option,
+              }))}
               value={courseForm.format}
-              onChange={(value) => setCourseForm(prev => ({ ...prev, format: value }))}
+              onChange={(value) =>
+                setCourseForm((prev) => ({ ...prev, format: value }))
+              }
               placeholder="请选择课程形式"
               style={{ width: '100%' }}
             />
           </div>
-          
+
           {/* 课程介绍 */}
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -807,7 +878,7 @@ const CourseManager = ({ showToast }) => {
               style={{ width: '100%' }}
             />
           </div>
-          
+
           {/* 是否免费 */}
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -816,26 +887,39 @@ const CourseManager = ({ showToast }) => {
             <Select
               options={freeOptions}
               value={courseForm.isFree}
-              onChange={(value) => setCourseForm(prev => ({ ...prev, isFree: value }))}
+              onChange={(value) =>
+                setCourseForm((prev) => ({ ...prev, isFree: value }))
+              }
               placeholder="请选择是否免费"
               style={{ width: '100%' }}
             />
           </div>
         </form>
       </Modal>
-      
+
       {/* 删除确认模态框 */}
       <Modal
         title="删除课程"
         open={showDeleteConfirm}
         onCancel={() => setShowDeleteConfirm(false)}
         footer={[
-          <Button key="cancel" disabled={isLoading} onClick={() => setShowDeleteConfirm(false)}>
+          <Button
+            key="cancel"
+            disabled={isLoading}
+            onClick={() => setShowDeleteConfirm(false)}
+          >
             取消
           </Button>,
-          <Button key="delete" type="primary" danger loading={isLoading} disabled={isLoading} onClick={confirmDelete}>
+          <Button
+            key="delete"
+            type="primary"
+            danger
+            loading={isLoading}
+            disabled={isLoading}
+            onClick={confirmDelete}
+          >
             {isLoading ? '删除中...' : '删除'}
-          </Button>
+          </Button>,
         ]}
       >
         <p className="text-center">确定要删除该课程吗？此操作不可恢复。</p>
@@ -850,12 +934,22 @@ const CourseManager = ({ showToast }) => {
         okText="保存"
         cancelText="取消"
         footer={[
-          <Button key="cancel" disabled={isLoading} onClick={() => setShowAddModal(false)}>
+          <Button
+            key="cancel"
+            disabled={isLoading}
+            onClick={() => setShowAddModal(false)}
+          >
             取消
           </Button>,
-          <Button key="submit" type="primary" loading={isLoading} disabled={isLoading} onClick={form.submit}>
+          <Button
+            key="submit"
+            type="primary"
+            loading={isLoading}
+            disabled={isLoading}
+            onClick={form.submit}
+          >
             {isLoading ? '保存中...' : '保存'}
-          </Button>
+          </Button>,
         ]}
       >
         <Form form={form} layout="vertical" onFinish={handleAddChapter}>
@@ -866,10 +960,7 @@ const CourseManager = ({ showToast }) => {
           >
             <Input placeholder="请输入章节名称" />
           </Form.Item>
-          <Form.Item
-            name="description"
-            label="章节描述"
-          >
+          <Form.Item name="description" label="章节描述">
             <Input.TextArea rows={4} placeholder="请输入章节描述" />
           </Form.Item>
         </Form>
@@ -884,12 +975,22 @@ const CourseManager = ({ showToast }) => {
         okText="保存"
         cancelText="取消"
         footer={[
-          <Button key="cancel" disabled={isLoading} onClick={() => setShowEditModal(false)}>
+          <Button
+            key="cancel"
+            disabled={isLoading}
+            onClick={() => setShowEditModal(false)}
+          >
             取消
           </Button>,
-          <Button key="submit" type="primary" loading={isLoading} disabled={isLoading} onClick={form.submit}>
+          <Button
+            key="submit"
+            type="primary"
+            loading={isLoading}
+            disabled={isLoading}
+            onClick={form.submit}
+          >
             {isLoading ? '保存中...' : '保存'}
-          </Button>
+          </Button>,
         ]}
       >
         <Form form={form} layout="vertical" onFinish={handleEditChapter}>
@@ -900,10 +1001,7 @@ const CourseManager = ({ showToast }) => {
           >
             <Input placeholder="请输入章节名称" />
           </Form.Item>
-          <Form.Item
-            name="description"
-            label="章节描述"
-          >
+          <Form.Item name="description" label="章节描述">
             <Input.TextArea rows={4} placeholder="请输入章节描述" />
           </Form.Item>
         </Form>
@@ -928,9 +1026,7 @@ const CourseManager = ({ showToast }) => {
           >
             <Input placeholder="请输入小节名称" />
           </Form.Item>
-          <Form.Item
-            label="小节类型"
-          >
+          <Form.Item label="小节类型">
             <Radio.Group
               value={sectionType}
               onChange={(e) => setSectionType(e.target.value)}
@@ -950,7 +1046,9 @@ const CourseManager = ({ showToast }) => {
                   placeholder="请输入文章内容"
                   style={{ height: '300px' }}
                   value={sectionForm.getFieldValue('content') || ''}
-                  onChange={(value) => sectionForm.setFieldsValue({ content: value })}
+                  onChange={(value) =>
+                    sectionForm.setFieldsValue({ content: value })
+                  }
                 />
               </div>
             </Form.Item>
@@ -993,9 +1091,7 @@ const CourseManager = ({ showToast }) => {
           >
             <Input placeholder="请输入小节名称" />
           </Form.Item>
-          <Form.Item
-            label="小节类型"
-          >
+          <Form.Item label="小节类型">
             <Radio.Group
               value={sectionType}
               onChange={(e) => setSectionType(e.target.value)}
@@ -1015,7 +1111,9 @@ const CourseManager = ({ showToast }) => {
                   placeholder="请输入文章内容"
                   style={{ height: '300px' }}
                   value={sectionForm.getFieldValue('content') || ''}
-                  onChange={(value) => sectionForm.setFieldsValue({ content: value })}
+                  onChange={(value) =>
+                    sectionForm.setFieldsValue({ content: value })
+                  }
                 />
               </div>
             </Form.Item>

@@ -3,6 +3,10 @@ import { Input, Select, Modal } from 'antd';
 import PaginationTable from '../common/PaginationTable';
 import { api } from '../../lib/api';
 import { logError } from '../../utils.js';
+import {
+  getPageSizeChangeState,
+  getPaginationRequestParams,
+} from '../../lib/adminPagination';
 
 const ReadingManager = ({ showToast }) => {
   const [readingList, setReadingList] = useState([]);
@@ -15,17 +19,19 @@ const ReadingManager = ({ showToast }) => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
   const [searchId, setSearchId] = useState('');
-  
+
   // 表单状态
   const [readingForm, setReadingForm] = useState({
     difficulty: '',
     article: '',
-    groups: [{
-      question: '',
-      options: ['', '', '', ''],
-      correctAnswer: '',
-      explanation: ''
-    }]
+    groups: [
+      {
+        question: '',
+        options: ['', '', '', ''],
+        correctAnswer: '',
+        explanation: '',
+      },
+    ],
   });
 
   // 难度选项
@@ -35,7 +41,7 @@ const ReadingManager = ({ showToast }) => {
     { value: '中级1', label: '中级1' },
     { value: '中级2', label: '中级2' },
     { value: '高级1', label: '高级1' },
-    { value: '高级2', label: '高级2' }
+    { value: '高级2', label: '高级2' },
   ];
 
   // 组件挂载时加载阅读列表
@@ -53,11 +59,11 @@ const ReadingManager = ({ showToast }) => {
         const [, index, field] = match;
         const newGroups = [...readingForm.groups];
         newGroups[index] = { ...newGroups[index], [field]: value };
-        setReadingForm(prev => ({ ...prev, groups: newGroups }));
+        setReadingForm((prev) => ({ ...prev, groups: newGroups }));
       }
     } else {
       // 处理普通字段
-      setReadingForm(prev => ({ ...prev, [name]: value }));
+      setReadingForm((prev) => ({ ...prev, [name]: value }));
     }
   };
 
@@ -66,20 +72,23 @@ const ReadingManager = ({ showToast }) => {
     const newGroups = [...readingForm.groups];
     newGroups[groupIndex].options = [...newGroups[groupIndex].options];
     newGroups[groupIndex].options[optionIndex] = value;
-    setReadingForm(prev => ({ ...prev, groups: newGroups }));
+    setReadingForm((prev) => ({ ...prev, groups: newGroups }));
   };
 
   // 添加选项组
   const addOptionGroup = () => {
     if (readingForm.groups.length < 10) {
-      setReadingForm(prev => ({
+      setReadingForm((prev) => ({
         ...prev,
-        groups: [...prev.groups, {
-          question: '',
-          options: ['', '', '', ''],
-          correctAnswer: '',
-          explanation: ''
-        }]
+        groups: [
+          ...prev.groups,
+          {
+            question: '',
+            options: ['', '', '', ''],
+            correctAnswer: '',
+            explanation: '',
+          },
+        ],
       }));
     } else {
       showToast('最多只能添加10组选项', 'error');
@@ -89,9 +98,9 @@ const ReadingManager = ({ showToast }) => {
   // 删除选项组
   const removeOptionGroup = (groupIndex) => {
     if (readingForm.groups.length > 1) {
-      setReadingForm(prev => ({
+      setReadingForm((prev) => ({
         ...prev,
-        groups: prev.groups.filter((_, index) => index !== groupIndex)
+        groups: prev.groups.filter((_, index) => index !== groupIndex),
       }));
     }
   };
@@ -112,7 +121,7 @@ const ReadingManager = ({ showToast }) => {
         showToast(`请填写第${i + 1}组的题目`, 'error');
         return false;
       }
-      if (group.options.some(option => !option.trim())) {
+      if (group.options.some((option) => !option.trim())) {
         showToast(`请填写第${i + 1}组的所有选项`, 'error');
         return false;
       }
@@ -125,22 +134,25 @@ const ReadingManager = ({ showToast }) => {
   };
 
   // 加载阅读列表
-  const fetchReadingList = async (useEmptyFilters = false) => {
+  const fetchReadingList = async (useEmptyFilters = false, pagination = {}) => {
     setIsLoading(true);
     try {
       // 构建查询参数
       const params = {
-        page: currentPage,
-        limit: itemsPerPage
+        ...getPaginationRequestParams({
+          currentPage,
+          itemsPerPage,
+          ...pagination,
+        }),
       };
-      
+
       // 添加搜索参数
       if (!useEmptyFilters && searchId) {
         params.id = searchId;
       }
-      
+
       const data = await api.getReadingList(params);
-      
+
       if (typeof setReadingList === 'function') {
         // 处理不同的数据结构
         if (Array.isArray(data)) {
@@ -166,12 +178,14 @@ const ReadingManager = ({ showToast }) => {
     setReadingForm({
       difficulty: '',
       article: '',
-      groups: [{
-        question: '',
-        options: ['', '', '', ''],
-        correctAnswer: '',
-        explanation: ''
-      }]
+      groups: [
+        {
+          question: '',
+          options: ['', '', '', ''],
+          correctAnswer: '',
+          explanation: '',
+        },
+      ],
     });
   };
 
@@ -189,11 +203,11 @@ const ReadingManager = ({ showToast }) => {
       const readingData = {
         difficulty: readingForm.difficulty,
         article: readingForm.article.trim(),
-        groups: readingForm.groups
+        groups: readingForm.groups,
       };
-      
+
       await api.createReading(readingData);
-      
+
       showToast('阅读添加成功', 'success');
       setShowModal(false);
       // 重置表单
@@ -221,11 +235,11 @@ const ReadingManager = ({ showToast }) => {
       const readingData = {
         difficulty: readingForm.difficulty,
         article: readingForm.article.trim(),
-        groups: readingForm.groups
+        groups: readingForm.groups,
       };
-      
+
       await api.updateReading(currentEditId, readingData);
-      
+
       showToast('阅读更新成功', 'success');
       setShowModal(false);
       // 重置表单
@@ -243,12 +257,14 @@ const ReadingManager = ({ showToast }) => {
   const openEditModal = (reading) => {
     setCurrentEditId(reading.id);
     setIsEditMode(true);
-    let groups = [{
-      question: '',
-      options: ['', '', '', ''],
-      correctAnswer: '',
-      explanation: ''
-    }];
+    let groups = [
+      {
+        question: '',
+        options: ['', '', '', ''],
+        correctAnswer: '',
+        explanation: '',
+      },
+    ];
     if (reading.groups) {
       if (Array.isArray(reading.groups)) {
         groups = reading.groups;
@@ -257,7 +273,7 @@ const ReadingManager = ({ showToast }) => {
     setReadingForm({
       difficulty: reading.difficulty || '',
       article: reading.article || '',
-      groups: groups
+      groups: groups,
     });
     setShowModal(true);
   };
@@ -272,10 +288,10 @@ const ReadingManager = ({ showToast }) => {
   const confirmDelete = async () => {
     if (isLoading) return;
     setIsLoading(true);
-    
+
     try {
       await api.deleteReading(currentEditId);
-      
+
       showToast('阅读删除成功', 'success');
       setShowDeleteConfirm(false);
       setCurrentEditId(null);
@@ -302,12 +318,12 @@ const ReadingManager = ({ showToast }) => {
             onKeyPress={(e) => {
               if (e.key === 'Enter') {
                 setCurrentPage(1);
-                fetchReadingList();
+                fetchReadingList(false, { page: 1 });
               }
             }}
           />
         </div>
-        <button 
+        <button
           onClick={() => {
             setIsEditMode(false);
             setShowModal(true);
@@ -317,7 +333,7 @@ const ReadingManager = ({ showToast }) => {
           添加阅读
         </button>
       </div>
-      
+
       <PaginationTable
         data={readingList}
         columns={[
@@ -325,37 +341,39 @@ const ReadingManager = ({ showToast }) => {
             title: 'ID',
             key: 'id',
             render: (row) => row.id || '-',
-            cellClassName: 'text-dark'
+            cellClassName: 'text-dark',
           },
           {
             title: '难度',
             key: 'difficulty',
             render: (row) => row.difficulty || '-',
-            cellClassName: 'text-dark font-medium'
+            cellClassName: 'text-dark font-medium',
           },
           {
             title: '文章',
             key: 'article',
-            render: (row) => row.article ? row.article.substring(0, 50) + '...' : '-',
-            cellClassName: 'text-muted'
+            render: (row) =>
+              row.article ? row.article.substring(0, 50) + '...' : '-',
+            cellClassName: 'text-muted',
           },
           {
             title: '题目数量',
             key: 'groups',
-            render: (row) => row.groups && Array.isArray(row.groups) ? row.groups.length : 0,
-            cellClassName: 'text-dark'
+            render: (row) =>
+              row.groups && Array.isArray(row.groups) ? row.groups.length : 0,
+            cellClassName: 'text-dark',
           },
           {
             title: '操作',
             render: (row) => (
               <div className="flex gap-2">
-                <button 
+                <button
                   onClick={() => openEditModal(row)}
                   className="px-2 py-1 bg-blue-100 text-primary rounded text-xs hover:bg-blue-200 transition-colors"
                 >
                   编辑
                 </button>
-                <button 
+                <button
                   onClick={() => openDeleteConfirm(row.id)}
                   className="px-2 py-1 bg-red-100 text-red-600 rounded text-xs hover:bg-red-200 transition-colors"
                 >
@@ -363,20 +381,24 @@ const ReadingManager = ({ showToast }) => {
                 </button>
               </div>
             ),
-            cellClassName: 'text-dark'
-          }
+            cellClassName: 'text-dark',
+          },
         ]}
-        pagination={{
-          current: currentPage,
-          pageSize: itemsPerPage,
-          total: totalItems,
-          onChange: (page, pageSize) => {
-            setCurrentPage(page);
-            setItemsPerPage(pageSize);
-            fetchReadingList();
-          }
+        isLoading={isLoading}
+        totalItems={totalItems}
+        currentPage={currentPage}
+        itemsPerPage={itemsPerPage}
+        onPageChange={(newPage) => {
+          setCurrentPage(newPage);
+          fetchReadingList(false, { page: newPage });
         }}
-        loading={isLoading}
+        onLimitChange={(newLimit) => {
+          const nextPagination = getPageSizeChangeState(newLimit);
+          setItemsPerPage(newLimit);
+          setCurrentPage(nextPagination.page);
+          fetchReadingList(false, nextPagination);
+        }}
+        emptyMessage="暂无阅读"
       />
 
       {/* 添加/编辑模态框 */}
@@ -401,7 +423,9 @@ const ReadingManager = ({ showToast }) => {
             <Select
               options={difficultyOptions}
               value={readingForm.difficulty}
-              onChange={(value) => setReadingForm(prev => ({ ...prev, difficulty: value }))}
+              onChange={(value) =>
+                setReadingForm((prev) => ({ ...prev, difficulty: value }))
+              }
               placeholder="请选择难度"
               style={{ width: '100%' }}
             />
@@ -428,9 +452,14 @@ const ReadingManager = ({ showToast }) => {
               题目组
             </label>
             {readingForm.groups.map((group, groupIndex) => (
-              <div key={groupIndex} className="border border-gray-200 rounded-lg p-4 mb-3">
+              <div
+                key={groupIndex}
+                className="border border-gray-200 rounded-lg p-4 mb-3"
+              >
                 <div className="flex justify-between items-center mb-3">
-                  <h4 className="text-sm font-medium">第 {groupIndex + 1} 组</h4>
+                  <h4 className="text-sm font-medium">
+                    第 {groupIndex + 1} 组
+                  </h4>
                   {readingForm.groups.length > 1 && (
                     <button
                       type="button"
@@ -466,7 +495,13 @@ const ReadingManager = ({ showToast }) => {
                       key={optionIndex}
                       name={`groups[${groupIndex}].options[${optionIndex}]`}
                       value={option}
-                      onChange={(e) => handleOptionChange(groupIndex, optionIndex, e.target.value)}
+                      onChange={(e) =>
+                        handleOptionChange(
+                          groupIndex,
+                          optionIndex,
+                          e.target.value,
+                        )
+                      }
                       placeholder={`选项 ${String.fromCharCode(65 + optionIndex)}`}
                       className="w-full mb-1"
                     />
@@ -479,15 +514,23 @@ const ReadingManager = ({ showToast }) => {
                     正确答案 <span className="text-red-500">*</span>
                   </label>
                   <Select
-                    options={group.options.map((option, index) => ({
-                      value: String.fromCharCode(65 + index),
-                      label: `${String.fromCharCode(65 + index)}. ${option}`
-                    })).filter(option => option.label !== '. ')}
+                    options={group.options
+                      .map((option, index) => ({
+                        value: String.fromCharCode(65 + index),
+                        label: `${String.fromCharCode(65 + index)}. ${option}`,
+                      }))
+                      .filter((option) => option.label !== '. ')}
                     value={group.correctAnswer}
                     onChange={(value) => {
                       const newGroups = [...readingForm.groups];
-                      newGroups[groupIndex] = { ...newGroups[groupIndex], correctAnswer: value };
-                      setReadingForm(prev => ({ ...prev, groups: newGroups }));
+                      newGroups[groupIndex] = {
+                        ...newGroups[groupIndex],
+                        correctAnswer: value,
+                      };
+                      setReadingForm((prev) => ({
+                        ...prev,
+                        groups: newGroups,
+                      }));
                     }}
                     placeholder="请选择正确答案"
                     style={{ width: '100%' }}
@@ -500,13 +543,13 @@ const ReadingManager = ({ showToast }) => {
                     解析
                   </label>
                   <Input.TextArea
-                  name={`groups[${groupIndex}].explanation`}
-                  value={group.explanation}
-                  onChange={handleFormChange}
-                  placeholder="请输入解析（选填）"
-                  rows={3}
-                  className="w-full"
-                />
+                    name={`groups[${groupIndex}].explanation`}
+                    value={group.explanation}
+                    onChange={handleFormChange}
+                    placeholder="请输入解析（选填）"
+                    rows={3}
+                    className="w-full"
+                  />
                 </div>
               </div>
             ))}
@@ -532,7 +575,11 @@ const ReadingManager = ({ showToast }) => {
         onCancel={() => setShowDeleteConfirm(false)}
         onOk={confirmDelete}
         okText={isLoading ? '删除中...' : '删除'}
-        okButtonProps={{ danger: true, loading: isLoading, disabled: isLoading }}
+        okButtonProps={{
+          danger: true,
+          loading: isLoading,
+          disabled: isLoading,
+        }}
         cancelText="取消"
       >
         <p>确定要删除这个阅读项目吗？</p>

@@ -10,6 +10,11 @@ import {
   ensureEditableRelatedGrammars,
   normalizeRelatedGrammars,
 } from '../../lib/grammarRelated';
+import {
+  buildGrammarCsvTemplate,
+  parseGrammarCsv,
+} from '../../lib/grammarCsvImport';
+import { buildGrammarImportSummary } from '../../lib/grammarImportSummary';
 
 const { Dragger } = Upload;
 
@@ -28,7 +33,7 @@ const GrammarManager = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
-  
+
   // 语法表单状态
   const [grammarForm, setGrammarForm] = useState({
     grammarPoint: '',
@@ -40,9 +45,9 @@ const GrammarManager = () => {
     examples: [''],
     translationExercises: [''],
     referenceAnswers: [''],
-    relatedGrammars: [createEmptyRelatedGrammarRow()]
+    relatedGrammars: [createEmptyRelatedGrammarRow()],
   });
-  
+
   const levels = ['N1', 'N2', 'N3', 'N4', 'N5'];
 
   // 加载语法数据
@@ -53,7 +58,7 @@ const GrammarManager = () => {
         ...(searchKeyword && { search: searchKeyword }),
         ...(selectedLevel && { level: selectedLevel }),
         page: currentPage,
-        limit: itemsPerPage
+        limit: itemsPerPage,
       };
       const response = await api.getGrammarList(params);
       // 检查响应是否为数组（直接返回的数据）或包含 data 属性的对象
@@ -82,9 +87,9 @@ const GrammarManager = () => {
   // 处理表单变化
   const handleFormChange = (e) => {
     const { name, value } = e.target;
-    setGrammarForm(prev => ({
+    setGrammarForm((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -92,9 +97,9 @@ const GrammarManager = () => {
   const handleExampleChange = (exampleIndex, value) => {
     const newExamples = [...grammarForm.examples];
     newExamples[exampleIndex] = value;
-    setGrammarForm(prev => ({
+    setGrammarForm((prev) => ({
       ...prev,
-      examples: newExamples
+      examples: newExamples,
     }));
   };
 
@@ -102,9 +107,9 @@ const GrammarManager = () => {
   const handleExerciseChange = (exerciseIndex, value) => {
     const newExercises = [...grammarForm.translationExercises];
     newExercises[exerciseIndex] = value;
-    setGrammarForm(prev => ({
+    setGrammarForm((prev) => ({
       ...prev,
-      translationExercises: newExercises
+      translationExercises: newExercises,
     }));
   };
 
@@ -112,9 +117,9 @@ const GrammarManager = () => {
   const handleAnswerChange = (answerIndex, value) => {
     const newAnswers = [...grammarForm.referenceAnswers];
     newAnswers[answerIndex] = value;
-    setGrammarForm(prev => ({
+    setGrammarForm((prev) => ({
       ...prev,
-      referenceAnswers: newAnswers
+      referenceAnswers: newAnswers,
     }));
   };
 
@@ -124,7 +129,7 @@ const GrammarManager = () => {
       ...nextRows[rowIndex],
       [field]: value,
     };
-    setGrammarForm(prev => ({
+    setGrammarForm((prev) => ({
       ...prev,
       relatedGrammars: nextRows,
     }));
@@ -133,9 +138,9 @@ const GrammarManager = () => {
   // 添加示例
   const addExample = () => {
     if (grammarForm.examples.length < 5) {
-      setGrammarForm(prev => ({
+      setGrammarForm((prev) => ({
         ...prev,
-        examples: [...prev.examples, '']
+        examples: [...prev.examples, ''],
       }));
     }
   };
@@ -143,10 +148,12 @@ const GrammarManager = () => {
   // 删除示例
   const removeExample = (exampleIndex) => {
     if (grammarForm.examples.length > 1) {
-      const newExamples = grammarForm.examples.filter((_, index) => index !== exampleIndex);
-      setGrammarForm(prev => ({
+      const newExamples = grammarForm.examples.filter(
+        (_, index) => index !== exampleIndex,
+      );
+      setGrammarForm((prev) => ({
         ...prev,
-        examples: newExamples
+        examples: newExamples,
       }));
     }
   };
@@ -154,19 +161,22 @@ const GrammarManager = () => {
   // 添加翻译练习
   const addExercise = () => {
     if (grammarForm.translationExercises.length < 8) {
-      setGrammarForm(prev => ({
+      setGrammarForm((prev) => ({
         ...prev,
         translationExercises: [...prev.translationExercises, ''],
-        referenceAnswers: [...prev.referenceAnswers, '']
+        referenceAnswers: [...prev.referenceAnswers, ''],
       }));
     }
   };
 
   const addRelatedGrammar = () => {
     if (grammarForm.relatedGrammars.length < MAX_RELATED_GRAMMAR_ROWS) {
-      setGrammarForm(prev => ({
+      setGrammarForm((prev) => ({
         ...prev,
-        relatedGrammars: [...prev.relatedGrammars, createEmptyRelatedGrammarRow()]
+        relatedGrammars: [
+          ...prev.relatedGrammars,
+          createEmptyRelatedGrammarRow(),
+        ],
       }));
     }
   };
@@ -174,20 +184,26 @@ const GrammarManager = () => {
   // 删除翻译练习
   const removeExercise = (exerciseIndex) => {
     if (grammarForm.translationExercises.length > 1) {
-      const newExercises = grammarForm.translationExercises.filter((_, index) => index !== exerciseIndex);
-      const newAnswers = grammarForm.referenceAnswers.filter((_, index) => index !== exerciseIndex);
-      setGrammarForm(prev => ({
+      const newExercises = grammarForm.translationExercises.filter(
+        (_, index) => index !== exerciseIndex,
+      );
+      const newAnswers = grammarForm.referenceAnswers.filter(
+        (_, index) => index !== exerciseIndex,
+      );
+      setGrammarForm((prev) => ({
         ...prev,
         translationExercises: newExercises,
-        referenceAnswers: newAnswers
+        referenceAnswers: newAnswers,
       }));
     }
   };
 
   const removeRelatedGrammar = (rowIndex) => {
     if (grammarForm.relatedGrammars.length > 1) {
-      const nextRows = grammarForm.relatedGrammars.filter((_, index) => index !== rowIndex);
-      setGrammarForm(prev => ({
+      const nextRows = grammarForm.relatedGrammars.filter(
+        (_, index) => index !== rowIndex,
+      );
+      setGrammarForm((prev) => ({
         ...prev,
         relatedGrammars: nextRows,
       }));
@@ -198,17 +214,19 @@ const GrammarManager = () => {
     const pairedExercises = grammarForm.translationExercises
       .map((exercise, index) => ({
         exercise: (exercise || '').trim(),
-        answer: (grammarForm.referenceAnswers[index] || '').trim()
+        answer: (grammarForm.referenceAnswers[index] || '').trim(),
       }))
-      .filter(item => item.exercise);
+      .filter((item) => item.exercise);
 
     return {
       ...grammarForm,
       continuation: (grammarForm.continuation || '').trim(),
-      examples: grammarForm.examples.map(example => (example || '').trim()).filter(Boolean),
-      translationExercises: pairedExercises.map(item => item.exercise),
-      referenceAnswers: pairedExercises.map(item => item.answer),
-      relatedGrammars: normalizeRelatedGrammars(grammarForm.relatedGrammars)
+      examples: grammarForm.examples
+        .map((example) => (example || '').trim())
+        .filter(Boolean),
+      translationExercises: pairedExercises.map((item) => item.exercise),
+      referenceAnswers: pairedExercises.map((item) => item.answer),
+      relatedGrammars: normalizeRelatedGrammars(grammarForm.relatedGrammars),
     };
   };
 
@@ -216,7 +234,7 @@ const GrammarManager = () => {
   const handleSubmitAdd = async (e) => {
     e.preventDefault();
     if (isLoading) return;
-    
+
     // 验证必填字段
     if (!grammarForm.grammarPoint || grammarForm.grammarPoint.trim() === '') {
       message.error('请输入语法点');
@@ -226,17 +244,23 @@ const GrammarManager = () => {
       message.error('请选择级别');
       return;
     }
-    if (!grammarForm.japaneseMeaning || grammarForm.japaneseMeaning.trim() === '') {
+    if (
+      !grammarForm.japaneseMeaning ||
+      grammarForm.japaneseMeaning.trim() === ''
+    ) {
       message.error('请输入日文释义');
       return;
     }
-    if (!grammarForm.chineseMeaning || grammarForm.chineseMeaning.trim() === '') {
+    if (
+      !grammarForm.chineseMeaning ||
+      grammarForm.chineseMeaning.trim() === ''
+    ) {
       message.error('请输入中文释义');
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     try {
       await api.createGrammar(buildGrammarSubmitData());
       message.success('语法添加成功');
@@ -254,7 +278,7 @@ const GrammarManager = () => {
   const handleSubmitEdit = async (e) => {
     e.preventDefault();
     if (isLoading) return;
-    
+
     // 验证必填字段
     if (!grammarForm.grammarPoint || grammarForm.grammarPoint.trim() === '') {
       message.error('请输入语法点');
@@ -264,17 +288,23 @@ const GrammarManager = () => {
       message.error('请选择级别');
       return;
     }
-    if (!grammarForm.japaneseMeaning || grammarForm.japaneseMeaning.trim() === '') {
+    if (
+      !grammarForm.japaneseMeaning ||
+      grammarForm.japaneseMeaning.trim() === ''
+    ) {
       message.error('请输入日文释义');
       return;
     }
-    if (!grammarForm.chineseMeaning || grammarForm.chineseMeaning.trim() === '') {
+    if (
+      !grammarForm.chineseMeaning ||
+      grammarForm.chineseMeaning.trim() === ''
+    ) {
       message.error('请输入中文释义');
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     try {
       await api.updateGrammar(currentEditId, buildGrammarSubmitData());
       message.success('语法更新成功');
@@ -302,7 +332,9 @@ const GrammarManager = () => {
       examples: grammar.examples || [''],
       translationExercises: grammar.translationExercises || [''],
       referenceAnswers: grammar.referenceAnswers || [''],
-      relatedGrammars: ensureEditableRelatedGrammars(grammar.relatedGrammars || grammar.related_grammars)
+      relatedGrammars: ensureEditableRelatedGrammars(
+        grammar.relatedGrammars || grammar.related_grammars,
+      ),
     });
     setShowModal(true);
   };
@@ -341,7 +373,7 @@ const GrammarManager = () => {
       examples: [''],
       translationExercises: [''],
       referenceAnswers: [''],
-      relatedGrammars: [createEmptyRelatedGrammarRow()]
+      relatedGrammars: [createEmptyRelatedGrammarRow()],
     });
     setCurrentEditId(null);
   };
@@ -349,20 +381,21 @@ const GrammarManager = () => {
   // 批量导入
   const handleBatchImport = async (file) => {
     setIsLoading(true);
-    message.info('开始处理文件...');
     try {
       const reader = new FileReader();
       reader.onload = async (event) => {
         try {
-          message.info('解析文件中...');
           const content = event.target.result;
           let data;
 
           // 解析文件内容
-          if (file.name.endsWith('.json')) {
+          const fileName = file.name.toLowerCase();
+          if (fileName.endsWith('.json')) {
             data = JSON.parse(content);
+          } else if (fileName.endsWith('.csv')) {
+            data = parseGrammarCsv(content);
           } else {
-            message.error('不支持的文件格式');
+            message.error('不支持的文件格式，请上传 JSON 或 CSV 文件');
             setIsLoading(false);
             return;
           }
@@ -375,9 +408,14 @@ const GrammarManager = () => {
           }
 
           // 过滤无效数据
-          message.info(`验证数据格式，共 ${data.length} 条数据...`);
-          const filteredData = data.filter(item => {
-            return item.grammarPoint && item.level && item.japaneseMeaning && item.chineseMeaning;
+          const totalCount = data.length;
+          const filteredData = data.filter((item) => {
+            return (
+              item.grammarPoint &&
+              item.level &&
+              item.japaneseMeaning &&
+              item.chineseMeaning
+            );
           });
 
           if (filteredData.length === 0) {
@@ -388,19 +426,18 @@ const GrammarManager = () => {
 
           // 与数据库中已有的语法进行去重
           try {
-            message.info('与数据库中已有的语法进行去重...');
             const existingGrammar = await api.getGrammarList({ limit: 10000 });
             const existingKeys = new Set();
-            
+
             if (Array.isArray(existingGrammar)) {
-              existingGrammar.forEach(grammar => {
+              existingGrammar.forEach((grammar) => {
                 if (grammar.grammarPoint && grammar.level) {
                   const key = `${grammar.grammarPoint}-${grammar.level}`;
                   existingKeys.add(key);
                 }
               });
             } else if (existingGrammar.data) {
-              existingGrammar.data.forEach(grammar => {
+              existingGrammar.data.forEach((grammar) => {
                 if (grammar.grammarPoint && grammar.level) {
                   const key = `${grammar.grammarPoint}-${grammar.level}`;
                   existingKeys.add(key);
@@ -409,35 +446,73 @@ const GrammarManager = () => {
             }
 
             // 过滤掉与数据库中重复的语法
-            const uniqueData = filteredData.filter(item => {
+            const uniqueData = filteredData.filter((item) => {
               const key = `${item.grammarPoint}-${item.level}`;
               return !existingKeys.has(key);
             });
+            const duplicateInDatabaseCount = filteredData.length - uniqueData.length;
 
             if (uniqueData.length === 0) {
-              message.info('所有数据都已存在，没有新数据可导入');
+              Modal.info({
+                title: '批量导入结果',
+                content: (
+                  <div className="space-y-2">
+                    {buildGrammarImportSummary({
+                      totalCount,
+                      validCount: filteredData.length,
+                      duplicateInDatabaseCount,
+                      importedCount: 0,
+                    }).map((line) => (
+                      <p key={line} className="m-0">{line}</p>
+                    ))}
+                  </div>
+                ),
+                okText: '知道了',
+              });
               setIsLoading(false);
               return;
-            } 
+            }
 
             // 发送批量导入请求
-            message.info(`正在导入 ${uniqueData.length} 条新数据...`);
             await api.importGrammar({ batch: uniqueData });
-
-            if (uniqueData.length < filteredData.length) {
-              message.success(`已过滤掉 ${filteredData.length - uniqueData.length} 条重复数据，成功导入 ${uniqueData.length} 条新数据`);
-            } else {
-              message.success(`成功导入 ${uniqueData.length} 条新数据`);
-            }
+            Modal.success({
+              title: '批量导入完成',
+              content: (
+                <div className="space-y-2">
+                  {buildGrammarImportSummary({
+                    totalCount,
+                    validCount: filteredData.length,
+                    duplicateInDatabaseCount,
+                    importedCount: uniqueData.length,
+                  }).map((line) => (
+                    <p key={line} className="m-0">{line}</p>
+                  ))}
+                </div>
+              ),
+              okText: '知道了',
+            });
           } catch (error) {
             api.handleError('去重失败:', error);
             // 如果去重失败，仍然尝试导入数据
-            message.info(`直接导入 ${filteredData.length} 条数据...`);
             await api.importGrammar({ batch: filteredData });
-            message.success(`成功导入 ${filteredData.length} 条数据`);
+            Modal.success({
+              title: '批量导入完成',
+              content: (
+                <div className="space-y-2">
+                  {buildGrammarImportSummary({
+                    totalCount,
+                    validCount: filteredData.length,
+                    importedCount: filteredData.length,
+                    fallbackMode: true,
+                  }).map((line) => (
+                    <p key={line} className="m-0">{line}</p>
+                  ))}
+                </div>
+              ),
+              okText: '知道了',
+            });
           }
 
-          message.info('刷新语法列表...');
           await fetchGrammarList();
         } catch (error) {
           api.handleError('文件解析失败:', error);
@@ -446,7 +521,7 @@ const GrammarManager = () => {
           setIsLoading(false);
         }
       };
-      reader.readAsText(file);
+      reader.readAsText(file, 'UTF-8');
     } catch (error) {
       api.handleError('批量导入失败:', error);
       message.error('批量导入失败');
@@ -458,29 +533,35 @@ const GrammarManager = () => {
   const downloadGrammarTemplate = () => {
     const template = [
       {
-        "grammarPoint": "~ている",
-        "level": "N5",
-        "japaneseMeaning": "現在進行中の動作を表す",
-        "chineseMeaning": "表示正在进行的动作",
-        "continuation": "動詞のて形 + いる",
-        "attentionPoints": "状態を表す動詞と一緒に使うこともできる",
-        "examples": ["私は日本語を勉強しています。", "彼はテレビを見ています。"],
-        "translationExercises": ["我正在学习日语。", "他正在看电视。"],
-        "referenceAnswers": ["私は日本語を勉強しています。", "彼はテレビを見ています。"],
-        "relatedGrammars": [{ "grammar": "〜てある", "id": "12" }]
+        grammarPoint: '~ている',
+        level: 'N5',
+        japaneseMeaning: '現在進行中の動作を表す',
+        chineseMeaning: '表示正在进行的动作',
+        continuation: '動詞のて形 + いる',
+        attentionPoints: '状態を表す動詞と一緒に使うこともできる',
+        examples: ['私は日本語を勉強しています。', '彼はテレビを見ています。'],
+        translationExercises: ['我正在学习日语。', '他正在看电视。'],
+        referenceAnswers: [
+          '私は日本語を勉強しています。',
+          '彼はテレビを見ています。',
+        ],
+        relatedGrammars: [{ grammar: '〜てある', id: '12' }],
       },
       {
-        "grammarPoint": "~たい",
-        "level": "N5",
-        "japaneseMeaning": "希望や欲求を表す",
-        "chineseMeaning": "表示希望或欲望",
-        "continuation": "動詞の辞書形 + たい",
-        "attentionPoints": "第一人称でしか使えない",
-        "examples": ["私は日本に行きたいです。", "彼女は寿司を食べたいです。"],
-        "translationExercises": ["我想去日本。", "她想吃寿司。"],
-        "referenceAnswers": ["私は日本に行きたいです。", "彼女は寿司を食べたいです。"],
-        "relatedGrammars": []
-      }
+        grammarPoint: '~たい',
+        level: 'N5',
+        japaneseMeaning: '希望や欲求を表す',
+        chineseMeaning: '表示希望或欲望',
+        continuation: '動詞の辞書形 + たい',
+        attentionPoints: '第一人称でしか使えない',
+        examples: ['私は日本に行きたいです。', '彼女は寿司を食べたいです。'],
+        translationExercises: ['我想去日本。', '她想吃寿司。'],
+        referenceAnswers: [
+          '私は日本に行きたいです。',
+          '彼女は寿司を食べたいです。',
+        ],
+        relatedGrammars: [],
+      },
     ];
 
     const jsonString = JSON.stringify(template, null, 2);
@@ -497,12 +578,31 @@ const GrammarManager = () => {
     message.success('模板下载成功');
   };
 
+  // 下载语法模板（CSV 格式）
+  const downloadGrammarTemplateCSV = () => {
+    const csvContent = buildGrammarCsvTemplate();
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const downloadUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = `grammar_template_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(downloadUrl);
+
+    message.success('模板下载成功');
+  };
+
   // 批量下载
   const handleBatchDownload = async () => {
     setIsLoading(true);
     try {
       // 获取用户选择的下载选项
-      const downloadOption = document.querySelector('input[name="grammar-download-option"]:checked')?.value || 'all';
+      const downloadOption =
+        document.querySelector('input[name="grammar-download-option"]:checked')
+          ?.value || 'all';
 
       if (downloadOption === 'paginated') {
         // 分页下载逻辑
@@ -513,7 +613,7 @@ const GrammarManager = () => {
       // 构建查询参数
       const params = {
         page: 1,
-        limit: 10000 // 限制最大下载量
+        limit: 10000, // 限制最大下载量
       };
 
       // 如果选择的是当前筛选条件的数据，则添加筛选参数
@@ -530,7 +630,9 @@ const GrammarManager = () => {
 
       // 发送请求获取语法数据
       const response = await api.exportGrammar(params);
-      const grammarData = Array.isArray(response) ? response : (response.data || []);
+      const grammarData = Array.isArray(response)
+        ? response
+        : response.data || [];
 
       // 转换为 JSON 字符串
       const content = JSON.stringify(grammarData, null, 2);
@@ -563,13 +665,19 @@ const GrammarManager = () => {
   const handlePaginatedDownload = async () => {
     try {
       // 获取用户自定义的每页大小和页码
-      const pageSize = parseInt(document.getElementById('grammar-page-size')?.value || '1000', 10);
-      const pageNumber = parseInt(document.getElementById('grammar-page-number')?.value || '1', 10);
+      const pageSize = parseInt(
+        document.getElementById('grammar-page-size')?.value || '1000',
+        10,
+      );
+      const pageNumber = parseInt(
+        document.getElementById('grammar-page-number')?.value || '1',
+        10,
+      );
 
       // 构建查询参数
       const params = {
         page: pageNumber,
-        limit: pageSize
+        limit: pageSize,
       };
 
       // 添加筛选参数
@@ -583,7 +691,9 @@ const GrammarManager = () => {
       // 获取指定页码的数据
       message.info(`开始下载第 ${pageNumber} 页，每页 ${pageSize} 条数据`);
       const pageData = await api.exportGrammar(params);
-      const grammarData = Array.isArray(pageData) ? pageData : (pageData.data || []);
+      const grammarData = Array.isArray(pageData)
+        ? pageData
+        : pageData.data || [];
       const totalItems = pageData.total || 0;
       const totalPages = Math.ceil(totalItems / pageSize);
 
@@ -603,7 +713,9 @@ const GrammarManager = () => {
       document.body.removeChild(link);
       URL.revokeObjectURL(downloadUrl);
 
-      message.success(`分页下载成功，共下载 ${grammarData.length} 条数据（第 ${pageNumber}/${totalPages} 页）`);
+      message.success(
+        `分页下载成功，共下载 ${grammarData.length} 条数据（第 ${pageNumber}/${totalPages} 页）`,
+      );
       setShowDownloadModal(false);
     } catch (error) {
       api.handleError('分页下载失败:', error);
@@ -616,7 +728,7 @@ const GrammarManager = () => {
     <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
       {/* 添加按钮 */}
       <div className="flex items-center justify-end mb-6 gap-4">
-        <button 
+        <button
           onClick={() => {
             resetForm();
             setIsEditMode(false);
@@ -626,7 +738,7 @@ const GrammarManager = () => {
         >
           添加语法
         </button>
-        <button 
+        <button
           onClick={() => {
             setShowImportModal(true);
           }}
@@ -634,7 +746,7 @@ const GrammarManager = () => {
         >
           批量导入
         </button>
-        <button 
+        <button
           onClick={() => {
             setShowDownloadModal(true);
           }}
@@ -642,16 +754,17 @@ const GrammarManager = () => {
         >
           批量下载
         </button>
-
       </div>
 
       {/* 筛选和搜索 */}
       <div className="mb-6 p-5 bg-white rounded-xl shadow-sm border border-gray-100">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-4">
           <div>
-            <label className="block text-sm font-medium text-dark mb-2">级别</label>
+            <label className="block text-sm font-medium text-dark mb-2">
+              级别
+            </label>
             <Select
-              options={levels.map(level => ({ value: level, label: level }))}
+              options={levels.map((level) => ({ value: level, label: level }))}
               value={selectedLevel}
               onChange={(value) => setSelectedLevel(value)}
               placeholder="全部级别"
@@ -659,8 +772,10 @@ const GrammarManager = () => {
             />
           </div>
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-dark mb-2">搜索</label>
-            <Input 
+            <label className="block text-sm font-medium text-dark mb-2">
+              搜索
+            </label>
+            <Input
               type="text"
               value={searchKeyword}
               onChange={(e) => setSearchKeyword(e.target.value)}
@@ -670,7 +785,7 @@ const GrammarManager = () => {
           </div>
         </div>
         <div className="flex justify-end gap-3">
-          <button 
+          <button
             onClick={() => {
               setSearchKeyword('');
               setSelectedLevel('');
@@ -680,7 +795,7 @@ const GrammarManager = () => {
           >
             重置
           </button>
-          <button 
+          <button
             onClick={fetchGrammarList}
             className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
@@ -696,29 +811,29 @@ const GrammarManager = () => {
           {
             title: 'ID',
             key: 'id',
-            cellClassName: 'text-dark'
+            cellClassName: 'text-dark',
           },
           {
             title: '语法点',
             key: 'grammarPoint',
-            cellClassName: 'text-dark'
+            cellClassName: 'text-dark',
           },
           {
             title: '级别',
             key: 'level',
-            cellClassName: 'text-dark'
+            cellClassName: 'text-dark',
           },
           {
             title: '操作',
             render: (row) => (
               <div className="flex space-x-3">
-                <button 
+                <button
                   onClick={() => handleEdit(row)}
                   className="text-primary hover:text-blue-700"
                 >
                   编辑
                 </button>
-                <button 
+                <button
                   onClick={() => handleDelete(row.id)}
                   className="text-red-600 hover:text-red-700"
                 >
@@ -726,15 +841,18 @@ const GrammarManager = () => {
                 </button>
               </div>
             ),
-            cellClassName: 'text-sm'
-          }
+            cellClassName: 'text-sm',
+          },
         ]}
         isLoading={isLoading}
         totalItems={totalItems}
         currentPage={currentPage}
         itemsPerPage={itemsPerPage}
         onPageChange={setCurrentPage}
-        onLimitChange={setItemsPerPage}
+        onLimitChange={(newLimit) => {
+          setItemsPerPage(newLimit);
+          setCurrentPage(1);
+        }}
         emptyMessage="暂无语法数据"
         emptyIcon="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
       />
@@ -753,13 +871,18 @@ const GrammarManager = () => {
         cancelText="取消"
         okButtonProps={{ loading: isLoading, disabled: isLoading }}
       >
-        <form onSubmit={isEditMode ? handleSubmitEdit : handleSubmitAdd} className="space-y-4">
+        <form
+          onSubmit={isEditMode ? handleSubmitEdit : handleSubmitAdd}
+          className="space-y-4"
+        >
           <div className="mb-4">
-            <label className="block text-sm font-medium text-dark mb-2">语法点 <span className="text-red-500">*</span></label>
-            <Input 
-              type="text" 
-              name="grammarPoint" 
-              value={grammarForm.grammarPoint} 
+            <label className="block text-sm font-medium text-dark mb-2">
+              语法点 <span className="text-red-500">*</span>
+            </label>
+            <Input
+              type="text"
+              name="grammarPoint"
+              value={grammarForm.grammarPoint}
               onChange={handleFormChange}
               placeholder="请输入语法点"
               required
@@ -767,30 +890,48 @@ const GrammarManager = () => {
           </div>
 
           <div className="mb-4">
-            <label className="block text-sm font-medium text-dark mb-2">级别 <span className="text-red-500">*</span></label>
+            <label className="block text-sm font-medium text-dark mb-2">
+              级别 <span className="text-red-500">*</span>
+            </label>
             <Select
-              options={levels.map(level => ({ value: level, label: level }))}
+              options={levels.map((level) => ({ value: level, label: level }))}
               value={grammarForm.level}
-              onChange={(value) => setGrammarForm(prev => ({ ...prev, level: value }))}
+              onChange={(value) =>
+                setGrammarForm((prev) => ({ ...prev, level: value }))
+              }
               style={{ width: '100%' }}
             />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
             <div>
-              <label className="block text-sm font-medium text-dark mb-2">日文释义 <span className="text-red-500">*</span></label>
-              <Input.TextArea 
+              <label className="block text-sm font-medium text-dark mb-2">
+                日文释义 <span className="text-red-500">*</span>
+              </label>
+              <Input.TextArea
                 value={grammarForm.japaneseMeaning}
-                onChange={(e) => setGrammarForm(prev => ({ ...prev, japaneseMeaning: e.target.value }))}
+                onChange={(e) =>
+                  setGrammarForm((prev) => ({
+                    ...prev,
+                    japaneseMeaning: e.target.value,
+                  }))
+                }
                 placeholder="请输入日文释义"
                 rows={6}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-dark mb-2">中文释义 <span className="text-red-500">*</span></label>
-              <Input.TextArea 
+              <label className="block text-sm font-medium text-dark mb-2">
+                中文释义 <span className="text-red-500">*</span>
+              </label>
+              <Input.TextArea
                 value={grammarForm.chineseMeaning}
-                onChange={(e) => setGrammarForm(prev => ({ ...prev, chineseMeaning: e.target.value }))}
+                onChange={(e) =>
+                  setGrammarForm((prev) => ({
+                    ...prev,
+                    chineseMeaning: e.target.value,
+                  }))
+                }
                 placeholder="请输入中文释义"
                 rows={6}
               />
@@ -798,39 +939,66 @@ const GrammarManager = () => {
           </div>
 
           <div className="mb-5">
-            <label className="block text-sm font-medium text-dark mb-2">接续方式</label>
-            <Input 
-                type="text" 
-                value={grammarForm.continuation}
-                onChange={(e) => setGrammarForm(prev => ({ ...prev, continuation: e.target.value }))}
-                placeholder="请输入接续方式"
-              />
+            <label className="block text-sm font-medium text-dark mb-2">
+              接续方式
+            </label>
+            <Input
+              type="text"
+              value={grammarForm.continuation}
+              onChange={(e) =>
+                setGrammarForm((prev) => ({
+                  ...prev,
+                  continuation: e.target.value,
+                }))
+              }
+              placeholder="请输入接续方式"
+            />
           </div>
 
           <div className="mb-5">
-            <label className="block text-sm font-medium text-dark mb-2">注意事项</label>
-            <Input.TextArea 
-                value={grammarForm.attentionPoints}
-                onChange={(e) => setGrammarForm(prev => ({ ...prev, attentionPoints: e.target.value }))}
-                placeholder="请输入注意事项"
-                rows={6}
-              />
+            <label className="block text-sm font-medium text-dark mb-2">
+              注意事项
+            </label>
+            <Input.TextArea
+              value={grammarForm.attentionPoints}
+              onChange={(e) =>
+                setGrammarForm((prev) => ({
+                  ...prev,
+                  attentionPoints: e.target.value,
+                }))
+              }
+              placeholder="请输入注意事项"
+              rows={6}
+            />
           </div>
 
           <div className="mb-5">
-            <label className="block text-sm font-medium text-dark mb-3">关联语法（最多 10 行）</label>
+            <label className="block text-sm font-medium text-dark mb-3">
+              关联语法（最多 10 行）
+            </label>
             {grammarForm.relatedGrammars.map((item, rowIndex) => (
-              <div key={rowIndex} className="grid grid-cols-1 md:grid-cols-[1fr_160px_auto] gap-2 mb-3">
+              <div
+                key={rowIndex}
+                className="grid grid-cols-1 md:grid-cols-[1fr_160px_auto] gap-2 mb-3"
+              >
                 <Input
                   type="text"
                   value={item.grammar}
-                  onChange={(e) => handleRelatedGrammarChange(rowIndex, 'grammar', e.target.value)}
+                  onChange={(e) =>
+                    handleRelatedGrammarChange(
+                      rowIndex,
+                      'grammar',
+                      e.target.value,
+                    )
+                  }
                   placeholder={`关联语法 ${rowIndex + 1}`}
                 />
                 <Input
                   type="text"
                   value={item.id}
-                  onChange={(e) => handleRelatedGrammarChange(rowIndex, 'id', e.target.value)}
+                  onChange={(e) =>
+                    handleRelatedGrammarChange(rowIndex, 'id', e.target.value)
+                  }
                   placeholder="ID"
                 />
                 <button
@@ -856,37 +1024,63 @@ const GrammarManager = () => {
 
           {/* 例句 */}
           <div className="mb-5">
-            <label className="block text-sm font-medium text-dark mb-3">例句（最多 5 句）</label>
+            <label className="block text-sm font-medium text-dark mb-3">
+              例句（最多 5 句）
+            </label>
             {grammarForm.examples.map((example, exampleIndex) => (
               <div key={exampleIndex} className="flex gap-2 mb-3">
-                <Input 
-                  type="text" 
+                <Input
+                  type="text"
                   value={example}
-                  onChange={(e) => handleExampleChange(exampleIndex, e.target.value)}
+                  onChange={(e) =>
+                    handleExampleChange(exampleIndex, e.target.value)
+                  }
                   className="flex-1 px-4 py-3"
                   placeholder={`例句 ${exampleIndex + 1}`}
                 />
                 {grammarForm.examples.length > 1 && (
-                  <button 
-                    type="button" 
+                  <button
+                    type="button"
                     onClick={() => removeExample(exampleIndex)}
                     className="text-red-600 hover:text-red-700 p-2 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
                     </svg>
                   </button>
                 )}
               </div>
             ))}
             {grammarForm.examples.length < 5 && (
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={addExample}
                 className="text-primary hover:text-primary/80 text-sm px-4 py-2 border border-primary/20 rounded-lg hover:bg-primary/5 transition-colors"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4 inline mr-1"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 4v16m8-8H4"
+                  />
                 </svg>
                 添加例句
               </button>
@@ -895,34 +1089,51 @@ const GrammarManager = () => {
 
           {/* 翻译练习 */}
           <div className="mb-5">
-            <label className="block text-sm font-medium text-dark mb-3">翻译练习（最多 8 组）</label>
+            <label className="block text-sm font-medium text-dark mb-3">
+              翻译练习（最多 8 组）
+            </label>
             {grammarForm.translationExercises.map((exercise, exerciseIndex) => (
               <div key={exerciseIndex} className="mb-4">
                 <div className="flex gap-2 mb-3">
-                  <Input 
-                    type="text" 
+                  <Input
+                    type="text"
                     value={exercise}
-                    onChange={(e) => handleExerciseChange(exerciseIndex, e.target.value)}
+                    onChange={(e) =>
+                      handleExerciseChange(exerciseIndex, e.target.value)
+                    }
                     className="flex-1 px-4 py-3"
                     placeholder={`翻译练习 ${exerciseIndex + 1}`}
                   />
                   {grammarForm.translationExercises.length > 1 && (
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       onClick={() => removeExercise(exerciseIndex)}
                       className="text-red-600 hover:text-red-700 p-2 border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M6 18L18 6M6 6l12 12"
+                        />
                       </svg>
                     </button>
                   )}
                 </div>
                 <div>
-                  <Input 
-                    type="text" 
+                  <Input
+                    type="text"
                     value={grammarForm.referenceAnswers[exerciseIndex]}
-                    onChange={(e) => handleAnswerChange(exerciseIndex, e.target.value)}
+                    onChange={(e) =>
+                      handleAnswerChange(exerciseIndex, e.target.value)
+                    }
                     className="flex-1 px-4 py-3"
                     placeholder={`参考答案 ${exerciseIndex + 1}`}
                   />
@@ -930,13 +1141,24 @@ const GrammarManager = () => {
               </div>
             ))}
             {grammarForm.translationExercises.length < 8 && (
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={addExercise}
                 className="text-primary hover:text-primary/80 text-sm px-4 py-2 border border-primary/20 rounded-lg hover:bg-primary/5 transition-colors"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4 inline mr-1"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 4v16m8-8H4"
+                  />
                 </svg>
                 添加翻译练习
               </button>
@@ -953,7 +1175,11 @@ const GrammarManager = () => {
         onOk={confirmDelete}
         okText={isLoading ? '删除中...' : '删除'}
         cancelText="取消"
-        okButtonProps={{ danger: true, loading: isLoading, disabled: isLoading }}
+        okButtonProps={{
+          danger: true,
+          loading: isLoading,
+          disabled: isLoading,
+        }}
       >
         <p className="text-gray-700">确定要删除这个语法吗？此操作不可撤销。</p>
       </Modal>
@@ -968,12 +1194,23 @@ const GrammarManager = () => {
       >
         <div className="mb-6">
           <h4 className="text-lg font-medium text-dark mb-4">下载模板</h4>
-          <button 
-            onClick={downloadGrammarTemplate}
-            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            下载 JSON 模板
-          </button>
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={downloadGrammarTemplateCSV}
+              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              下载 CSV 模板
+            </button>
+            <button
+              onClick={downloadGrammarTemplate}
+              className="px-4 py-2 border border-gray-300 rounded-lg text-dark hover:bg-gray-50 transition-colors"
+            >
+              下载 JSON 模板
+            </button>
+          </div>
+          <p className="mt-3 text-sm text-gray-500">
+            CSV 模板支持用分号分隔多个例句、翻译练习、参考答案；关联语法使用“语法|ID”，多个关联语法用分号分隔。
+          </p>
         </div>
 
         <div className="mb-6">
@@ -981,8 +1218,13 @@ const GrammarManager = () => {
           <Dragger
             name="file"
             multiple={false}
-            accept=".json"
+            accept=".json,.csv"
             beforeUpload={(file) => {
+              const fileName = file.name.toLowerCase();
+              if (!fileName.endsWith('.json') && !fileName.endsWith('.csv')) {
+                message.error('仅支持 JSON 或 CSV 格式文件');
+                return false;
+              }
               handleBatchImport(file);
               return false; // 阻止自动上传
             }}
@@ -992,7 +1234,7 @@ const GrammarManager = () => {
             </p>
             <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
             <p className="ant-upload-hint">
-              支持单个 JSON 文件上传
+              支持单个 JSON 或 CSV 文件上传。CSV 字段：grammarPoint, level, japaneseMeaning, chineseMeaning, continuation, attentionPoints, examples, translationExercises, referenceAnswers, relatedGrammars。
             </p>
           </Dragger>
         </div>
@@ -1013,80 +1255,108 @@ const GrammarManager = () => {
           <p className="text-gray-600 mb-4">请选择下载方式：</p>
           <div className="space-y-4">
             <div className="flex items-center">
-              <input 
-                type="radio" 
-                id="grammar-download-all" 
-                name="grammar-download-option" 
-                value="all" 
+              <input
+                type="radio"
+                id="grammar-download-all"
+                name="grammar-download-option"
+                value="all"
                 defaultChecked
                 onChange={(e) => {
-                  const paginatedOptions = document.getElementById('grammar-paginated-options');
+                  const paginatedOptions = document.getElementById(
+                    'grammar-paginated-options',
+                  );
                   if (paginatedOptions) {
-                    paginatedOptions.style.display = e.target.value === 'paginated' ? 'block' : 'none';
+                    paginatedOptions.style.display =
+                      e.target.value === 'paginated' ? 'block' : 'none';
                   }
                 }}
               />
-              <label htmlFor="grammar-download-all" className="ml-2 text-gray-700">
+              <label
+                htmlFor="grammar-download-all"
+                className="ml-2 text-gray-700"
+              >
                 下载所有数据（最多 10,000 条）
               </label>
             </div>
             <div className="flex items-center">
-              <input 
-                type="radio" 
-                id="grammar-download-filtered" 
-                name="grammar-download-option" 
+              <input
+                type="radio"
+                id="grammar-download-filtered"
+                name="grammar-download-option"
                 value="filtered"
                 onChange={(e) => {
-                  const paginatedOptions = document.getElementById('grammar-paginated-options');
+                  const paginatedOptions = document.getElementById(
+                    'grammar-paginated-options',
+                  );
                   if (paginatedOptions) {
-                    paginatedOptions.style.display = e.target.value === 'paginated' ? 'block' : 'none';
+                    paginatedOptions.style.display =
+                      e.target.value === 'paginated' ? 'block' : 'none';
                   }
                 }}
               />
-              <label htmlFor="grammar-download-filtered" className="ml-2 text-gray-700">
+              <label
+                htmlFor="grammar-download-filtered"
+                className="ml-2 text-gray-700"
+              >
                 下载当前筛选条件的数据
               </label>
             </div>
             <div className="flex items-center">
-              <input 
-                type="radio" 
-                id="grammar-download-paginated" 
-                name="grammar-download-option" 
+              <input
+                type="radio"
+                id="grammar-download-paginated"
+                name="grammar-download-option"
                 value="paginated"
                 onChange={(e) => {
-                  const paginatedOptions = document.getElementById('grammar-paginated-options');
+                  const paginatedOptions = document.getElementById(
+                    'grammar-paginated-options',
+                  );
                   if (paginatedOptions) {
-                    paginatedOptions.style.display = e.target.value === 'paginated' ? 'block' : 'none';
+                    paginatedOptions.style.display =
+                      e.target.value === 'paginated' ? 'block' : 'none';
                   }
                 }}
               />
-              <label htmlFor="grammar-download-paginated" className="ml-2 text-gray-700">
+              <label
+                htmlFor="grammar-download-paginated"
+                className="ml-2 text-gray-700"
+              >
                 分页下载（适合大量数据）
               </label>
             </div>
-            <div className="ml-8 space-y-4" id="grammar-paginated-options" style={{ display: 'none' }}>
+            <div
+              className="ml-8 space-y-4"
+              id="grammar-paginated-options"
+              style={{ display: 'none' }}
+            >
               <div>
-                <label htmlFor="grammar-page-size" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="grammar-page-size"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   每页大小
                 </label>
-                <input 
-                  type="number" 
-                  id="grammar-page-size" 
-                  min="1" 
-                  max="5000" 
-                  defaultValue="1000" 
+                <input
+                  type="number"
+                  id="grammar-page-size"
+                  min="1"
+                  max="5000"
+                  defaultValue="1000"
                   className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div>
-                <label htmlFor="grammar-page-number" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="grammar-page-number"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   下载页码
                 </label>
-                <input 
-                  type="number" 
-                  id="grammar-page-number" 
-                  min="1" 
-                  defaultValue="1" 
+                <input
+                  type="number"
+                  id="grammar-page-number"
+                  min="1"
+                  defaultValue="1"
                   className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -1096,8 +1366,16 @@ const GrammarManager = () => {
         <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
           <div className="flex">
             <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              <svg
+                className="h-5 w-5 text-yellow-400"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                  clipRule="evenodd"
+                />
               </svg>
             </div>
             <div className="ml-3">

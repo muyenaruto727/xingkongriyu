@@ -3,6 +3,10 @@ import { Input, Select, Modal } from 'antd';
 import PaginationTable from '../common/PaginationTable';
 import { api } from '../../lib/api';
 import { logError } from '../../utils.js';
+import {
+  getPageSizeChangeState,
+  getPaginationRequestParams,
+} from '../../lib/adminPagination';
 
 const ListeningManager = ({ showToast }) => {
   const [listeningList, setListeningList] = useState([]);
@@ -15,7 +19,7 @@ const ListeningManager = ({ showToast }) => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
   const [searchId, setSearchId] = useState('');
-  
+
   // 表单状态
   const [listeningForm, setListeningForm] = useState({
     difficulty: '',
@@ -23,12 +27,14 @@ const ListeningManager = ({ showToast }) => {
     listeningText: '',
     exerciseType: '答题',
     explanation: '',
-    groups: [{
-      question: '',
-      options: ['', '', '', ''],
-      correctAnswer: '',
-      explanation: ''
-    }]
+    groups: [
+      {
+        question: '',
+        options: ['', '', '', ''],
+        correctAnswer: '',
+        explanation: '',
+      },
+    ],
   });
 
   // 难度选项
@@ -38,13 +44,13 @@ const ListeningManager = ({ showToast }) => {
     { value: '中级1', label: '中级1' },
     { value: '中级2', label: '中级2' },
     { value: '高级1', label: '高级1' },
-    { value: '高级2', label: '高级2' }
+    { value: '高级2', label: '高级2' },
   ];
 
   // 练习类型选项
   const exerciseTypeOptions = [
     { value: '精听', label: '精听' },
-    { value: '答题', label: '答题' }
+    { value: '答题', label: '答题' },
   ];
 
   // 组件挂载时加载听力列表
@@ -62,11 +68,11 @@ const ListeningManager = ({ showToast }) => {
         const [, index, field] = match;
         const newGroups = [...listeningForm.groups];
         newGroups[index] = { ...newGroups[index], [field]: value };
-        setListeningForm(prev => ({ ...prev, groups: newGroups }));
+        setListeningForm((prev) => ({ ...prev, groups: newGroups }));
       }
     } else {
       // 处理普通字段
-      setListeningForm(prev => ({ ...prev, [name]: value }));
+      setListeningForm((prev) => ({ ...prev, [name]: value }));
     }
   };
 
@@ -75,20 +81,23 @@ const ListeningManager = ({ showToast }) => {
     const newGroups = [...listeningForm.groups];
     newGroups[groupIndex].options = [...newGroups[groupIndex].options];
     newGroups[groupIndex].options[optionIndex] = value;
-    setListeningForm(prev => ({ ...prev, groups: newGroups }));
+    setListeningForm((prev) => ({ ...prev, groups: newGroups }));
   };
 
   // 添加选项组
   const addOptionGroup = () => {
     if (listeningForm.groups.length < 10) {
-      setListeningForm(prev => ({
+      setListeningForm((prev) => ({
         ...prev,
-        groups: [...prev.groups, {
-          question: '',
-          options: ['', '', '', ''],
-          correctAnswer: '',
-          explanation: ''
-        }]
+        groups: [
+          ...prev.groups,
+          {
+            question: '',
+            options: ['', '', '', ''],
+            correctAnswer: '',
+            explanation: '',
+          },
+        ],
       }));
     } else {
       showToast('最多只能添加10组选项', 'error');
@@ -98,9 +107,9 @@ const ListeningManager = ({ showToast }) => {
   // 删除选项组
   const removeOptionGroup = (groupIndex) => {
     if (listeningForm.groups.length > 1) {
-      setListeningForm(prev => ({
+      setListeningForm((prev) => ({
         ...prev,
-        groups: prev.groups.filter((_, index) => index !== groupIndex)
+        groups: prev.groups.filter((_, index) => index !== groupIndex),
       }));
     }
   };
@@ -118,7 +127,7 @@ const ListeningManager = ({ showToast }) => {
     if (listeningForm.exerciseType === '答题') {
       for (let i = 0; i < listeningForm.groups.length; i++) {
         const group = listeningForm.groups[i];
-        if (group.options.some(option => !option.trim())) {
+        if (group.options.some((option) => !option.trim())) {
           showToast(`请填写第${i + 1}组的所有选项`, 'error');
           return false;
         }
@@ -141,22 +150,28 @@ const ListeningManager = ({ showToast }) => {
   };
 
   // 加载听力列表
-  const fetchListeningList = async (useEmptyFilters = false) => {
+  const fetchListeningList = async (
+    useEmptyFilters = false,
+    pagination = {},
+  ) => {
     setIsLoading(true);
     try {
       // 构建查询参数
       const params = {
-        page: currentPage,
-        limit: itemsPerPage
+        ...getPaginationRequestParams({
+          currentPage,
+          itemsPerPage,
+          ...pagination,
+        }),
       };
-      
+
       // 添加搜索参数
       if (!useEmptyFilters && searchId) {
         params.id = searchId;
       }
-      
+
       const data = await api.getListeningList(params);
-      
+
       if (typeof setListeningList === 'function') {
         // 处理不同的数据结构
         if (Array.isArray(data)) {
@@ -185,12 +200,14 @@ const ListeningManager = ({ showToast }) => {
       listeningText: '',
       exerciseType: '答题',
       explanation: '',
-      groups: [{
-        question: '',
-        options: ['', '', '', ''],
-        correctAnswer: '',
-        explanation: ''
-      }]
+      groups: [
+        {
+          question: '',
+          options: ['', '', '', ''],
+          correctAnswer: '',
+          explanation: '',
+        },
+      ],
     });
     setCurrentEditId(null);
     setIsEditMode(false);
@@ -200,12 +217,12 @@ const ListeningManager = ({ showToast }) => {
   const handleSubmitAdd = async (e) => {
     e.preventDefault();
     if (isLoading) return;
-    
+
     // 表单验证
     if (!validateForm()) {
       return;
     }
-    
+
     setIsLoading(true);
     try {
       // 构建发送到 API 的数据
@@ -215,11 +232,11 @@ const ListeningManager = ({ showToast }) => {
         listeningText: listeningForm.listeningText.trim(),
         exerciseType: listeningForm.exerciseType,
         groups: listeningForm.groups,
-        explanation: listeningForm.explanation.trim()
+        explanation: listeningForm.explanation.trim(),
       };
-      
+
       await api.createListening(listeningData);
-      
+
       showToast('听力添加成功', 'success');
       setShowModal(false);
       // 重置表单
@@ -237,12 +254,12 @@ const ListeningManager = ({ showToast }) => {
   const handleSubmitEdit = async (e) => {
     e.preventDefault();
     if (isLoading) return;
-    
+
     // 表单验证
     if (!validateForm()) {
       return;
     }
-    
+
     setIsLoading(true);
     try {
       // 构建发送到 API 的数据
@@ -252,11 +269,11 @@ const ListeningManager = ({ showToast }) => {
         listeningText: listeningForm.listeningText.trim(),
         exerciseType: listeningForm.exerciseType,
         groups: listeningForm.groups,
-        explanation: listeningForm.explanation.trim()
+        explanation: listeningForm.explanation.trim(),
       };
-      
+
       await api.updateListening(currentEditId, listeningData);
-      
+
       showToast('听力更新成功', 'success');
       setShowModal(false);
       // 重置表单
@@ -274,12 +291,14 @@ const ListeningManager = ({ showToast }) => {
   const openEditModal = (listening) => {
     setCurrentEditId(listening.id);
     setIsEditMode(true);
-    let groups = [{
-      question: '',
-      options: ['', '', '', ''],
-      correctAnswer: '',
-      explanation: ''
-    }];
+    let groups = [
+      {
+        question: '',
+        options: ['', '', '', ''],
+        correctAnswer: '',
+        explanation: '',
+      },
+    ];
     if (listening.groups) {
       if (Array.isArray(listening.groups)) {
         groups = listening.groups;
@@ -291,7 +310,7 @@ const ListeningManager = ({ showToast }) => {
       listeningText: listening.listening_text || '',
       exerciseType: listening.exercise_type || '答题',
       explanation: listening.explanation || '',
-      groups: groups
+      groups: groups,
     });
     setShowModal(true);
   };
@@ -306,10 +325,10 @@ const ListeningManager = ({ showToast }) => {
   const confirmDelete = async () => {
     if (isLoading) return;
     setIsLoading(true);
-    
+
     try {
       await api.deleteListening(currentEditId);
-      
+
       showToast('听力删除成功', 'success');
       setShowDeleteConfirm(false);
       setCurrentEditId(null);
@@ -336,12 +355,12 @@ const ListeningManager = ({ showToast }) => {
             onKeyPress={(e) => {
               if (e.key === 'Enter') {
                 setCurrentPage(1);
-                fetchListeningList();
+                fetchListeningList(false, { page: 1 });
               }
             }}
           />
         </div>
-        <button 
+        <button
           onClick={() => {
             setIsEditMode(false);
             setShowModal(true);
@@ -351,7 +370,7 @@ const ListeningManager = ({ showToast }) => {
           添加听力
         </button>
       </div>
-      
+
       <PaginationTable
         data={listeningList}
         columns={[
@@ -359,38 +378,38 @@ const ListeningManager = ({ showToast }) => {
             title: 'ID',
             key: 'id',
             render: (row) => row.id || '-',
-            cellClassName: 'text-dark'
+            cellClassName: 'text-dark',
           },
           {
             title: '难度',
             key: 'difficulty',
             render: (row) => row.difficulty || '-',
-            cellClassName: 'text-dark font-medium'
+            cellClassName: 'text-dark font-medium',
           },
           {
             title: '听力材料URL',
             key: 'audio_url',
             render: (row) => row.audio_url || '-',
-            cellClassName: 'text-muted'
+            cellClassName: 'text-muted',
           },
           {
             title: '练习类型',
             key: 'exercise_type',
             render: (row) => row.exercise_type || '-',
-            cellClassName: 'text-dark'
+            cellClassName: 'text-dark',
           },
 
           {
             title: '操作',
             render: (row) => (
               <div className="flex gap-2">
-                <button 
+                <button
                   onClick={() => openEditModal(row)}
                   className="px-2 py-1 bg-blue-100 text-primary rounded text-xs hover:bg-blue-200 transition-colors"
                 >
                   编辑
                 </button>
-                <button 
+                <button
                   onClick={() => openDeleteConfirm(row.id)}
                   className="px-2 py-1 bg-red-100 text-red-600 rounded text-xs hover:bg-red-200 transition-colors"
                 >
@@ -398,23 +417,27 @@ const ListeningManager = ({ showToast }) => {
                 </button>
               </div>
             ),
-            cellClassName: 'text-sm'
-          }
+            cellClassName: 'text-sm',
+          },
         ]}
         isLoading={isLoading}
         totalItems={totalItems}
         currentPage={currentPage}
         itemsPerPage={itemsPerPage}
-        onPageChange={setCurrentPage}
+        onPageChange={(newPage) => {
+          setCurrentPage(newPage);
+          fetchListeningList(false, { page: newPage });
+        }}
         onLimitChange={(newLimit) => {
+          const nextPagination = getPageSizeChangeState(newLimit);
           setItemsPerPage(newLimit);
-          setCurrentPage(1);
-          fetchListeningList();
+          setCurrentPage(nextPagination.page);
+          fetchListeningList(false, nextPagination);
         }}
         emptyMessage="暂无听力"
         emptyIcon="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
       />
-      
+
       {/* 听力模态框 */}
       <Modal
         open={showModal}
@@ -429,41 +452,56 @@ const ListeningManager = ({ showToast }) => {
         cancelText="取消"
         okButtonProps={{ loading: isLoading, disabled: isLoading }}
       >
-        <form onSubmit={isEditMode ? handleSubmitEdit : handleSubmitAdd} className="space-y-6">
+        <form
+          onSubmit={isEditMode ? handleSubmitEdit : handleSubmitAdd}
+          className="space-y-6"
+        >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-dark mb-2">难度 <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-medium text-dark mb-2">
+                难度 <span className="text-red-500">*</span>
+              </label>
               <Select
                 options={difficultyOptions}
                 value={listeningForm.difficulty}
-                onChange={(value) => setListeningForm(prev => ({ ...prev, difficulty: value }))}
+                onChange={(value) =>
+                  setListeningForm((prev) => ({ ...prev, difficulty: value }))
+                }
                 placeholder="请选择难度"
                 style={{ width: '100%' }}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-dark mb-2">听力材料URL</label>
-              <Input 
-                type="text" 
-                name="audioUrl" 
-                value={listeningForm.audioUrl} 
-                onChange={handleFormChange} 
+              <label className="block text-sm font-medium text-dark mb-2">
+                听力材料URL
+              </label>
+              <Input
+                type="text"
+                name="audioUrl"
+                value={listeningForm.audioUrl}
+                onChange={handleFormChange}
                 placeholder="请输入听力材料URL"
                 style={{ width: '100%' }}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-dark mb-2">练习类型 <span className="text-red-500">*</span></label>
+              <label className="block text-sm font-medium text-dark mb-2">
+                练习类型 <span className="text-red-500">*</span>
+              </label>
               <Select
                 options={exerciseTypeOptions}
                 value={listeningForm.exerciseType}
-                onChange={(value) => setListeningForm(prev => ({ ...prev, exerciseType: value }))}
+                onChange={(value) =>
+                  setListeningForm((prev) => ({ ...prev, exerciseType: value }))
+                }
                 placeholder="请选择练习类型"
                 style={{ width: '100%' }}
               />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-dark mb-2">听力文本</label>
+              <label className="block text-sm font-medium text-dark mb-2">
+                听力文本
+              </label>
               <Input.TextArea
                 name="listeningText"
                 value={listeningForm.listeningText}
@@ -474,15 +512,20 @@ const ListeningManager = ({ showToast }) => {
               />
             </div>
           </div>
-          
+
           {listeningForm.exerciseType === '答题' && (
             <div className="space-y-6">
               {listeningForm.groups.map((group, groupIndex) => (
-                <div key={groupIndex} className="border border-gray-200 rounded-lg p-4">
+                <div
+                  key={groupIndex}
+                  className="border border-gray-200 rounded-lg p-4"
+                >
                   <div className="flex items-center justify-between mb-4">
-                    <span className="text-sm font-medium">第{groupIndex + 1}组</span>
+                    <span className="text-sm font-medium">
+                      第{groupIndex + 1}组
+                    </span>
                     {listeningForm.groups.length > 1 && (
-                      <button 
+                      <button
                         type="button"
                         onClick={() => removeOptionGroup(groupIndex)}
                         className="text-red-600 hover:text-red-800 text-sm"
@@ -491,69 +534,91 @@ const ListeningManager = ({ showToast }) => {
                       </button>
                     )}
                   </div>
-                  
+
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-dark mb-2">题目</label>
-                      <Input 
-                        type="text" 
-                        name={`groups[${groupIndex}].question`} 
-                        value={group.question} 
-                        onChange={handleFormChange} 
+                      <label className="block text-sm font-medium text-dark mb-2">
+                        题目
+                      </label>
+                      <Input
+                        type="text"
+                        name={`groups[${groupIndex}].question`}
+                        value={group.question}
+                        onChange={handleFormChange}
                         placeholder="请输入题目"
                       />
                     </div>
-                    
+
                     <div>
-                      <label className="block text-sm font-medium text-dark mb-2">选项 <span className="text-red-500">*</span></label>
+                      <label className="block text-sm font-medium text-dark mb-2">
+                        选项 <span className="text-red-500">*</span>
+                      </label>
                       <div className="space-y-2">
                         {group.options.map((option, optionIndex) => (
-                          <Input 
+                          <Input
                             key={optionIndex}
-                            type="text" 
-                            value={option} 
-                            onChange={(e) => handleOptionChange(groupIndex, optionIndex, e.target.value)} 
+                            type="text"
+                            value={option}
+                            onChange={(e) =>
+                              handleOptionChange(
+                                groupIndex,
+                                optionIndex,
+                                e.target.value,
+                              )
+                            }
                             placeholder={`选项${String.fromCharCode(65 + optionIndex)}`}
-                            required 
+                            required
                           />
                         ))}
                       </div>
                     </div>
-                    
+
                     <div>
-                      <label className="block text-sm font-medium text-dark mb-2">正确答案 <span className="text-red-500">*</span></label>
+                      <label className="block text-sm font-medium text-dark mb-2">
+                        正确答案 <span className="text-red-500">*</span>
+                      </label>
                       <Select
-                        options={group.options.map((option, index) => ({
-                          value: String.fromCharCode(65 + index),
-                          label: `${String.fromCharCode(65 + index)}. ${option}`
-                        })).filter(option => option.label.includes('.'))}
+                        options={group.options
+                          .map((option, index) => ({
+                            value: String.fromCharCode(65 + index),
+                            label: `${String.fromCharCode(65 + index)}. ${option}`,
+                          }))
+                          .filter((option) => option.label.includes('.'))}
                         value={group.correctAnswer}
                         onChange={(value) => {
                           const newGroups = [...listeningForm.groups];
-                          newGroups[groupIndex] = { ...newGroups[groupIndex], correctAnswer: value };
-                          setListeningForm(prev => ({ ...prev, groups: newGroups }));
+                          newGroups[groupIndex] = {
+                            ...newGroups[groupIndex],
+                            correctAnswer: value,
+                          };
+                          setListeningForm((prev) => ({
+                            ...prev,
+                            groups: newGroups,
+                          }));
                         }}
                         placeholder="请选择正确答案"
                         style={{ width: '100%' }}
                       />
                     </div>
-                    
+
                     <div>
-                      <label className="block text-sm font-medium text-dark mb-2">参考解析 <span className="text-red-500">*</span></label>
-                      <Input 
-                        type="text" 
-                        name={`groups[${groupIndex}].explanation`} 
-                        value={group.explanation} 
-                        onChange={handleFormChange} 
+                      <label className="block text-sm font-medium text-dark mb-2">
+                        参考解析 <span className="text-red-500">*</span>
+                      </label>
+                      <Input
+                        type="text"
+                        name={`groups[${groupIndex}].explanation`}
+                        value={group.explanation}
+                        onChange={handleFormChange}
                         placeholder="请输入参考解析"
-                        required 
+                        required
                       />
                     </div>
                   </div>
                 </div>
               ))}
               {listeningForm.groups.length < 10 && (
-                <button 
+                <button
                   type="button"
                   onClick={addOptionGroup}
                   className="w-full py-2 border border-dashed border-gray-300 rounded-lg text-center text-gray-600 hover:bg-gray-50"
@@ -563,23 +628,25 @@ const ListeningManager = ({ showToast }) => {
               )}
             </div>
           )}
-          
+
           {listeningForm.exerciseType !== '答题' && (
             <div>
-              <label className="block text-sm font-medium text-dark mb-2">参考解析 <span className="text-red-500">*</span></label>
-              <Input 
-                type="text" 
-                name="explanation" 
-                value={listeningForm.explanation} 
-                onChange={handleFormChange} 
+              <label className="block text-sm font-medium text-dark mb-2">
+                参考解析 <span className="text-red-500">*</span>
+              </label>
+              <Input
+                type="text"
+                name="explanation"
+                value={listeningForm.explanation}
+                onChange={handleFormChange}
                 placeholder="请输入参考解析"
-                required 
+                required
               />
             </div>
           )}
         </form>
       </Modal>
-      
+
       {/* 删除确认模态框 */}
       <Modal
         open={showDeleteConfirm}
@@ -587,7 +654,11 @@ const ListeningManager = ({ showToast }) => {
         title="确认删除"
         onOk={confirmDelete}
         okText={isLoading ? '删除中...' : '删除'}
-        okButtonProps={{ danger: true, loading: isLoading, disabled: isLoading }}
+        okButtonProps={{
+          danger: true,
+          loading: isLoading,
+          disabled: isLoading,
+        }}
         cancelText="取消"
       >
         <p className="text-center">确定要删除这个听力项目吗？</p>
