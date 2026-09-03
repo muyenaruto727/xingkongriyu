@@ -1,9 +1,13 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { message } from 'antd';
 import Navigation from '../../components/layout/Navigation';
 import { api } from '../../lib/api';
+import {
+  buildTetrisVocabularyParams,
+  cleanTetrisVocabulary,
+} from '../../lib/tetrisGame';
 
 const cardColors = [
   { bg: 'bg-white', border: 'border-slate-200', text: 'text-slate-800' },
@@ -22,7 +26,11 @@ const shuffleArray = (arr) => {
 const TetrisGame = () => {
   const router = useRouter();
   const [currentUser, setCurrentUser] = useState(null);
+  const [textbooks, setTextbooks] = useState([]);
+  const [sourceMode, setSourceMode] = useState('level');
   const [selectedLevel, setSelectedLevel] = useState('N5');
+  const [selectedTextbook, setSelectedTextbook] = useState('');
+  const [selectedLesson, setSelectedLesson] = useState('');
   const [pairCount, setPairCount] = useState(8);
   const [cards, setCards] = useState([]);
   const [selectedCard, setSelectedCard] = useState(null);
@@ -46,6 +54,36 @@ const TetrisGame = () => {
   }, []);
 
   useEffect(() => {
+    fetchTextbooks();
+  }, []);
+
+  const fetchTextbooks = async () => {
+    try {
+      const data = await api.getTextbookList();
+      const list = Array.isArray(data) ? data : data?.data || [];
+      setTextbooks(list);
+    } catch (err) {
+      api.handleError('教材列表读取失败', err);
+    }
+  };
+
+  const selectedTextbookItem = useMemo(
+    () => textbooks.find((item) => String(item.id) === String(selectedTextbook)),
+    [selectedTextbook, textbooks],
+  );
+
+  const lessonOptions = useMemo(() => {
+    if (!selectedTextbookItem) return [];
+    if (Array.isArray(selectedTextbookItem.lessons)) return selectedTextbookItem.lessons;
+
+    const count = selectedTextbookItem.lesson_count || selectedTextbookItem.lessons_count || 25;
+    return Array.from({ length: count }, (_, index) => ({
+      id: `第${index + 1}课`,
+      name: `第${index + 1}课`,
+    }));
+  }, [selectedTextbookItem]);
+
+  useEffect(() => {
     let timer;
     if (isPlaying && !showResult) {
       timer = setInterval(() => setElapsedTime(prev => prev + 1), 1000);
@@ -55,11 +93,23 @@ const TetrisGame = () => {
 
   const startGame = useCallback(async () => {
     try {
+      const requestConfig = buildTetrisVocabularyParams({
+        sourceMode,
+        selectedLevel,
+        selectedTextbook,
+        selectedTextbookName: selectedTextbookItem?.name || '',
+        selectedLesson,
+        pairCount,
+      });
+
+      if (requestConfig.error) {
+        message.warning(requestConfig.error);
+        return;
+      }
+
       setIsLoadingData(true);
-      const data = await api.getVocabList({ level: selectedLevel, limit: 1000 });
-      const list = data.data || data || [];
-      const levelVocab = (Array.isArray(list) ? list : []).filter(v => v.level === selectedLevel);
-      const selected = shuffleArray(levelVocab).slice(0, pairCount);
+      const data = await api.getVocabList(requestConfig.params);
+      const selected = shuffleArray(cleanTetrisVocabulary(data)).slice(0, pairCount);
 
       // If not enough vocab, fill with what we have.
       const actualCount = Math.min(selected.length, pairCount);
@@ -111,7 +161,14 @@ const TetrisGame = () => {
     } finally {
       setIsLoadingData(false);
     }
-  }, [selectedLevel, pairCount]);
+  }, [
+    sourceMode,
+    selectedLevel,
+    selectedTextbook,
+    selectedTextbookItem,
+    selectedLesson,
+    pairCount,
+  ]);
 
   const handleCardClick = (card) => {
     if (card.matched || shakeCard) return;
@@ -182,11 +239,19 @@ const TetrisGame = () => {
       <Navigation />
 
       <main className="tool-main">
-        <div className="container max-w-4xl">
+        <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8">
 
           {/* ── Settings ── */}
           {!isPlaying && !showResult && (
             <div>
+              <button
+                type="button"
+                onClick={() => router.push('/tools')}
+                className="tool-back"
+              >
+                ← 返回小工具
+              </button>
+
               <div className="mb-8">
                 <span className="tool-eyebrow">单词消消乐</span>
                 <h1 className="tool-title">
@@ -198,21 +263,85 @@ const TetrisGame = () => {
               </div>
 
               <div className="tool-panel mb-8">
-                <div className="grid grid-cols-2 gap-4 mb-8">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">词汇等级</label>
-                    <select
-                      value={selectedLevel}
-                      onChange={(e) => setSelectedLevel(e.target.value)}
-                      className="tool-input"
+                <div className="mb-8">
+                  <label className="tool-label">词汇来源</label>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <button
+                      type="button"
+                      onClick={() => setSourceMode('level')}
+                      className={`tool-choice ${sourceMode === 'level' ? 'tool-choice-active' : ''}`}
                     >
-                      {levels.map(level => (
-                        <option key={level} value={level}>{level}</option>
-                      ))}
-                    </select>
+                      <div className="font-bold text-slate-800">按级别筛选</div>
+                      <div className="mt-1 text-xs text-slate-500">从 N1-N5 词汇中抽取配对</div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSourceMode('textbook')}
+                      className={`tool-choice ${sourceMode === 'textbook' ? 'tool-choice-active' : ''}`}
+                    >
+                      <div className="font-bold text-slate-800">按教材课程</div>
+                      <div className="mt-1 text-xs text-slate-500">从指定教材和课程抽取配对</div>
+                    </button>
                   </div>
+                </div>
+
+                <div className="grid gap-5 mb-8 md:grid-cols-2">
+                  {sourceMode === 'level' ? (
+                    <div>
+                      <label className="tool-label">词汇等级</label>
+                      <select
+                        value={selectedLevel}
+                        onChange={(e) => setSelectedLevel(e.target.value)}
+                        className="tool-input"
+                      >
+                        {levels.map(level => (
+                          <option key={level} value={level}>{level}</option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : (
+                    <>
+                      <div>
+                        <label className="tool-label">选择教材</label>
+                        <select
+                          value={selectedTextbook}
+                          onChange={(e) => {
+                            setSelectedTextbook(e.target.value);
+                            setSelectedLesson('');
+                          }}
+                          className="tool-input"
+                        >
+                          <option value="">请选择教材</option>
+                          {textbooks.map((textbook) => (
+                            <option key={textbook.id} value={String(textbook.id)}>
+                              {textbook.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="tool-label">选择课程</label>
+                        <select
+                          value={selectedLesson}
+                          onChange={(e) => setSelectedLesson(e.target.value)}
+                          className="tool-input"
+                          disabled={!selectedTextbook}
+                        >
+                          <option value="">请选择课程</option>
+                          {lessonOptions.map((lesson) => {
+                            const lessonName = lesson.name || lesson;
+                            return (
+                              <option key={lesson.id || lessonName} value={lessonName}>
+                                {lessonName}
+                              </option>
+                            );
+                          })}
+                        </select>
+                      </div>
+                    </>
+                  )}
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">配对数量</label>
+                    <label className="tool-label">配对数量</label>
                     <select
                       value={pairCount}
                       onChange={(e) => setPairCount(Number(e.target.value))}
@@ -248,17 +377,11 @@ const TetrisGame = () => {
                   </ul>
                 </div>
 
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => router.push('/tools')}
-                    className="tool-button-secondary flex-1"
-                  >
-                    ← 返回
-                  </button>
+                <div className="flex justify-end">
                   <button
                     onClick={startGame}
-                    disabled={isLoadingData}
-                    className="tool-button-primary flex-1"
+                    disabled={isLoadingData || (sourceMode === 'textbook' && (!selectedTextbook || !selectedLesson))}
+                    className="tool-button-primary w-full sm:w-auto sm:min-w-40"
                   >
                     {isLoadingData ? '准备中...' : '开始游戏'}
                   </button>

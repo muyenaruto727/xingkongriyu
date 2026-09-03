@@ -33,7 +33,7 @@ async function handler(req, res) {
 
 // 创建课程
 async function handleCreateCourse(req, res) {
-  const { name, format, description, isFree, status } = req.body;
+  const { name, format, description, price = 0, status } = req.body;
   
   try {
     const duplicateResult = await pool.query(
@@ -45,18 +45,16 @@ async function handleCreateCourse(req, res) {
     }
 
     const query = `
-      INSERT INTO courses (name, format, description, is_free, status, title, level)
+      INSERT INTO courses (name, format, description, price, status, title, level)
       VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING *
     `;
-    const params = [name, format, description, isFree, status || '未上架', name, '初级'];
+    const params = [name, format, description, Number(price) || 0, status || '未上架', name, '初级'];
     
     const result = await pool.query(query, params);
-    // 转换字段名，将 is_free 转换为 isFree
     const course = result.rows[0];
     if (course) {
-      course.isFree = course.is_free;
-      delete course.is_free;
+      course.price = Number(course.price || 0);
     }
     return successResponse(res, course, '课程创建成功');
   } catch (error) {
@@ -67,7 +65,7 @@ async function handleCreateCourse(req, res) {
 // 更新课程
 async function handleUpdateCourse(req, res) {
   const { id } = req.query;
-  const { name, format, description, isFree, status } = req.body;
+  const { name, format, description, price, status } = req.body;
   
   try {
     // 检查课程是否存在
@@ -84,7 +82,7 @@ async function handleUpdateCourse(req, res) {
     // 使用当前值作为默认值，只更新提供的字段
     const query = `
       UPDATE courses
-      SET name = $1, format = $2, description = $3, is_free = $4, status = $5, title = $6, level = $7
+      SET name = $1, format = $2, description = $3, price = $4, status = $5, title = $6, level = $7
       WHERE id = $8
       RETURNING *
     `;
@@ -92,7 +90,7 @@ async function handleUpdateCourse(req, res) {
       name !== undefined ? name : currentCourse.name,
       format !== undefined ? format : currentCourse.format,
       description !== undefined ? description : currentCourse.description,
-      isFree !== undefined ? isFree : currentCourse.is_free,
+      price !== undefined ? Number(price) || 0 : Number(currentCourse.price || 0),
       status !== undefined ? status : currentCourse.status,
       name !== undefined ? name : currentCourse.title,
       currentCourse.level || '初级',
@@ -100,11 +98,9 @@ async function handleUpdateCourse(req, res) {
     ];
     
     const result = await pool.query(query, params);
-    // 转换字段名，将 is_free 转换为 isFree
     const course = result.rows[0];
     if (course) {
-      course.isFree = course.is_free;
-      delete course.is_free;
+      course.price = Number(course.price || 0);
     }
     return successResponse(res, course, '课程更新成功');
   } catch (error) {
@@ -159,11 +155,9 @@ async function handleGetCourses(req, res) {
       total = parseInt(countResult.rows[0].count);
     }
     
-    // 转换字段名，将 is_free 转换为 isFree
     const courses = result.rows.map(course => {
       const newCourse = { ...course };
-      newCourse.isFree = newCourse.is_free;
-      delete newCourse.is_free;
+      newCourse.price = Number(newCourse.price || 0);
       return newCourse;
     });
     

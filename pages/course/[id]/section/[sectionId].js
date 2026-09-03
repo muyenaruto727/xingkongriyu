@@ -5,6 +5,29 @@ import Navigation from '../../../../components/layout/Navigation';
 import Footer from '../../../../components/layout/Footer';
 import { api } from '../../../../lib/api';
 
+const renderContent = (html) => {
+  if (!html) return null;
+  const pattern = /<pre[^>]*>\s*<code(?:[^>]*)>([\s\S]*?)<\/code>\s*<\/pre>/gi;
+  const parts = [];
+  let last = 0;
+  let match;
+  while ((match = pattern.exec(html))) {
+    if (match.index > last) parts.push(<div key={`html-${last}`} dangerouslySetInnerHTML={{ __html: html.slice(last, match.index) }} />);
+    const decoded = match[1]
+      .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')
+      .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, ' ');
+    const isHtml = /<!doctype\s+html|<html[\s>]|<body[\s>]|<head[\s>]/i.test(decoded);
+    if (isHtml) {
+      parts.push(<iframe key={`frame-${match.index}`} title="HTML代码示例" sandbox="allow-scripts" srcDoc={decoded} className="w-full min-h-[480px] border border-gray-200 rounded-lg bg-white" />);
+    } else {
+      parts.push(<pre key={`code-${match.index}`} className="overflow-x-auto rounded-lg bg-slate-900 p-4 text-sm text-slate-100"><code>{decoded}</code></pre>);
+    }
+    last = pattern.lastIndex;
+  }
+  if (last < html.length) parts.push(<div key={`html-${last}`} dangerouslySetInnerHTML={{ __html: html.slice(last) }} />);
+  return parts;
+};
+
 const SectionDetail = () => {
   const router = useRouter();
   const { id, sectionId } = router.query;
@@ -140,7 +163,7 @@ const SectionDetail = () => {
               
               {section.content && (
                 <div className="prose max-w-none mb-8">
-                  <div dangerouslySetInnerHTML={{ __html: section.content }} />
+                  {renderContent(section.content)}
                 </div>
               )}
               

@@ -72,18 +72,12 @@ const CourseManager = ({ showToast }) => {
     name: '',
     format: '',
     description: '',
-    isFree: '否',
+    price: 0,
     status: '未上架',
   });
 
   // 课程形式选项
   const formatOptions = ['文本课程', '视频课程', '1V1辅导'];
-
-  // 是否免费选项
-  const freeOptions = [
-    { value: '是', label: '是' },
-    { value: '否', label: '否' },
-  ];
 
   // 加载课程列表
   const fetchCourseList = async (useEmptyFilters = false, pagination = {}) => {
@@ -147,7 +141,7 @@ const CourseManager = ({ showToast }) => {
       name: '',
       format: '',
       description: '',
-      isFree: '否',
+      price: 0,
       status: '未上架',
     });
     setCurrentEditId(null);
@@ -168,8 +162,8 @@ const CourseManager = ({ showToast }) => {
       showToast('请输入课程介绍', 'error');
       return false;
     }
-    if (!courseForm.isFree) {
-      showToast('请选择是否免费', 'error');
+    if (!Number.isFinite(Number(courseForm.price)) || Number(courseForm.price) < 0) {
+      showToast('请输入不小于 0 的课程价格', 'error');
       return false;
     }
     return true;
@@ -192,7 +186,7 @@ const CourseManager = ({ showToast }) => {
         name: courseForm.name.trim(),
         format: courseForm.format,
         description: courseForm.description.trim(),
-        isFree: courseForm.isFree,
+        price: Number(courseForm.price),
         status: courseForm.status,
       };
 
@@ -228,7 +222,7 @@ const CourseManager = ({ showToast }) => {
         name: courseForm.name.trim(),
         format: courseForm.format,
         description: courseForm.description.trim(),
-        isFree: courseForm.isFree,
+        price: Number(courseForm.price),
         status: courseForm.status,
       };
 
@@ -262,7 +256,7 @@ const CourseManager = ({ showToast }) => {
       name: course.name || '',
       format: course.format || '',
       description: course.description || '',
-      isFree: course.is_free || '否',
+      price: Number(course.price || 0),
       status: course.status || '未上架',
     });
     setShowModal(true);
@@ -607,13 +601,13 @@ const CourseManager = ({ showToast }) => {
       render: (row) => <span>{row.format}</span>,
     },
     {
-      title: '是否免费',
-      key: 'isFree',
+      title: '课程定价',
+      key: 'price',
       render: (row) => (
         <span
-          className={`px-2 py-1 rounded-full text-xs font-medium ${row.isFree === '是' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}
+          className={`px-2 py-1 rounded-full text-xs font-medium ${Number(row.price) === 0 ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}
         >
-          {row.isFree}
+          {Number(row.price) === 0 ? '免费' : `¥${Number(row.price).toFixed(2)}`}
         </span>
       ),
     },
@@ -892,18 +886,20 @@ const CourseManager = ({ showToast }) => {
             />
           </div>
 
-          {/* 是否免费 */}
+          {/* 课程定价 */}
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              是否免费 <span className="text-red-500">*</span>
+              课程定价 <span className="text-red-500">*</span>
             </label>
-            <Select
-              options={freeOptions}
-              value={courseForm.isFree}
-              onChange={(value) =>
-                setCourseForm((prev) => ({ ...prev, isFree: value }))
-              }
-              placeholder="请选择是否免费"
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              name="price"
+              value={courseForm.price}
+              onChange={handleFormChange}
+              prefix="¥"
+              placeholder="输入 0 表示免费"
               style={{ width: '100%' }}
             />
           </div>
@@ -1025,7 +1021,11 @@ const CourseManager = ({ showToast }) => {
         title="添加小节"
         open={showAddSectionModal}
         onOk={() => sectionForm.submit()}
-        onCancel={() => setShowAddSectionModal(false)}
+        onCancel={() => {
+          setShowAddSectionModal(false);
+          sectionForm.resetFields();
+          setSectionType('article');
+        }}
         okText={isLoading ? '保存中...' : '保存'}
         cancelText="取消"
         confirmLoading={isLoading}
@@ -1056,6 +1056,7 @@ const CourseManager = ({ showToast }) => {
             >
               <div>
                 <WangEditor
+                  key={`add-section-${showAddSectionModal}`}
                   placeholder="请输入文章内容"
                   style={{ height: '300px' }}
                   value={sectionForm.getFieldValue('content') || ''}
@@ -1090,7 +1091,12 @@ const CourseManager = ({ showToast }) => {
         title="编辑小节"
         open={showEditSectionModal}
         onOk={() => sectionForm.submit()}
-        onCancel={() => setShowEditSectionModal(false)}
+        onCancel={() => {
+          setShowEditSectionModal(false);
+          sectionForm.resetFields();
+          setEditingSection(null);
+          setSectionType('article');
+        }}
         okText={isLoading ? '保存中...' : '保存'}
         cancelText="取消"
         confirmLoading={isLoading}

@@ -209,8 +209,8 @@ const LearningCenter = () => {
                         </div>
 
                         <div className="flex items-center gap-2">
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${course.isFree === '是' ? 'bg-emerald-50 text-emerald-600 ring-1 ring-emerald-200' : 'bg-blue-50 text-blue-600 ring-1 ring-blue-200'}`}>
-                            {course.isFree === '是' ? '免费' : '付费'}
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${Number(course.price) === 0 ? 'bg-emerald-50 text-emerald-600 ring-1 ring-emerald-200' : 'bg-blue-50 text-blue-600 ring-1 ring-blue-200'}`}>
+                            {Number(course.price) === 0 ? '免费' : `¥${Number(course.price).toFixed(2)}`}
                           </span>
                           {course.format && (
                             <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">{course.format}</span>

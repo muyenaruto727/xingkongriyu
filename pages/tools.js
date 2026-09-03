@@ -40,7 +40,7 @@ const Tools = () => {
         <section className="pt-24 pb-12 md:pt-32 md:pb-20">
           <div className="container">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+              <div className="flex h-full flex-col bg-white rounded-xl shadow-lg p-8 border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                 <div className="bg-sky-100 text-sky-600 rounded-full w-16 h-16 flex items-center justify-center mb-6">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -71,12 +71,12 @@ const Tools = () => {
                 </p>
                 <Link
                   href="/tools/gojyuon"
-                  className="bg-sky-500 hover:bg-sky-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium"
+                  className="mt-auto w-fit bg-sky-500 hover:bg-sky-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium"
                 >
                   开始游戏
                 </Link>
               </div>
-              <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+              <div className="flex h-full flex-col bg-white rounded-xl shadow-lg p-8 border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                 <div className="bg-purple-100 text-purple-600 rounded-full w-16 h-16 flex items-center justify-center mb-6">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -101,13 +101,13 @@ const Tools = () => {
                 </p>
                 <Link
                   href="/tools/typing-game"
-                  className="bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium"
+                  className="mt-auto w-fit bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium"
                 >
                   开始游戏
                 </Link>
               </div>
 
-              <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+              <div className="flex h-full flex-col bg-white rounded-xl shadow-lg p-8 border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                 <div className="bg-pink-100 text-pink-600 rounded-full w-16 h-16 flex items-center justify-center mb-6">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -138,13 +138,13 @@ const Tools = () => {
                 </p>
                 <Link
                   href="/tools/tetris-game"
-                  className="bg-pink-500 hover:bg-pink-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium"
+                  className="mt-auto w-fit bg-pink-500 hover:bg-pink-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium"
                 >
                   开始游戏
                 </Link>
               </div>
 
-              <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+              <div className="flex h-full flex-col bg-white rounded-xl shadow-lg p-8 border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                 <div className="bg-indigo-100 text-indigo-600 rounded-full w-16 h-16 flex items-center justify-center mb-6">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -169,13 +169,13 @@ const Tools = () => {
                 </p>
                 <Link
                   href="/tools/flash-cards"
-                  className="bg-indigo-500 hover:bg-indigo-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium"
+                  className="mt-auto w-fit bg-indigo-500 hover:bg-indigo-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium"
                 >
                   开始记忆
                 </Link>
               </div>
 
-              <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+              <div className="flex h-full flex-col bg-white rounded-xl shadow-lg p-8 border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                 <div className="bg-blue-100 text-blue-600 rounded-full w-16 h-16 flex items-center justify-center mb-6">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -206,13 +206,13 @@ const Tools = () => {
                 </p>
                 <Link
                   href="/tools/police-catch-thief"
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium"
+                  className="mt-auto w-fit bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium"
                 >
                   开始追捕
                 </Link>
               </div>
 
-              <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+              <div className="flex h-full flex-col bg-white rounded-xl shadow-lg p-8 border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                 <div className="bg-amber-100 text-amber-600 rounded-full w-16 h-16 flex items-center justify-center mb-6">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -243,13 +243,13 @@ const Tools = () => {
                 </p>
                 <Link
                   href="/tools/verb-change"
-                  className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium"
+                  className="mt-auto w-fit bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium"
                 >
                   开始练习
                 </Link>
               </div>
 
-              <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+              <div className="flex h-full flex-col bg-white rounded-xl shadow-lg p-8 border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                 <div className="bg-cyan-100 text-cyan-600 rounded-full w-16 h-16 flex items-center justify-center mb-6">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -280,13 +280,13 @@ const Tools = () => {
                 </p>
                 <Link
                   href="/tools/easy-listening"
-                  className="bg-cyan-500 hover:bg-cyan-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium"
+                  className="mt-auto w-fit bg-cyan-500 hover:bg-cyan-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium"
                 >
                   开始听写
                 </Link>
               </div>
 
-              <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+              <div className="flex h-full flex-col bg-white rounded-xl shadow-lg p-8 border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                 <div className="bg-orange-100 text-orange-600 rounded-full w-16 h-16 flex items-center justify-center mb-6">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -311,13 +311,13 @@ const Tools = () => {
                 </p>
                 <Link
                   href="/tools/easynews"
-                  className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium"
+                  className="mt-auto w-fit bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium"
                 >
                   开始阅读
                 </Link>
               </div>
 
-              <div className="bg-white rounded-xl shadow-lg p-8 border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+              <div className="flex h-full flex-col bg-white rounded-xl shadow-lg p-8 border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
                 <div className="bg-red-100 text-red-600 rounded-full w-16 h-16 flex items-center justify-center mb-6">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -354,7 +354,7 @@ const Tools = () => {
                 </p>
                 <Link
                   href="/tools/yahoonews"
-                  className="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium"
+                  className="mt-auto w-fit bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg transition-colors inline-block font-medium"
                 >
                   查看新闻
                 </Link>

@@ -1,9 +1,13 @@
-import { useState, useEffect, useRef } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { message } from 'antd';
 import Navigation from '../../components/layout/Navigation';
 import { api } from '../../lib/api';
+import {
+  buildTypingVocabularyParams,
+  cleanTypingVocabulary,
+} from '../../lib/typingGame';
 
 const TypingGame = () => {
   const router = useRouter();
@@ -19,7 +23,11 @@ const TypingGame = () => {
   const [gameHistory, setGameHistory] = useState([]);
   const [showResult, setShowResult] = useState(false);
   const [difficulty, setDifficulty] = useState('easy');
+  const [textbooks, setTextbooks] = useState([]);
+  const [sourceMode, setSourceMode] = useState('level');
   const [selectedLevel, setSelectedLevel] = useState('N5');
+  const [selectedTextbook, setSelectedTextbook] = useState('');
+  const [selectedLesson, setSelectedLesson] = useState('');
   const [wordCount, setWordCount] = useState(20);
   const [articleLevel, setArticleLevel] = useState('N5');
   const [filteredItems, setFilteredItems] = useState([]);
@@ -43,6 +51,36 @@ const TypingGame = () => {
       setCurrentUser(JSON.parse(user));
     }
   }, []);
+
+  useEffect(() => {
+    fetchTextbooks();
+  }, []);
+
+  const fetchTextbooks = async () => {
+    try {
+      const data = await api.getTextbookList();
+      const list = Array.isArray(data) ? data : data?.data || [];
+      setTextbooks(list);
+    } catch (err) {
+      api.handleError('教材列表读取失败', err);
+    }
+  };
+
+  const selectedTextbookItem = useMemo(
+    () => textbooks.find((item) => String(item.id) === String(selectedTextbook)),
+    [selectedTextbook, textbooks],
+  );
+
+  const lessonOptions = useMemo(() => {
+    if (!selectedTextbookItem) return [];
+    if (Array.isArray(selectedTextbookItem.lessons)) return selectedTextbookItem.lessons;
+
+    const count = selectedTextbookItem.lesson_count || selectedTextbookItem.lessons_count || 25;
+    return Array.from({ length: count }, (_, index) => ({
+      id: `第${index + 1}课`,
+      name: `第${index + 1}课`,
+    }));
+  }, [selectedTextbookItem]);
 
   useEffect(() => {
     let timer;
@@ -79,12 +117,25 @@ const TypingGame = () => {
       setUsedItems([]);
 
       if (gameMode === 'word') {
-        const vocabData = await api.getVocabList({ level: selectedLevel, limit: 1000 });
-        const vocabList = vocabData.data || vocabData || [];
-        const filtered = (Array.isArray(vocabList) ? vocabList : []).filter(vocab => vocab.level === selectedLevel);
-        const items = filtered.slice(0, wordCount);
+        const requestConfig = buildTypingVocabularyParams({
+          gameMode,
+          sourceMode,
+          selectedLevel,
+          selectedTextbook,
+          selectedTextbookName: selectedTextbookItem?.name || '',
+          selectedLesson,
+          wordCount,
+        });
+
+        if (requestConfig?.error) {
+          message.warning(requestConfig.error);
+          return;
+        }
+
+        const vocabData = await api.getVocabList(requestConfig.params);
+        const items = cleanTypingVocabulary(vocabData).slice(0, wordCount);
         if (items.length === 0) {
-          message.warning('当前配置没有可用词汇，请换一个等级后再试');
+          message.warning('当前配置没有可用词汇，请换一个等级或课程后再试');
           return;
         }
         setFilteredItems(items);
@@ -181,12 +232,19 @@ const TypingGame = () => {
       <Navigation />
 
       <main className="tool-main">
-        <div className="container max-w-3xl">
+        <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-8">
 
           {/* ── Settings Page ── */}
           {!isPlaying && !showResult && (
             <div>
-              {/* Hero header */}
+              <button
+                type="button"
+                onClick={() => router.push('/tools')}
+                className="tool-back"
+              >
+                ← 返回小工具
+              </button>
+
               <div className="mb-8">
                 <span className="tool-eyebrow">打字游戏</span>
                 <h1 className="tool-title">
@@ -201,7 +259,7 @@ const TypingGame = () => {
               <div className="tool-panel mb-8">
                 {/* Mode selection */}
                 <div className="mb-8">
-                  <label className="block text-sm font-semibold text-gray-700 mb-4">选择模式</label>
+                  <label className="tool-label mb-4">选择模式</label>
                   <div className="grid grid-cols-2 gap-4">
                     <button
                       onClick={() => setGameMode('word')}
@@ -240,37 +298,103 @@ const TypingGame = () => {
 
                 {/* Level / Count / Article level */}
                 {gameMode === 'word' && (
-                  <div className="grid grid-cols-2 gap-4 mb-8">
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">词汇等级</label>
-                      <select
-                        value={selectedLevel}
-                        onChange={(e) => setSelectedLevel(e.target.value)}
-                        className="tool-input"
-                      >
-                        {levels.map(level => (
-                          <option key={level} value={level}>{level}</option>
-                        ))}
-                      </select>
+                  <>
+                    <div className="mb-8">
+                      <label className="tool-label">词汇来源</label>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <button
+                          type="button"
+                          onClick={() => setSourceMode('level')}
+                          className={`tool-choice ${sourceMode === 'level' ? 'tool-choice-active' : ''}`}
+                        >
+                          <div className="font-bold text-slate-800">按级别筛选</div>
+                          <div className="mt-1 text-xs text-slate-500">从 N1-N5 词汇中抽取打字题</div>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSourceMode('textbook')}
+                          className={`tool-choice ${sourceMode === 'textbook' ? 'tool-choice-active' : ''}`}
+                        >
+                          <div className="font-bold text-slate-800">按教材课程</div>
+                          <div className="mt-1 text-xs text-slate-500">从指定教材和课程抽取打字题</div>
+                        </button>
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">词汇数量</label>
-                      <select
-                        value={wordCount}
-                        onChange={(e) => setWordCount(Number(e.target.value))}
-                        className="tool-input"
-                      >
-                        {wordCounts.map(count => (
-                          <option key={count} value={count}>{count} 个</option>
-                        ))}
-                      </select>
+
+                    <div className="grid gap-5 mb-8 md:grid-cols-2">
+                      {sourceMode === 'level' ? (
+                        <div>
+                          <label className="tool-label">词汇等级</label>
+                          <select
+                            value={selectedLevel}
+                            onChange={(e) => setSelectedLevel(e.target.value)}
+                            className="tool-input"
+                          >
+                            {levels.map(level => (
+                              <option key={level} value={level}>{level}</option>
+                            ))}
+                          </select>
+                        </div>
+                      ) : (
+                        <>
+                          <div>
+                            <label className="tool-label">选择教材</label>
+                            <select
+                              value={selectedTextbook}
+                              onChange={(e) => {
+                                setSelectedTextbook(e.target.value);
+                                setSelectedLesson('');
+                              }}
+                              className="tool-input"
+                            >
+                              <option value="">请选择教材</option>
+                              {textbooks.map((textbook) => (
+                                <option key={textbook.id} value={String(textbook.id)}>
+                                  {textbook.name}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="tool-label">选择课程</label>
+                            <select
+                              value={selectedLesson}
+                              onChange={(e) => setSelectedLesson(e.target.value)}
+                              className="tool-input"
+                              disabled={!selectedTextbook}
+                            >
+                              <option value="">请选择课程</option>
+                              {lessonOptions.map((lesson) => {
+                                const lessonName = lesson.name || lesson;
+                                return (
+                                  <option key={lesson.id || lessonName} value={lessonName}>
+                                    {lessonName}
+                                  </option>
+                                );
+                              })}
+                            </select>
+                          </div>
+                        </>
+                      )}
+                      <div>
+                        <label className="tool-label">词汇数量</label>
+                        <select
+                          value={wordCount}
+                          onChange={(e) => setWordCount(Number(e.target.value))}
+                          className="tool-input"
+                        >
+                          {wordCounts.map(count => (
+                            <option key={count} value={count}>{count} 个</option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
-                  </div>
+                  </>
                 )}
 
                 {gameMode === 'sentence' && (
                   <div className="mb-8">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">文章难度</label>
+                    <label className="tool-label">文章难度</label>
                     <select
                       value={articleLevel}
                       onChange={(e) => setArticleLevel(e.target.value)}
@@ -285,7 +409,7 @@ const TypingGame = () => {
 
                 {/* Difficulty */}
                 <div className="mb-8">
-                  <label className="block text-sm font-semibold text-gray-700 mb-3">难度选择</label>
+                  <label className="tool-label mb-3">难度选择</label>
                   <div className="grid grid-cols-3 gap-3">
                     {[
                       { key: 'easy', label: '简单', desc: gameMode === 'sentence' ? '15分钟' : '90秒' },
@@ -305,17 +429,11 @@ const TypingGame = () => {
                 </div>
 
                 {/* Action row */}
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => router.push('/tools')}
-                    className="tool-button-secondary flex-1"
-                  >
-                    ← 返回
-                  </button>
+                <div className="flex justify-end">
                   <button
                     onClick={startGame}
-                    disabled={isLoadingData}
-                    className="tool-button-primary flex-1"
+                    disabled={isLoadingData || (gameMode === 'word' && sourceMode === 'textbook' && (!selectedTextbook || !selectedLesson))}
+                    className="tool-button-primary w-full sm:w-auto sm:min-w-40"
                   >
                     {isLoadingData ? '准备中...' : '开始游戏'}
                   </button>

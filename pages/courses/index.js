@@ -77,8 +77,8 @@ const Courses = () => {
                       <h4 className="text-xl font-semibold mb-3 text-gray-800">{course.name}</h4>
                       <p className="text-gray-600 mb-6 leading-relaxed">{course.description}</p>
                       <div className="flex justify-between items-center mb-6">
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${course.isFree === '是' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
-                          {course.isFree === '是' ? '免费' : '付费'}
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${Number(course.price) === 0 ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
+                          {Number(course.price) === 0 ? '免费' : `¥${Number(course.price).toFixed(2)}`}
                         </span>
                         <span className="text-gray-600 text-sm">{course.format}</span>
                       </div>
