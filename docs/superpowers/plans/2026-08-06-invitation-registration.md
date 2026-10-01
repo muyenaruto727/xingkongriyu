@@ -24,7 +24,7 @@
 ### Task 2: Database Migration
 
 **Files:**
-- Create: `db/updates/add-invitation-codes.js`
+- Create: `db/migrations/add-invitation-codes.js`
 - Modify: `package.json`
 
 - [ ] Add `invitation_codes` table.
@@ -68,5 +68,5 @@
 - `node -c pages/api/auth/login.js`
 - `node -c pages/api/invitation-codes/index.js`
 - `node -c pages/api/users/index.js`
-- `node -c db/updates/add-invitation-codes.js`
+- `node -c db/migrations/add-invitation-codes.js`
 - `npm run build`

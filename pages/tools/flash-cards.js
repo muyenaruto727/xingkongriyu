@@ -400,7 +400,12 @@ const Flashcards = () => {
                               <div className="text-xs font-bold text-slate-400">例句</div>
                               <div className="mt-3 space-y-3 text-base leading-8 text-slate-700">
                                 {currentExamples.slice(0, 2).map((example, index) => (
-                                  <p key={`${example}-${index}`}>{example}</p>
+                                  <div key={`${example.sentence}-${index}`}>
+                                    <p>{example.sentence}</p>
+                                    {example.meaning && (
+                                      <p className="text-sm text-slate-500">{example.meaning}</p>
+                                    )}
+                                  </div>
                                 ))}
                               </div>
                             </div>

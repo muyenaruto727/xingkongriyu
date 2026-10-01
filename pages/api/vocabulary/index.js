@@ -208,7 +208,7 @@ async function handler(req, res) {
                 normalizedItem.category,
                 normalizedItem.pitch_accent,
                 normalizedItem.tag,
-                toArray(normalizedItem.examples),
+                JSON.stringify(normalizedItem.examples || []),
                 Array.isArray(normalizedItem.textbooks) ? normalizedItem.textbooks.join(',') : normalizedItem.textbooks,
                 Array.isArray(normalizedItem.lessons) ? normalizedItem.lessons.join(',') : normalizedItem.lessons,
               ];
@@ -227,7 +227,7 @@ async function handler(req, res) {
                 normalizedItem.category,
                 normalizedItem.pitch_accent,
                 normalizedItem.tag,
-                toArray(normalizedItem.examples),
+                JSON.stringify(normalizedItem.examples || []),
               ];
               const result = await pool.query(query, params);
               results.push(result.rows[0]);
@@ -270,7 +270,7 @@ async function handler(req, res) {
             normalizedItem.category,
             normalizedItem.pitch_accent,
             normalizedItem.tag,
-            toArray(normalizedItem.examples),
+            JSON.stringify(normalizedItem.examples || []),
             normalizedItem.textbook,
             normalizedItem.lesson,
           ];
@@ -290,7 +290,7 @@ async function handler(req, res) {
             normalizedItem.category,
             normalizedItem.pitch_accent,
             normalizedItem.tag,
-            toArray(normalizedItem.examples),
+            JSON.stringify(normalizedItem.examples || []),
           ];
           const result = await pool.query(query, params);
           cache.clear();
@@ -324,7 +324,7 @@ async function handler(req, res) {
             normalizedItem.category,
             normalizedItem.pitch_accent,
             normalizedItem.tag,
-            toArray(normalizedItem.examples),
+            JSON.stringify(normalizedItem.examples || []),
             normalizedItem.textbook,
             normalizedItem.lesson,
             id,
@@ -348,7 +348,7 @@ async function handler(req, res) {
             normalizedItem.category,
             normalizedItem.pitch_accent,
             normalizedItem.tag,
-            toArray(normalizedItem.examples),
+            JSON.stringify(normalizedItem.examples || []),
             id,
           ];
           const result = await pool.query(query, params);

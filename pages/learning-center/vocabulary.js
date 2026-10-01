@@ -9,6 +9,7 @@ import {
   getVocabularyOptionValue,
   normalizeVocabularyField,
 } from '../../lib/vocabularyOptions';
+import { buildVocabularyCardMeta } from '../../lib/vocabCardPresentation';
 
 const Navigation = dynamic(() => import('../../components/layout/Navigation'), { ssr: true });
 const Footer = dynamic(() => import('../../components/layout/Footer'), { ssr: true });
@@ -254,8 +255,8 @@ const Vocabulary = () => {
             {safeVocabList.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                 {safeVocabList.map((vocab) => {
-                  const levelLabel = formatVocabularyField('level', vocab.level) || 'N5';
-                  const lc = levelColors[levelLabel] || levelColors['N5'];
+                  const { levelLabel, tagLabels } = buildVocabularyCardMeta(vocab);
+                  const lc = levelColors[levelLabel];
                   const categories = normalizeVocabularyField('category', vocab.category);
                   const pitchAccent = normalizeVocabularyField('pitchAccent', vocab.pitch_accent || vocab.pitchAccent);
 
@@ -267,7 +268,9 @@ const Vocabulary = () => {
                       {/* Row 1: Level + categories + favorite */}
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
-                          <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${lc.bg} ${lc.text}`}>{levelLabel}</span>
+                          {levelLabel && lc && (
+                            <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${lc.bg} ${lc.text}`}>{levelLabel}</span>
+                          )}
                           {Array.isArray(categories) && categories.slice(0, 1).map((cat, i) => (
                             <span key={i} className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">{formatVocabularyField('category', cat)}</span>
                           ))}
@@ -281,6 +284,16 @@ const Vocabulary = () => {
                           </svg>
                         </button>
                       </div>
+
+                      {tagLabels.length > 0 && (
+                        <div className="mb-3 flex flex-wrap gap-1.5">
+                          {tagLabels.map((tag) => (
+                            <span key={tag} className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
 
                       {/* Row 2: Word + meaning */}
                       <div className="mb-4">
@@ -374,13 +387,16 @@ const Vocabulary = () => {
                   <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
                     <span className="w-1 h-4 bg-blue-500 rounded-full" /> 例句
                   </h4>
-                  {Array.isArray(examples) && examples.length > 0 && examples.some(ex => ex && ex.trim() !== '') ? (
+                  {Array.isArray(examples) && examples.some(ex => ex?.sentence?.trim()) ? (
                     <div className="space-y-2">
-                      {examples.filter(ex => ex && ex.trim() !== '').map((ex, i) => (
+                      {examples.filter(ex => ex?.sentence?.trim()).map((ex, i) => (
                         <div key={i} className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl px-4 py-3">
                           <div className="flex items-baseline gap-3">
                             <span className="text-blue-600 font-bold text-sm min-w-[24px]">{i + 1}.</span>
-                            <p className="text-gray-800 text-sm leading-relaxed">{ex}</p>
+                            <div>
+                              <p className="text-gray-800 text-sm leading-relaxed">{ex.sentence}</p>
+                              {ex.meaning && <p className="mt-1 text-gray-500 text-sm">{ex.meaning}</p>}
+                            </div>
                           </div>
                         </div>
                       ))}

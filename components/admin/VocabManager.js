@@ -26,6 +26,10 @@ import {
 import { validateVocabularyForm } from '../../lib/vocabFormValidation';
 import { buildVocabularyImportSummary } from '../../lib/vocabImportSummary';
 import {
+  countVocabularyExamples,
+  formatPitchAccent,
+} from '../../lib/vocabPresentation';
+import {
   getPageSizeChangeState,
   getPaginationRequestParams,
 } from '../../lib/adminPagination';
@@ -53,10 +57,10 @@ const VocabManager = () => {
     japanese: '',
     pronunciation: '',
     category: [],
-    pitchAccent: [],
+    pitchAccent: '',
     chinese: '',
     level: '',
-    examples: [''],
+    examples: [{ sentence: '', meaning: '' }],
     tag: [],
     textbooks: [],
     lessons: [],
@@ -214,7 +218,12 @@ const VocabManager = () => {
         category: normalizedForm.category,
         pitch_accent: normalizedForm.pitch_accent,
         tag: normalizedForm.tag,
-        examples: normalizedForm.examples.filter((example) => example.trim()),
+        examples: normalizedForm.examples
+          .map((example) => ({
+            sentence: String(example.sentence || '').trim(),
+            meaning: String(example.meaning || '').trim(),
+          }))
+          .filter((example) => example.sentence),
         textbook: textbooks.length > 0 ? textbooks.join(',') : '',
         lesson: vocabForm.lessons.length > 0 ? vocabForm.lessons.join(',') : '',
       });
@@ -265,7 +274,12 @@ const VocabManager = () => {
         category: normalizedForm.category,
         pitch_accent: normalizedForm.pitch_accent,
         tag: normalizedForm.tag,
-        examples: normalizedForm.examples.filter((example) => example.trim()),
+        examples: normalizedForm.examples
+          .map((example) => ({
+            sentence: String(example.sentence || '').trim(),
+            meaning: String(example.meaning || '').trim(),
+          }))
+          .filter((example) => example.sentence),
         textbook:
           vocabForm.textbooks.length > 0 ? vocabForm.textbooks.join(',') : '',
         lesson: vocabForm.lessons.length > 0 ? vocabForm.lessons.join(',') : '',
@@ -395,17 +409,14 @@ const VocabManager = () => {
       japanese: vocab.japanese || '',
       pronunciation: vocab.pronunciation || '',
       category: normalizeVocabularyField('category', vocab.category),
-      pitchAccent: normalizeVocabularyField(
-        'pitchAccent',
-        vocab.pitch_accent || vocab.pitchAccent,
+      pitchAccent: formatPitchAccent(
+        vocab.pitch_accent ?? vocab.pitchAccent,
       ),
       chinese: vocab.chinese || '',
       level: getVocabularyOptionValue('level', vocab.level) || '',
-      examples: vocab.examples
-        ? Array.isArray(vocab.examples)
-          ? vocab.examples
-          : [vocab.examples]
-        : [''],
+      examples: Array.isArray(vocab.examples) && vocab.examples.length > 0
+        ? vocab.examples
+        : [{ sentence: '', meaning: '' }],
       tag: hasValue(vocab.tag)
         ? normalizeVocabularyField('tag', vocab.tag)
         : [],
@@ -427,10 +438,10 @@ const VocabManager = () => {
       japanese: '',
       pronunciation: '',
       category: [],
-      pitchAccent: [],
+      pitchAccent: '',
       chinese: '',
       level: '',
-      examples: [''],
+      examples: [{ sentence: '', meaning: '' }],
       tag: [],
       textbooks: [],
       lessons: [],
@@ -645,10 +656,10 @@ const VocabManager = () => {
         level: 5,
         tag: [0, 2],
         category: [12],
-        pitchAccent: [0],
+        pitchAccent: '⓪',
         examples: [
-          '例えば、日本語の勉強は毎日する必要があります。',
-          '例えば、この本はとても面白いです。',
+          { sentence: '例えば、日本語の勉強は毎日する必要があります。', meaning: '例如，日语需要每天学习。' },
+          { sentence: '例えば、この本はとても面白いです。', meaning: '例如，这本书非常有趣。' },
         ],
         textbooks: ['综合日语1', '大家的日语初级上'],
         lessons: ['综合日语1:第1课', '大家的日语初级上:第3课'],
@@ -660,10 +671,10 @@ const VocabManager = () => {
         level: 5,
         tag: [0],
         category: [10],
-        pitchAccent: [1],
+        pitchAccent: '①',
         examples: [
-          '私は毎日日本語を勉強しています。',
-          '彼は一生懸命勉強しています。',
+          { sentence: '私は毎日日本語を勉強しています。', meaning: '我每天学习日语。' },
+          { sentence: '彼は一生懸命勉強しています。', meaning: '他正在努力学习。' },
         ],
         textbooks: ['综合日语1'],
         lessons: ['综合日语1:第1课'],
@@ -675,8 +686,11 @@ const VocabManager = () => {
         level: 5,
         tag: [0],
         category: [6],
-        pitchAccent: [2],
-        examples: ['私は毎日三食食べます。', '彼はりんごを食べています。'],
+        pitchAccent: '②',
+        examples: [
+          { sentence: '私は毎日三食食べます。', meaning: '我每天吃三顿饭。' },
+          { sentence: '彼はりんごを食べています。', meaning: '他正在吃苹果。' },
+        ],
         textbooks: ['综合日语1'],
         lessons: ['综合日语1:第2课'],
       },
@@ -1066,28 +1080,14 @@ const VocabManager = () => {
           },
           {
             title: '声调',
-            render: (row) => {
-              const pitchAccents = normalizeVocabularyField(
-                'pitchAccent',
-                row.pitch_accent || row.pitchAccent,
-              );
-              if (Array.isArray(pitchAccents) && pitchAccents.length > 0) {
-                return (
-                  <div className="flex flex-wrap gap-1">
-                    {pitchAccents.map((accent, i) => (
-                      <span
-                        key={i}
-                        className="bg-blue-100 text-primary px-2 py-1 rounded text-xs"
-                      >
-                        {formatVocabularyField('pitchAccent', accent)}
-                      </span>
-                    ))}
-                  </div>
-                );
-              }
-              return '-';
-            },
+            render: (row) =>
+              formatPitchAccent(row.pitch_accent ?? row.pitchAccent) || '-',
             cellClassName: 'text-sm',
+          },
+          {
+            title: '例句条数',
+            render: (row) => countVocabularyExamples(row.examples),
+            cellClassName: 'text-dark',
           },
           {
             title: '级别',
@@ -1246,20 +1246,14 @@ const VocabManager = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-dark mb-2">
-                声调 <span className="text-red-500">*</span>
+                声调
               </label>
-              <Select
-                mode="multiple"
-                options={VOCABULARY_FIELD_OPTIONS.pitchAccent}
+              <Input
+                type="text"
+                name="pitchAccent"
                 value={vocabForm.pitchAccent}
-                onChange={(value) => {
-                  setVocabForm((prev) => ({
-                    ...prev,
-                    pitchAccent: value,
-                  }));
-                }}
-                placeholder="请选择声调"
-                style={{ width: '100%' }}
+                onChange={handleFormChange}
+                placeholder="请输入声调（可选）"
               />
             </div>
             <div>
@@ -1277,7 +1271,7 @@ const VocabManager = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-dark mb-2">
-                级别 <span className="text-red-500">*</span>
+                级别
               </label>
               <Select
                 options={VOCABULARY_FIELD_OPTIONS.level}
@@ -1285,7 +1279,7 @@ const VocabManager = () => {
                 onChange={(value) =>
                   setVocabForm((prev) => ({ ...prev, level: value }))
                 }
-                placeholder="请选择级别"
+                placeholder="请选择级别（可选）"
                 style={{ width: '100%' }}
               />
             </div>
@@ -1311,13 +1305,16 @@ const VocabManager = () => {
               例句
             </label>
             {vocabForm.examples.map((example, index) => (
-              <div key={index} className="flex gap-2 mb-2">
+              <div key={index} className="grid gap-2 mb-2 md:grid-cols-2">
                 <Input
                   type="text"
-                  value={example}
+                  value={example.sentence}
                   onChange={(e) => {
                     const newExamples = [...vocabForm.examples];
-                    newExamples[index] = e.target.value;
+                    newExamples[index] = {
+                      ...newExamples[index],
+                      sentence: e.target.value,
+                    };
                     setVocabForm((prev) => ({
                       ...prev,
                       examples: newExamples,
@@ -1326,6 +1323,21 @@ const VocabManager = () => {
                   className="flex-grow"
                   placeholder="请输入例句"
                 />
+                <div className="flex gap-2">
+                  <Input
+                    type="text"
+                    value={example.meaning}
+                    onChange={(e) => {
+                      const newExamples = [...vocabForm.examples];
+                      newExamples[index] = {
+                        ...newExamples[index],
+                        meaning: e.target.value,
+                      };
+                      setVocabForm((prev) => ({ ...prev, examples: newExamples }));
+                    }}
+                    className="flex-grow"
+                    placeholder="请输入释义"
+                  />
                 <button
                   type="button"
                   onClick={() => {
@@ -1354,6 +1366,7 @@ const VocabManager = () => {
                     />
                   </svg>
                 </button>
+                </div>
               </div>
             ))}
             <button
@@ -1361,7 +1374,7 @@ const VocabManager = () => {
               onClick={() =>
                 setVocabForm((prev) => ({
                   ...prev,
-                  examples: [...prev.examples, ''],
+                  examples: [...prev.examples, { sentence: '', meaning: '' }],
                 }))
               }
               className="px-4 py-2 text-blue-600 hover:text-blue-800 transition-colors"
@@ -1414,7 +1427,7 @@ const VocabManager = () => {
           </div>
           <p className="mt-3 text-sm text-gray-500">
             CSV
-            模板支持用分号分隔多本教材、多个课程、多个声调、多个标签，例如：日常;商务/职场、⓪;①。
+            模板支持用分号分隔多本教材、多个课程、多个标签、例句和释义；例句与释义请按顺序一一对应。声调请直接填写文本。
           </p>
         </div>
 
@@ -1441,8 +1454,8 @@ const VocabManager = () => {
             <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
             <p className="ant-upload-hint">
               支持单个 JSON 或 CSV 文件上传。CSV 字段：japanese, pronunciation,
-              chinese, level, tag, category, pitchAccent, examples, textbooks,
-              lessons。
+              chinese, level, tag, category, pitchAccent, examples,
+              exampleMeanings, textbooks, lessons。
             </p>
           </Upload.Dragger>
         </div>

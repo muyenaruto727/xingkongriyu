@@ -3,6 +3,7 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../lib/api';
+import { getSafeLoginRedirect } from '../lib/protectedRoutes';
 
 const Login = () => {
   const router = useRouter();
@@ -30,7 +31,7 @@ const Login = () => {
     try {
       const data = await api.login(formData.username, formData.password);
       login(data.user, data.token);
-      router.push('/');
+      router.replace(getSafeLoginRedirect(router.query.redirect));
     } catch (error) {
       api.handleError('Login error:', error);
       setError(error.userMessage || error.message || '登录失败，请重试');
