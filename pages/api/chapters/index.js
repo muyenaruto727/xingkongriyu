@@ -43,6 +43,11 @@ async function handleGetChapters(req, res) {
               'name', s.name,
               'content', s.content,
               'video_url', s.video_url,
+              'videoUrl', s.video_url,
+              'content_type', s.content_type,
+              'contentType', s.content_type,
+              'textbook', s.textbook,
+              'lesson', s.lesson,
               'order', s."order"
             )
           ) FILTER (WHERE s.id IS NOT NULL),

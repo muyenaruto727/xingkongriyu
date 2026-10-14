@@ -9,6 +9,7 @@ import {
   Pagination,
   Upload,
   Modal,
+  Collapse,
 } from 'antd';
 import { InboxOutlined } from '@ant-design/icons';
 import PaginationTable from '../common/PaginationTable';
@@ -34,7 +35,10 @@ import {
   getPaginationRequestParams,
 } from '../../lib/adminPagination';
 import {
+  buildTextbookCascaderOptions,
   buildTextbookCascaderValue,
+  extractTextbookCascaderSelection,
+  formatTextbookCascaderDisplay,
   splitCommaList,
 } from '../../lib/vocabTextbookCascader';
 
@@ -80,16 +84,7 @@ const VocabManager = () => {
     return value !== undefined && value !== null && value !== '';
   };
 
-  // 转换教材数据为级联选择格式
-  // lesson value 使用教材名:课程名，确保选中后 Tag 显示 "综合日语1:第5课"
-  const cascaderOptions = textbooks.map((textbook) => ({
-    label: textbook.name,
-    value: String(textbook.id),
-    children: (textbook.lessons || []).map((lesson) => ({
-      label: `${textbook.name}:${lesson.name}`,
-      value: `${textbook.name}:${lesson.name}`,
-    })),
-  }));
+  const cascaderOptions = buildTextbookCascaderOptions(textbooks);
 
   const buildCascaderValue = (tbIds, lessons) =>
     buildTextbookCascaderValue(tbIds, lessons, textbooks);
@@ -198,17 +193,9 @@ const VocabManager = () => {
     try {
       const normalizedForm = normalizeVocabularyRecord(vocabForm);
 
-      // 处理教材ID，确保包含所有课程中提到的教材
-      const textbooksFromLessons = new Set(vocabForm.textbooks);
-
-      vocabForm.lessons.forEach((lessonValue) => {
-        if (lessonValue.includes(':')) {
-          const [textbookId] = lessonValue.split(':');
-          textbooksFromLessons.add(textbookId);
-        }
-      });
-
-      const textbooks = Array.from(textbooksFromLessons);
+      const textbooks = Array.from(
+        new Set((vocabForm.textbooks || []).map((item) => String(item))),
+      );
 
       await api.createVocab({
         japanese: normalizedForm.japanese,
@@ -479,7 +466,7 @@ const VocabManager = () => {
           if (fileName.endsWith('.json')) {
             data = JSON.parse(content);
           } else if (fileName.endsWith('.csv')) {
-            data = parseVocabularyCsv(content);
+            data = parseVocabularyCsv(content, true);
           } else {
             message.error('不支持的文件格式，请上传 JSON 或 CSV 文件');
             setIsLoading(false);
@@ -497,12 +484,21 @@ const VocabManager = () => {
 
           // 过滤掉模板中的示例数据（日文为空的条目）
           const totalCount = data.length;
+          const sourceIndices = new Map(data.map((item, index) => [item, item.importLine || index + 1]));
+          const positionLabel = fileName.endsWith('.csv') ? '行' : '条';
+          const invalidItems = data
+            .map((item) => ({ item, index: sourceIndices.get(item) }))
+            .filter(({ item }) => !item.japanese || !String(item.japanese).trim());
           let filteredData = data.filter(
             (item) => item.japanese && item.japanese.trim(),
           );
 
           if (filteredData.length === 0) {
-            message.error('没有有效的数据可导入');
+            Modal.info({
+              title: '批量导入结果',
+              content: <div style={{ maxHeight: 400, overflowY: 'auto' }}><p>没有有效的数据可导入，成功导入：0 条</p>{invalidItems.map(({ item, index }) => <p key={index}>第 {index} {positionLabel}：日文为空；{item.chinese || '无中文释义'}</p>)}</div>,
+              okText: '知道了',
+            });
             setIsLoading(false);
             if (inputElement) inputElement.value = '';
             return;
@@ -510,13 +506,18 @@ const VocabManager = () => {
 
           // 过滤掉重复数据（根据日文和发音的组合判断）
           const seen = new Set();
+          const duplicateGroups = new Map();
           const validDataCount = filteredData.length;
-          filteredData = filteredData.filter((item) => {
+          filteredData = filteredData.filter((item, index) => {
             const key = `${item.japanese}-${item.pronunciation}`;
             if (seen.has(key)) {
+              const group = duplicateGroups.get(key) || [];
+              group.push({ item, index: sourceIndices.get(item) });
+              duplicateGroups.set(key, group);
               return false;
             }
             seen.add(key);
+            duplicateGroups.set(key, [{ item, index: sourceIndices.get(item) }]);
             return true;
           });
           const duplicateInFileCount = validDataCount - filteredData.length;
@@ -547,6 +548,15 @@ const VocabManager = () => {
               logError(error, 'Batch Import Deduplication');
             }
 
+            let databaseDuplicates = [];
+            const renderImportDetails = () => (
+              <Collapse size="small" style={{ maxHeight: 400, overflowY: 'auto' }} items={[
+                ...(invalidItems.length ? [{ key: 'invalid', label: `无效数据（${invalidItems.length} 条）`, children: <div className="space-y-1">{invalidItems.map(({ index }) => <p key={index} className="m-0">第 {index} {positionLabel}：日文为空</p>)}</div> }] : []),
+                ...(duplicateInFileCount ? [{ key: 'file-duplicates', label: `文件内重复（${duplicateInFileCount} 条）`, children: <div className="space-y-2">{[...duplicateGroups.entries()].filter(([, rows]) => rows.length > 1).map(([key, rows]) => <div key={key}><div className="font-medium">{rows[0].item.japanese}｜{rows[0].item.pronunciation}</div>{rows.map(({ item, index }) => <p key={index} className="m-0 text-gray-600">第 {index} {positionLabel}：{item.chinese || '无中文释义'}</p>)}</div>)}</div> }] : []),
+                ...(dedupeAvailable && databaseDuplicates.length ? [{ key: 'database-duplicates', label: `数据库已存在（${databaseDuplicates.length} 条）`, children: <div className="space-y-1">{databaseDuplicates.map((item, index) => <p key={`${item.japanese}-${item.pronunciation}-${index}`} className="m-0">{item.japanese}｜{item.pronunciation}</p>)}</div> }] : []),
+              ]} />
+            );
+
             if (dedupeAvailable) {
               // 过滤掉与数据库中重复的词汇
               const uniqueData = filteredData.filter((item) => {
@@ -555,12 +565,14 @@ const VocabManager = () => {
             });
             const duplicateInDatabaseCount =
               filteredData.length - uniqueData.length;
+            databaseDuplicates = filteredData
+              .filter((item) => existingKeys.has(`${item.japanese}-${item.pronunciation}`));
 
             if (uniqueData.length === 0) {
               Modal.info({
                 title: '批量导入结果',
                 content: (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {buildVocabularyImportSummary({
                       totalCount,
                       validCount: validDataCount,
@@ -572,6 +584,7 @@ const VocabManager = () => {
                         {line}
                       </p>
                     ))}
+                    {renderImportDetails()}
                   </div>
                 ),
                 okText: '知道了',
@@ -586,7 +599,7 @@ const VocabManager = () => {
             Modal.success({
               title: '批量导入完成',
               content: (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {buildVocabularyImportSummary({
                     totalCount,
                     validCount: validDataCount,
@@ -598,6 +611,7 @@ const VocabManager = () => {
                       {line}
                     </p>
                   ))}
+                  {renderImportDetails()}
                 </div>
               ),
                 okText: '知道了',
@@ -608,18 +622,19 @@ const VocabManager = () => {
               Modal.success({
               title: '批量导入完成',
               content: (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {buildVocabularyImportSummary({
                     totalCount,
                     validCount: validDataCount,
                     duplicateInFileCount,
                     importedCount: filteredData.length,
                     fallbackMode: true,
-                  }).map((line) => (
+                }).map((line) => (
                     <p key={line} className="m-0">
                       {line}
                     </p>
                   ))}
+                  {renderImportDetails()}
                 </div>
               ),
               okText: '知道了',
@@ -969,27 +984,7 @@ const VocabManager = () => {
                 searchForm.lessons,
               )}
               onChange={(values) => {
-                // Ant Design 5 Cascader 在 multiple 模式下返回路径数组的数组
-                // 例如选择 "综合日语1:第5课" → values = [["1", "1:第5课"]]
-                const textbooks = [];
-                const lessons = [];
-                const flatValues = Array.isArray(values) ? values : [];
-                flatValues.forEach((item) => {
-                  const path = Array.isArray(item) ? item : [item];
-                  if (path.length > 0) {
-                    // 路径第一个元素是教材ID
-                    if (!textbooks.includes(String(path[0]))) {
-                      textbooks.push(String(path[0]));
-                    }
-                    // 路径最后一个元素是叶子节点（课程）
-                    if (path.length > 1) {
-                      const leaf = String(path[path.length - 1]);
-                      if (!lessons.includes(leaf)) {
-                        lessons.push(leaf);
-                      }
-                    }
-                  }
-                });
+                const { textbooks, lessons } = extractTextbookCascaderSelection(values);
                 setSearchForm({
                   ...searchForm,
                   textbooks,
@@ -998,6 +993,8 @@ const VocabManager = () => {
               }}
               placeholder="请选择教材和课程"
               multiple
+              changeOnSelect
+              displayRender={formatTextbookCascaderDisplay}
               style={{ width: '100%' }}
             />
           </div>
@@ -1200,19 +1197,7 @@ const VocabManager = () => {
                   vocabForm.lessons || [],
                 )}
                 onChange={(values) => {
-                  // 处理Cascader的多选值格式
-                  const textbooksSet = new Set();
-                  const lessons = [];
-
-                  values.forEach((path) => {
-                    if (path.length === 2) {
-                      const [textbookId, lessonValue] = path;
-                      textbooksSet.add(textbookId);
-                      lessons.push(lessonValue);
-                    }
-                  });
-
-                  const textbooks = Array.from(textbooksSet);
+                  const { textbooks, lessons } = extractTextbookCascaderSelection(values);
 
                   // 直接更新状态，确保UI能够正确反映选择
                   setVocabForm({
@@ -1223,6 +1208,8 @@ const VocabManager = () => {
                 }}
                 placeholder="请选择教材和课程"
                 multiple
+                changeOnSelect
+                displayRender={formatTextbookCascaderDisplay}
                 style={{ width: '100%' }}
               />
             </div>

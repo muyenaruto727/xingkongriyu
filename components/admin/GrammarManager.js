@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { api } from '../../lib/api';
-import { message, Modal, Select, Input, Upload } from 'antd';
+import { message, Modal, Select, Input, Upload, Cascader } from 'antd';
 import { InboxOutlined } from '@ant-design/icons';
 import Pagination from '../common/Pagination';
 import PaginationTable from '../common/PaginationTable';
@@ -15,6 +15,13 @@ import {
   parseGrammarCsv,
 } from '../../lib/grammarCsvImport';
 import { buildGrammarImportSummary } from '../../lib/grammarImportSummary';
+import {
+  buildTextbookCascaderOptions,
+  buildTextbookCascaderValue,
+  extractTextbookCascaderSelection,
+  formatTextbookCascaderDisplay,
+  splitCommaList,
+} from '../../lib/vocabTextbookCascader';
 
 const { Dragger } = Upload;
 
@@ -33,6 +40,7 @@ const GrammarManager = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
+  const [textbooks, setTextbooks] = useState([]);
 
   // 语法表单状态
   const [grammarForm, setGrammarForm] = useState({
@@ -45,10 +53,23 @@ const GrammarManager = () => {
     examples: [''],
     translationExercises: [''],
     referenceAnswers: [''],
+    textbooks: [],
+    lessons: [],
     relatedGrammars: [createEmptyRelatedGrammarRow()],
   });
 
   const levels = ['N1', 'N2', 'N3', 'N4', 'N5'];
+
+  const cascaderOptions = buildTextbookCascaderOptions(textbooks);
+
+  const fetchTextbooks = async () => {
+    try {
+      const data = await api.getTextbookList();
+      setTextbooks(Array.isArray(data) ? data : []);
+    } catch (error) {
+      api.handleError('Failed to fetch textbooks:', error);
+    }
+  };
 
   // 加载语法数据
   const fetchGrammarList = async (pagination = {}) => {
@@ -85,6 +106,10 @@ const GrammarManager = () => {
   useEffect(() => {
     fetchGrammarList();
   }, [searchKeyword, selectedLevel, currentPage, itemsPerPage]);
+
+  useEffect(() => {
+    fetchTextbooks();
+  }, []);
 
   // 处理表单变化
   const handleFormChange = (e) => {
@@ -228,6 +253,8 @@ const GrammarManager = () => {
         .filter(Boolean),
       translationExercises: pairedExercises.map((item) => item.exercise),
       referenceAnswers: pairedExercises.map((item) => item.answer),
+      textbook: grammarForm.textbooks.join(','),
+      lesson: grammarForm.lessons.join(','),
       relatedGrammars: normalizeRelatedGrammars(grammarForm.relatedGrammars),
     };
   };
@@ -334,6 +361,8 @@ const GrammarManager = () => {
       examples: grammar.examples || [''],
       translationExercises: grammar.translationExercises || [''],
       referenceAnswers: grammar.referenceAnswers || [''],
+      textbooks: splitCommaList(grammar.textbook),
+      lessons: splitCommaList(grammar.lesson),
       relatedGrammars: ensureEditableRelatedGrammars(
         grammar.relatedGrammars || grammar.related_grammars,
       ),
@@ -375,6 +404,8 @@ const GrammarManager = () => {
       examples: [''],
       translationExercises: [''],
       referenceAnswers: [''],
+      textbooks: [],
+      lessons: [],
       relatedGrammars: [createEmptyRelatedGrammarRow()],
     });
     setCurrentEditId(null);
@@ -545,6 +576,8 @@ const GrammarManager = () => {
           '私は日本語を勉強しています。',
           '彼はテレビを見ています。',
         ],
+        textbooks: ['大家的日语初级上'],
+        lessons: ['大家的日语初级上:第14课'],
         relatedGrammars: [{ grammar: '〜てある', id: '12' }],
       },
       {
@@ -560,6 +593,8 @@ const GrammarManager = () => {
           '私は日本に行きたいです。',
           '彼女は寿司を食べたいです。',
         ],
+        textbooks: ['大家的日语初级上'],
+        lessons: ['大家的日语初级上:第13课'],
         relatedGrammars: [],
       },
     ];
@@ -979,56 +1014,6 @@ const GrammarManager = () => {
             />
           </div>
 
-          <div className="mb-5">
-            <label className="block text-sm font-medium text-dark mb-3">
-              关联语法（最多 10 行）
-            </label>
-            {grammarForm.relatedGrammars.map((item, rowIndex) => (
-              <div
-                key={rowIndex}
-                className="grid grid-cols-1 md:grid-cols-[1fr_160px_auto] gap-2 mb-3"
-              >
-                <Input
-                  type="text"
-                  value={item.grammar}
-                  onChange={(e) =>
-                    handleRelatedGrammarChange(
-                      rowIndex,
-                      'grammar',
-                      e.target.value,
-                    )
-                  }
-                  placeholder={`关联语法 ${rowIndex + 1}`}
-                />
-                <Input
-                  type="text"
-                  value={item.id}
-                  onChange={(e) =>
-                    handleRelatedGrammarChange(rowIndex, 'id', e.target.value)
-                  }
-                  placeholder="ID"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeRelatedGrammar(rowIndex)}
-                  disabled={grammarForm.relatedGrammars.length <= 1}
-                  className="px-3 py-2 text-red-600 hover:text-red-700 border border-red-200 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  删除
-                </button>
-              </div>
-            ))}
-            {grammarForm.relatedGrammars.length < MAX_RELATED_GRAMMAR_ROWS && (
-              <button
-                type="button"
-                onClick={addRelatedGrammar}
-                className="text-primary hover:text-primary/80 text-sm px-4 py-2 border border-primary/20 rounded-lg hover:bg-primary/5 transition-colors"
-              >
-                添加关联语法
-              </button>
-            )}
-          </div>
-
           {/* 例句 */}
           <div className="mb-5">
             <label className="block text-sm font-medium text-dark mb-3">
@@ -1171,6 +1156,85 @@ const GrammarManager = () => {
               </button>
             )}
           </div>
+
+          {/* 关联教材 */}
+          <div className="mb-5">
+            <label className="block text-sm font-medium text-dark mb-2">
+              关联教材
+            </label>
+            <Cascader
+              options={cascaderOptions}
+              value={buildTextbookCascaderValue(
+                grammarForm.textbooks,
+                grammarForm.lessons,
+                textbooks,
+              )}
+              onChange={(values) => {
+                const { textbooks, lessons } = extractTextbookCascaderSelection(values);
+                setGrammarForm((prev) => ({
+                  ...prev,
+                  textbooks,
+                  lessons,
+                }));
+              }}
+              placeholder="请选择教材和课程（可选）"
+              multiple
+              changeOnSelect
+              displayRender={formatTextbookCascaderDisplay}
+              style={{ width: '100%' }}
+            />
+          </div>
+
+          {/* 关联语法：保持为表单最后一项 */}
+          <div className="mb-5">
+            <label className="block text-sm font-medium text-dark mb-3">
+              关联语法（最多 10 行）
+            </label>
+            {grammarForm.relatedGrammars.map((item, rowIndex) => (
+              <div
+                key={rowIndex}
+                className="grid grid-cols-1 md:grid-cols-[1fr_160px_auto] gap-2 mb-3"
+              >
+                <Input
+                  type="text"
+                  value={item.grammar}
+                  onChange={(e) =>
+                    handleRelatedGrammarChange(
+                      rowIndex,
+                      'grammar',
+                      e.target.value,
+                    )
+                  }
+                  placeholder={`关联语法 ${rowIndex + 1}`}
+                />
+                <Input
+                  type="text"
+                  value={item.id}
+                  onChange={(e) =>
+                    handleRelatedGrammarChange(rowIndex, 'id', e.target.value)
+                  }
+                  placeholder="ID"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeRelatedGrammar(rowIndex)}
+                  disabled={grammarForm.relatedGrammars.length <= 1}
+                  className="px-3 py-2 text-red-600 hover:text-red-700 border border-red-200 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  删除
+                </button>
+              </div>
+            ))}
+            {grammarForm.relatedGrammars.length < MAX_RELATED_GRAMMAR_ROWS && (
+              <button
+                type="button"
+                onClick={addRelatedGrammar}
+                className="text-primary hover:text-primary/80 text-sm px-4 py-2 border border-primary/20 rounded-lg hover:bg-primary/5 transition-colors"
+              >
+                添加关联语法
+              </button>
+            )}
+          </div>
         </form>
       </Modal>
 
@@ -1216,7 +1280,7 @@ const GrammarManager = () => {
             </button>
           </div>
           <p className="mt-3 text-sm text-gray-500">
-            CSV 模板支持用分号分隔多个例句、翻译练习、参考答案；关联语法使用“语法|ID”，多个关联语法用分号分隔。
+            CSV 模板支持用分号分隔多个例句、翻译练习、参考答案、教材和课程；关联语法使用“语法|ID”，多个关联语法用分号分隔。
           </p>
         </div>
 
@@ -1241,7 +1305,7 @@ const GrammarManager = () => {
             </p>
             <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
             <p className="ant-upload-hint">
-              支持单个 JSON 或 CSV 文件上传。CSV 字段：grammarPoint, level, japaneseMeaning, chineseMeaning, continuation, attentionPoints, examples, translationExercises, referenceAnswers, relatedGrammars。
+              支持单个 JSON 或 CSV 文件上传。CSV 字段：grammarPoint, level, japaneseMeaning, chineseMeaning, continuation, attentionPoints, examples, translationExercises, referenceAnswers, textbooks, lessons, relatedGrammars。
             </p>
           </Dragger>
         </div>

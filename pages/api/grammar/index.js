@@ -5,6 +5,24 @@ const { parseIntegerParam } = require('../../../lib/requestValidation');
 const {
   normalizeRelatedGrammars,
 } = require('../../../lib/grammarRelated');
+const {
+  resolveTextbookFilterNames,
+  buildVocabularyTextbookFilter,
+} = require('../../../lib/vocabularyTextbookFilter');
+
+function serializeCommaList(value) {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim()).filter(Boolean).join(',');
+  }
+
+  return String(value || '').trim();
+}
+
+function toQueryList(value) {
+  if (Array.isArray(value)) return value;
+  if (value === undefined || value === null || value === '') return [];
+  return String(value).split(',').map((item) => item.trim()).filter(Boolean);
+}
 
 async function handler(req, res) {
   const { method } = req;
@@ -12,7 +30,7 @@ async function handler(req, res) {
   switch (method) {
     case 'GET':
       try {
-        const { id, level, search, page = 1, limit = 10, export: isExport } = req.query;
+        const { id, level, search, textbooks, lessons, textbook, lesson, page = 1, limit = 10, export: isExport } = req.query;
         const parsedPage = parseIntegerParam(page, { name: 'page', min: 1, max: 10000, defaultValue: 1 });
         const parsedLimit = parseIntegerParam(limit, { name: 'limit', min: 1, max: 100, defaultValue: 10 });
         if (!isExport && (parsedPage.error || parsedLimit.error)) {
@@ -40,6 +58,30 @@ async function handler(req, res) {
           paramIndex++;
         }
 
+        const finalTextbooks = textbooks || textbook;
+        const finalLessons = lessons || lesson;
+        const rawTextbookValues = toQueryList(finalTextbooks).filter((item) => item && item !== '全部');
+        const numericTextbookIds = rawTextbookValues.filter((item) => /^\d+$/.test(item));
+        let textbookRows = [];
+        if (numericTextbookIds.length > 0) {
+          const textbookResult = await pool.query(
+            'SELECT id, name FROM textbooks WHERE id = ANY($1::int[])',
+            [numericTextbookIds.map((item) => Number(item))],
+          );
+          textbookRows = textbookResult.rows;
+        }
+
+        const textbookFilter = buildVocabularyTextbookFilter({
+          textbookValues: resolveTextbookFilterNames(rawTextbookValues, textbookRows),
+          lessonValues: toQueryList(finalLessons).filter((item) => item && item !== '全部'),
+          startParamIndex: paramIndex,
+        });
+        if (textbookFilter.clauses.length > 0) {
+          whereClause += ` AND ${textbookFilter.clauses.map((clause) => `(${clause})`).join(' AND ')}`;
+          params.push(...textbookFilter.params);
+          paramIndex = textbookFilter.nextParamIndex;
+        }
+
         // 构建主查询
         let query = `SELECT * FROM grammar WHERE ${whereClause} ORDER BY id DESC`;
         
@@ -63,6 +105,8 @@ async function handler(req, res) {
           translationExercises: row.translation_exercises || [],
           referenceAnswers: row.reference_answers || [],
           examples: row.examples || [],
+          textbook: row.textbook || '',
+          lesson: row.lesson || '',
           relatedGrammars: normalizeRelatedGrammars(row.related_grammars)
         }));
 
@@ -87,7 +131,7 @@ async function handler(req, res) {
 
     case 'POST':
       try {
-        const { batch, grammarPoint, level, japaneseMeaning, chineseMeaning, continuation, attentionPoints, translationExercises, referenceAnswers, examples, relatedGrammars } = req.body;
+        const { batch, grammarPoint, level, japaneseMeaning, chineseMeaning, continuation, attentionPoints, translationExercises, referenceAnswers, examples, textbook, lesson, relatedGrammars } = req.body;
         const isDuplicateGrammar = async (item) => {
           const duplicateResult = await pool.query(
             'SELECT id FROM grammar WHERE grammar_point = $1 AND level = $2 LIMIT 1',
@@ -104,10 +148,10 @@ async function handler(req, res) {
               continue;
             }
             const result = await pool.query(
-              `INSERT INTO grammar (grammar_point, level, japanese_meaning, chinese_meaning, continuation, attention_points, translation_exercises, reference_answers, examples, related_grammars)
-               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+              `INSERT INTO grammar (grammar_point, level, japanese_meaning, chinese_meaning, continuation, attention_points, translation_exercises, reference_answers, examples, textbook, lesson, related_grammars)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
                RETURNING *`,
-              [item.grammarPoint, item.level, item.japaneseMeaning || '', item.chineseMeaning || '', item.continuation || '', item.attentionPoints || '', item.translationExercises || [], item.referenceAnswers || [], item.examples || [], JSON.stringify(normalizeRelatedGrammars(item.relatedGrammars || item.related_grammars))]
+              [item.grammarPoint, item.level, item.japaneseMeaning || '', item.chineseMeaning || '', item.continuation || '', item.attentionPoints || '', item.translationExercises || [], item.referenceAnswers || [], item.examples || [], serializeCommaList(item.textbook ?? item.textbooks), serializeCommaList(item.lesson ?? item.lessons), JSON.stringify(normalizeRelatedGrammars(item.relatedGrammars || item.related_grammars))]
             );
             results.push(result.rows[0]);
           }
@@ -118,10 +162,10 @@ async function handler(req, res) {
           }
           // 处理单个语法添加
           const result = await pool.query(
-            `INSERT INTO grammar (grammar_point, level, japanese_meaning, chinese_meaning, continuation, attention_points, translation_exercises, reference_answers, examples, related_grammars)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            `INSERT INTO grammar (grammar_point, level, japanese_meaning, chinese_meaning, continuation, attention_points, translation_exercises, reference_answers, examples, textbook, lesson, related_grammars)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
              RETURNING *`,
-            [grammarPoint, level, japaneseMeaning || '', chineseMeaning || '', continuation || '', attentionPoints || '', translationExercises || [], referenceAnswers || [], examples || [], JSON.stringify(normalizeRelatedGrammars(relatedGrammars))]
+            [grammarPoint, level, japaneseMeaning || '', chineseMeaning || '', continuation || '', attentionPoints || '', translationExercises || [], referenceAnswers || [], examples || [], serializeCommaList(textbook), serializeCommaList(lesson), JSON.stringify(normalizeRelatedGrammars(relatedGrammars))]
           );
           
           const row = result.rows[0];
@@ -136,6 +180,8 @@ async function handler(req, res) {
             translationExercises: row.translation_exercises || [],
             referenceAnswers: row.reference_answers || [],
             examples: row.examples || [],
+            textbook: row.textbook || '',
+            lesson: row.lesson || '',
             relatedGrammars: normalizeRelatedGrammars(row.related_grammars)
           };
           return successResponse(res, grammarItem, '语法添加成功');
@@ -148,16 +194,17 @@ async function handler(req, res) {
     case 'PUT':
       try {
         const { id } = req.query;
-        const { grammarPoint, level, japaneseMeaning, chineseMeaning, continuation, attentionPoints, translationExercises, referenceAnswers, examples, relatedGrammars } = req.body;
+        const { grammarPoint, level, japaneseMeaning, chineseMeaning, continuation, attentionPoints, translationExercises, referenceAnswers, examples, textbook, lesson, relatedGrammars } = req.body;
         
         const result = await pool.query(
           `UPDATE grammar 
            SET grammar_point = $1, level = $2, japanese_meaning = $3, chinese_meaning = $4, 
                continuation = $5, attention_points = $6, translation_exercises = $7, 
-               reference_answers = $8, examples = $9, related_grammars = $10, updated_at = CURRENT_TIMESTAMP
-           WHERE id = $11
+               reference_answers = $8, examples = $9, textbook = $10, lesson = $11,
+               related_grammars = $12, updated_at = CURRENT_TIMESTAMP
+           WHERE id = $13
            RETURNING *`,
-          [grammarPoint, level, japaneseMeaning || '', chineseMeaning || '', continuation || '', attentionPoints || '', translationExercises || [], referenceAnswers || [], examples || [], JSON.stringify(normalizeRelatedGrammars(relatedGrammars)), id]
+          [grammarPoint, level, japaneseMeaning || '', chineseMeaning || '', continuation || '', attentionPoints || '', translationExercises || [], referenceAnswers || [], examples || [], serializeCommaList(textbook), serializeCommaList(lesson), JSON.stringify(normalizeRelatedGrammars(relatedGrammars)), id]
         );
         
         const row = result.rows[0];
@@ -172,6 +219,8 @@ async function handler(req, res) {
           translationExercises: row.translation_exercises || [],
           referenceAnswers: row.reference_answers || [],
           examples: row.examples || [],
+          textbook: row.textbook || '',
+          lesson: row.lesson || '',
           relatedGrammars: normalizeRelatedGrammars(row.related_grammars)
         };
         return successResponse(res, grammarItem, '语法更新成功');

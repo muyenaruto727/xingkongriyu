@@ -10,6 +10,7 @@ import {
   normalizeVocabularyField,
 } from '../../lib/vocabularyOptions';
 import { buildVocabularyCardMeta } from '../../lib/vocabCardPresentation';
+import { countVocabularyExamples } from '../../lib/vocabPresentation';
 
 const Navigation = dynamic(() => import('../../components/layout/Navigation'), { ssr: true });
 const Footer = dynamic(() => import('../../components/layout/Footer'), { ssr: true });
@@ -255,10 +256,10 @@ const Vocabulary = () => {
             {safeVocabList.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
                 {safeVocabList.map((vocab) => {
-                  const { levelLabel, tagLabels } = buildVocabularyCardMeta(vocab);
+                  const { levelLabel, tagLabels, pitchAccentLabel } = buildVocabularyCardMeta(vocab);
                   const lc = levelColors[levelLabel];
                   const categories = normalizeVocabularyField('category', vocab.category);
-                  const pitchAccent = normalizeVocabularyField('pitchAccent', vocab.pitch_accent || vocab.pitchAccent);
+                  const exampleCount = countVocabularyExamples(vocab.examples);
 
                   return (
                     <div key={vocab.id} className="group relative bg-white rounded-2xl border border-gray-100 p-5 hover:shadow-xl hover:shadow-blue-100/30 hover:-translate-y-1 hover:border-blue-200 transition-all duration-300">
@@ -314,14 +315,16 @@ const Vocabulary = () => {
 
                       {/* Row 4: Pitch accent */}
                       <div className="text-xs text-gray-400 mb-5">
-                        声调: {formatVocabularyField('pitchAccent', pitchAccent) || '-'}
+                        声调: {pitchAccentLabel || '-'}
                       </div>
 
                       {/* Row 5: Example button */}
-                      <button onClick={() => { setCurrentVocab(vocab); setShowExampleModal(true); }}
-                        className="w-full py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-xl hover:bg-blue-100 hover:text-blue-700 transition-all duration-300 group-hover:bg-blue-100">
-                        查看例句
-                      </button>
+                      {exampleCount > 0 && (
+                        <button onClick={() => { setCurrentVocab(vocab); setShowExampleModal(true); }}
+                          className="w-full py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-xl hover:bg-blue-100 hover:text-blue-700 transition-all duration-300 group-hover:bg-blue-100">
+                          查看例句
+                        </button>
+                      )}
                     </div>
                   );
                 })}

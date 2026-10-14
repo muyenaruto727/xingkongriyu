@@ -3,6 +3,24 @@ const { handleError, successResponse } = require('../../../lib/errorHandler');
 const { withAdminForMethods } = require('../../../lib/apiAuth');
 const { sanitizeRichText } = require('../../../lib/sanitizeHtml');
 
+const RICH_TEXT_TYPES = new Set(['article']);
+
+function serializeCommaList(value) {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim()).filter(Boolean).join(',');
+  }
+
+  return String(value || '').trim();
+}
+
+function normalizeSectionContent({ content, contentType }) {
+  if (!content) return null;
+  if (RICH_TEXT_TYPES.has(contentType)) {
+    return sanitizeRichText(content);
+  }
+  return String(content);
+}
+
 async function handler(req, res) {
   try {
     const { method, query } = req;
@@ -47,7 +65,7 @@ async function handleGetSections(req, res) {
 
 // 创建小节
 async function handleCreateSection(req, res) {
-  const { name, content, videoUrl, chapterId, order } = req.body;
+  const { name, content, videoUrl, chapterId, order, contentType = 'article', textbook, lesson } = req.body;
   
   try {
     // 检查章节是否存在
@@ -67,11 +85,20 @@ async function handleCreateSection(req, res) {
     }
     
     const query = `
-      INSERT INTO sections (name, content, video_url, chapter_id, "order")
-      VALUES ($1, $2, $3, $4, $5)
+      INSERT INTO sections (name, content, video_url, chapter_id, "order", content_type, textbook, lesson)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING *
     `;
-    const params = [name, content ? sanitizeRichText(content) : null, videoUrl || null, chapterId, order || 0];
+    const params = [
+      name,
+      normalizeSectionContent({ content, contentType }),
+      videoUrl || null,
+      chapterId,
+      order || 0,
+      contentType,
+      serializeCommaList(textbook),
+      serializeCommaList(lesson),
+    ];
     
     const result = await pool.query(query, params);
     const section = result.rows[0];
@@ -85,7 +112,7 @@ async function handleCreateSection(req, res) {
 // 更新小节
 async function handleUpdateSection(req, res) {
   const { id } = req.query;
-  const { name, content, videoUrl, order } = req.body;
+  const { name, content, videoUrl, order, contentType = 'article', textbook, lesson } = req.body;
   
   try {
     // 检查小节是否存在
@@ -98,11 +125,21 @@ async function handleUpdateSection(req, res) {
     
     const query = `
       UPDATE sections
-      SET name = $1, content = $2, video_url = $3, "order" = $4, updated_at = NOW()
-      WHERE id = $5
+      SET name = $1, content = $2, video_url = $3, "order" = $4,
+          content_type = $5, textbook = $6, lesson = $7, updated_at = NOW()
+      WHERE id = $8
       RETURNING *
     `;
-    const params = [name, content ? sanitizeRichText(content) : null, videoUrl || null, order || 0, id];
+    const params = [
+      name,
+      normalizeSectionContent({ content, contentType }),
+      videoUrl || null,
+      order || 0,
+      contentType,
+      serializeCommaList(textbook),
+      serializeCommaList(lesson),
+      id,
+    ];
     
     const result = await pool.query(query, params);
     const section = result.rows[0];

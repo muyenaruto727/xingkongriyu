@@ -8,16 +8,6 @@
     "start": "next start",
     "export": "next export",
     "init-db": "node db/init.js",
-    "migrate-db": "node db/migrations/migrate-nhk-news.js",
-    "migrate-nhk-news": "node db/migrations/migrate-nhk-news.js",
-    "migrate-invitation-codes": "node db/migrations/add-invitation-codes.js",
-    "migrate-question-tag": "node db/migrations/add-question-tag.js",
-    "migrate-grammar-related-grammars": "node db/migrations/add-grammar-related-grammars.js",
-    "migrate-listening-text": "node db/migrations/add-listening-text.js",
-    "migrate-course-price": "node db/migrations/add-course-price.js",
-    "migrate-vocab-values": "node db/migrations/migrate-vocabulary-values.js",
-    "migrate-vocab-examples": "node db/migrations/change-vocabulary-examples-to-jsonb.js",
-    "migrate-vocab-schema": "psql \"$POSTGRES_URL\" -f db/migrations/sync-vocabulary-schema.sql",
     "seed-data": "node db/seeds/seed-data.js"
   },
   "dependencies": {

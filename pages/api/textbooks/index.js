@@ -169,6 +169,61 @@ const defaultTextbooks = [
   ]},
 ];
 
+const textbookWithLessonsSelect = `
+  SELECT t.*,
+         COALESCE(json_agg(l.* ORDER BY l.sort_order) FILTER (WHERE l.id IS NOT NULL), '[]') as lessons
+  FROM textbooks t
+  LEFT JOIN (
+    SELECT l.*,
+           COALESCE(json_agg(u.* ORDER BY u.sort_order) FILTER (WHERE u.id IS NOT NULL), '[]') as units
+    FROM textbook_lessons l
+    LEFT JOIN textbook_units u ON l.id = u.lesson_id
+    GROUP BY l.id
+  ) l ON t.id = l.textbook_id
+`;
+
+async function insertTextbookUnits(client, lessonId, units = []) {
+  const validUnits = (Array.isArray(units) ? units : [])
+    .map((unit, index) => ({
+      name: String(unit.name || '').trim(),
+      sort_order: unit.sort_order ?? index,
+    }))
+    .filter((unit) => unit.name);
+
+  if (validUnits.length === 0) {
+    return;
+  }
+
+  const unitsQuery = `
+    INSERT INTO textbook_units (lesson_id, name, sort_order)
+    VALUES ${validUnits.map((_, i) => `($1, $${i * 2 + 2}, $${i * 2 + 3})`).join(',')}
+  `;
+  const params = [lessonId];
+  validUnits.forEach((unit) => {
+    params.push(unit.name, unit.sort_order);
+  });
+  await client.query(unitsQuery, params);
+}
+
+async function insertTextbookLessons(client, textbookId, lessons = []) {
+  const validLessons = (Array.isArray(lessons) ? lessons : [])
+    .map((lesson, index) => ({
+      ...lesson,
+      name: String(lesson.name || '').trim() || `第${index + 1}课`,
+      sort_order: lesson.sort_order ?? index,
+    }));
+
+  for (const lesson of validLessons) {
+    const lessonResult = await client.query(
+      `INSERT INTO textbook_lessons (textbook_id, name, sort_order)
+       VALUES ($1, $2, $3)
+       RETURNING id`,
+      [textbookId, lesson.name, lesson.sort_order],
+    );
+    await insertTextbookUnits(client, lessonResult.rows[0].id, lesson.units);
+  }
+}
+
 // 获取教材列表（包含课程）
 async function handleGetTextbooks(req, res) {
   const { id } = req.query;
@@ -177,21 +232,13 @@ async function handleGetTextbooks(req, res) {
     if (id) {
       // 获取单个教材及其课程
       const query = `
-        SELECT t.*, 
-               COALESCE(json_agg(l.* ORDER BY l.sort_order), '[]') as lessons
-        FROM textbooks t
-        LEFT JOIN textbook_lessons l ON t.id = l.textbook_id
+        ${textbookWithLessonsSelect}
         WHERE t.id = $1
         GROUP BY t.id
       `;
       const result = await pool.query(query, [id]);
       
       if (result.rows.length === 0) {
-        // 如果数据库中没有找到，尝试从默认数据中查找
-        const defaultTextbook = defaultTextbooks.find(t => t.id === parseInt(id));
-        if (defaultTextbook) {
-          return successResponse(res, defaultTextbook);
-        }
         return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: '教材不存在' } });
       }
       
@@ -199,10 +246,7 @@ async function handleGetTextbooks(req, res) {
     } else {
       // 获取所有教材列表（带课程）
       const query = `
-        SELECT t.*, 
-               COALESCE(json_agg(l.* ORDER BY l.sort_order), '[]') as lessons
-        FROM textbooks t
-        LEFT JOIN textbook_lessons l ON t.id = l.textbook_id
+        ${textbookWithLessonsSelect}
         GROUP BY t.id
         ORDER BY t.sort_order, t.created_at DESC
       `;
@@ -211,11 +255,6 @@ async function handleGetTextbooks(req, res) {
       return successResponse(res, result.rows);
     }
   } catch (error) {
-    // 如果表不存在或其他数据库错误，返回默认数据
-    console.warn('Database error, returning default textbooks:', error.message);
-    if (error.message && error.message.includes('does not exist')) {
-      return successResponse(res, defaultTextbooks);
-    }
     handleError(error, req, res);
   }
 }
@@ -251,28 +290,13 @@ async function handleCreateTextbook(req, res) {
     const textbookResult = await client.query(textbookQuery, [name, description || '', level || '', sort_order || 0]);
     const textbook = textbookResult.rows[0];
     
-    // 如果有课程数据，批量插入
-    if (lessons && Array.isArray(lessons) && lessons.length > 0) {
-      const lessonsQuery = `
-        INSERT INTO textbook_lessons (textbook_id, name, sort_order)
-        VALUES ${lessons.map((_, i) => `($1, $${i * 2 + 2}, $${i * 2 + 3})`).join(',')}
-      `;
-      const params = [textbook.id];
-      lessons.forEach((lesson, i) => {
-        params.push(lesson.name || `第${i + 1}课`);
-        params.push(lesson.sort_order || i);
-      });
-      await client.query(lessonsQuery, params);
-    }
+    await insertTextbookLessons(client, textbook.id, lessons);
     
     await client.query('COMMIT');
     
     // 获取包含课程的完整教材信息
     const fullQuery = `
-      SELECT t.*, 
-             COALESCE(json_agg(l.* ORDER BY l.sort_order), '[]') as lessons
-      FROM textbooks t
-      LEFT JOIN textbook_lessons l ON t.id = l.textbook_id
+      ${textbookWithLessonsSelect}
       WHERE t.id = $1
       GROUP BY t.id
     `;
@@ -321,29 +345,14 @@ async function handleUpdateTextbook(req, res) {
     // 如果有课程数据，先删除旧课程再插入新课程
     if (lessons !== undefined && Array.isArray(lessons)) {
       await client.query('DELETE FROM textbook_lessons WHERE textbook_id = $1', [id]);
-      
-      if (lessons.length > 0) {
-        const lessonsQuery = `
-          INSERT INTO textbook_lessons (textbook_id, name, sort_order)
-          VALUES ${lessons.map((_, i) => `($1, $${i * 2 + 2}, $${i * 2 + 3})`).join(',')}
-        `;
-        const params = [id];
-        lessons.forEach((lesson, i) => {
-          params.push(lesson.name || `第${i + 1}课`);
-          params.push(lesson.sort_order || i);
-        });
-        await client.query(lessonsQuery, params);
-      }
+      await insertTextbookLessons(client, id, lessons);
     }
     
     await client.query('COMMIT');
     
     // 获取包含课程的完整教材信息
     const fullQuery = `
-      SELECT t.*, 
-             COALESCE(json_agg(l.* ORDER BY l.sort_order), '[]') as lessons
-      FROM textbooks t
-      LEFT JOIN textbook_lessons l ON t.id = l.textbook_id
+      ${textbookWithLessonsSelect}
       WHERE t.id = $1
       GROUP BY t.id
     `;

@@ -7,6 +7,7 @@ import {
   Table,
   Form,
   Select,
+  Cascader,
   message,
   Tree,
   Radio,
@@ -19,6 +20,13 @@ import {
   getPageSizeChangeState,
   getPaginationRequestParams,
 } from '../../lib/adminPagination';
+import {
+  buildTextbookCascaderOptions,
+  buildTextbookCascaderValue,
+  extractTextbookCascaderSelection,
+  formatTextbookCascaderDisplay,
+  splitCommaList,
+} from '../../lib/vocabTextbookCascader';
 
 // 动态导入 WangEditor，确保只在客户端加载
 const WangEditor = dynamic(() => import('../common/WangEditor'), {
@@ -43,6 +51,7 @@ const WangEditor = dynamic(() => import('../common/WangEditor'), {
 const CourseManager = ({ showToast }) => {
   const [activeTab, setActiveTab] = useState('courses'); // 'courses' 或 'chapters'
   const [courseList, setCourseList] = useState([]);
+  const [textbooks, setTextbooks] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -65,7 +74,8 @@ const CourseManager = ({ showToast }) => {
   const [form] = Form.useForm();
   const [sectionForm] = Form.useForm();
   const [expandedKeys, setExpandedKeys] = useState([]);
-  const [sectionType, setSectionType] = useState('article'); // article 或 video
+  const [sectionType, setSectionType] = useState('article');
+  const sectionTextbookSelection = Form.useWatch('textbookSelection', sectionForm) || [];
 
   // 课程表单状态
   const [courseForm, setCourseForm] = useState({
@@ -78,6 +88,39 @@ const CourseManager = ({ showToast }) => {
 
   // 课程形式选项
   const formatOptions = ['文本课程', '视频课程', '1V1辅导'];
+  const sectionCascaderOptions = buildTextbookCascaderOptions(textbooks);
+  const selectedCourse = courseList.find((course) => course.id === currentEditId);
+  const selectedCourseFormat = selectedCourse?.format || '文本课程';
+  const isTextCourse = selectedCourseFormat === '文本课程';
+  const isVideoCourse = selectedCourseFormat === '视频课程';
+  const isOneOnOneCourse = selectedCourseFormat === '1V1辅导';
+  const hasRelatedTextbook = Array.isArray(sectionTextbookSelection) && sectionTextbookSelection.length > 0;
+
+  const getSectionTypeOptions = () => {
+    const baseOptions = [
+      { label: '会话', value: 'conversation' },
+      { label: '阅读', value: 'reading' },
+      { label: '文章', value: 'article' },
+    ];
+
+    if (!hasRelatedTextbook) {
+      return baseOptions;
+    }
+
+    return [
+      { label: '词汇', value: 'vocabulary' },
+      { label: '语法', value: 'grammar' },
+      ...baseOptions,
+    ];
+  };
+
+  const normalizeSectionType = (nextType, hasRelation = hasRelatedTextbook) => {
+    if (!isTextCourse) return isVideoCourse ? 'video' : 'article';
+    if (!hasRelation && ['vocabulary', 'grammar'].includes(nextType)) {
+      return 'conversation';
+    }
+    return nextType || 'conversation';
+  };
 
   // 加载课程列表
   const fetchCourseList = async (useEmptyFilters = false, pagination = {}) => {
@@ -121,9 +164,19 @@ const CourseManager = ({ showToast }) => {
     }
   };
 
+  const fetchTextbooks = async () => {
+    try {
+      const data = await api.getTextbookList();
+      setTextbooks(Array.isArray(data) ? data : []);
+    } catch (error) {
+      api.handleError('获取教材列表失败:', error);
+    }
+  };
+
   // 初始化时加载课程列表
   useEffect(() => {
     fetchCourseList();
+    fetchTextbooks();
   }, [currentPage, itemsPerPage]);
 
   // 处理表单输入变化
@@ -395,6 +448,23 @@ const CourseManager = ({ showToast }) => {
     });
   };
 
+  const buildSectionPayload = (values, chapterId) => {
+    const { textbooks, lessons } = extractTextbookCascaderSelection(values.textbookSelection || []);
+    const nextType = normalizeSectionType(sectionType, textbooks.length > 0 || lessons.length > 0);
+    const shouldKeepContent = ['conversation', 'reading', 'article'].includes(nextType);
+
+    return {
+      name: values.name,
+      chapterId,
+      order: values.order,
+      contentType: nextType,
+      textbook: isTextCourse ? textbooks.join(',') : '',
+      lesson: isTextCourse ? lessons.join(',') : '',
+      content: isTextCourse && shouldKeepContent ? values.content || null : null,
+      videoUrl: isVideoCourse ? values.videoUrl || null : null,
+    };
+  };
+
   // 处理小节添加
   const handleAddSection = async (values) => {
     if (isLoading) return;
@@ -404,18 +474,12 @@ const CourseManager = ({ showToast }) => {
     }
     setIsLoading(true);
     try {
-      // 确保 content 和 videoUrl 字段存在，避免传递 undefined
-      const sectionData = {
-        ...values,
-        chapterId: selectedChapter.id,
-        content: values.content || null,
-        videoUrl: values.videoUrl || null,
-      };
+      const sectionData = buildSectionPayload(values, selectedChapter.id);
       await api.createSection(sectionData);
       message.success('小节添加成功');
       setShowAddSectionModal(false);
       sectionForm.resetFields();
-      setSectionType('article');
+      setSectionType('conversation');
       fetchChapters(currentEditId);
     } catch (error) {
       api.handleError('添加小节失败:', error);
@@ -429,12 +493,7 @@ const CourseManager = ({ showToast }) => {
     if (isLoading) return;
     setIsLoading(true);
     try {
-      // 确保 content 和 videoUrl 字段存在，避免传递 undefined
-      const sectionData = {
-        ...values,
-        content: values.content || null,
-        videoUrl: values.videoUrl || null,
-      };
+      const sectionData = buildSectionPayload(values);
       await api.updateSection(editingSection.id, sectionData);
       message.success('小节更新成功');
       setShowEditSectionModal(false);
@@ -492,15 +551,25 @@ const CourseManager = ({ showToast }) => {
   const openAddSectionModal = (chapter) => {
     setSelectedChapter(chapter);
     sectionForm.resetFields();
-    setSectionType('article');
+    const defaultType = selectedCourse?.format === '视频课程' ? 'video' : 'conversation';
+    setSectionType(defaultType);
+    sectionForm.setFieldsValue({ contentType: defaultType });
     setShowAddSectionModal(true);
   };
 
   // 处理编辑小节
   const openEditSectionModal = (section) => {
     setEditingSection(section);
-    sectionForm.setFieldsValue(section);
-    setSectionType(section.video_url ? 'video' : 'article');
+    const nextType = section.content_type || section.contentType || (section.video_url ? 'video' : 'article');
+    const textbookValues = splitCommaList(section.textbook);
+    const lessonValues = splitCommaList(section.lesson);
+    sectionForm.setFieldsValue({
+      ...section,
+      videoUrl: section.videoUrl || section.video_url || '',
+      contentType: nextType,
+      textbookSelection: buildTextbookCascaderValue(textbookValues, lessonValues, textbooks),
+    });
+    setSectionType(nextType);
     setShowEditSectionModal(true);
   };
 
@@ -675,6 +744,119 @@ const CourseManager = ({ showToast }) => {
       cellClassName: 'text-sm',
     },
   ];
+
+  const renderAnnotatedTemplateHelp = () => (
+    <div className="mt-2 text-xs text-gray-500 leading-5">
+      <div>模板：短词注音用 <span className="font-mono">今日[きょう]</span>，长句或包含数字时用 <span className="font-mono">{'{'}台風７号|たいふうななごう{'}'}</span>，重点文本用 <span className="font-mono">**重点**</span>。</div>
+      <div>示例：<span className="font-mono">{'{'}台風７号|たいふうななごう{'}'}は、**沖縄[おきなわ]**の南へ進んでいます。</span></div>
+    </div>
+  );
+
+  const renderSectionFormFields = (editorKey) => (
+    <>
+      <Form.Item
+        name="name"
+        label="小节名称"
+        rules={[{ required: true, message: '请输入小节名称' }]}
+      >
+        <Input placeholder="请输入小节名称" />
+      </Form.Item>
+
+      {isTextCourse && (
+        <>
+          <Form.Item name="textbookSelection" label="关联教材">
+            <Cascader
+              options={sectionCascaderOptions}
+              placeholder="请选择教材和课程（可选）"
+              multiple
+              changeOnSelect
+              displayRender={formatTextbookCascaderDisplay}
+              style={{ width: '100%' }}
+              onChange={(values = []) => {
+                sectionForm.setFieldsValue({ textbookSelection: values });
+                const hasSelection = Array.isArray(values) && values.length > 0;
+                if (!hasSelection && ['vocabulary', 'grammar'].includes(sectionType)) {
+                  setSectionType('conversation');
+                  sectionForm.setFieldsValue({ contentType: 'conversation' });
+                }
+              }}
+            />
+          </Form.Item>
+
+          <Form.Item label="小节类型" name="contentType">
+            <Radio.Group
+              value={sectionType}
+              optionType="button"
+              buttonStyle="solid"
+              options={getSectionTypeOptions()}
+              onChange={(e) => {
+                setSectionType(e.target.value);
+                sectionForm.setFieldsValue({ contentType: e.target.value });
+              }}
+            />
+          </Form.Item>
+        </>
+      )}
+
+      {isVideoCourse && (
+        <Form.Item
+          name="videoUrl"
+          label="视频链接"
+          rules={[{ required: true, message: '请输入视频链接' }]}
+        >
+          <Input placeholder="请输入视频链接" />
+        </Form.Item>
+      )}
+
+      {isTextCourse && ['conversation', 'reading'].includes(sectionType) && (
+        <Form.Item
+          name="content"
+          label="小节内容"
+          rules={[{ required: true, message: '请输入小节内容' }]}
+        >
+          <Input.TextArea
+            rows={8}
+            placeholder={'渡辺[わたなべ]：難しいね。\\n木山[きやま]：**そうなんだよ。**'}
+          />
+        </Form.Item>
+      )}
+      {isTextCourse && ['conversation', 'reading'].includes(sectionType) && renderAnnotatedTemplateHelp()}
+
+      {isTextCourse && sectionType === 'article' && (
+        <Form.Item
+          name="content"
+          label="小节内容"
+          rules={[{ required: true, message: '请输入小节内容' }]}
+        >
+          <div>
+            <WangEditor
+              key={editorKey}
+              placeholder="请输入文章内容"
+              style={{ height: '300px' }}
+              value={sectionForm.getFieldValue('content') || ''}
+              onChange={(value) =>
+                sectionForm.setFieldsValue({ content: value })
+              }
+            />
+          </div>
+        </Form.Item>
+      )}
+
+      {isTextCourse && ['vocabulary', 'grammar'].includes(sectionType) && (
+        <div className="mb-4 rounded-md border border-blue-100 bg-blue-50 px-3 py-2 text-sm text-blue-700">
+          该类型不需要填写小节内容，前台会根据关联教材自动展示对应的{sectionType === 'vocabulary' ? '词汇' : '语法'}。
+        </div>
+      )}
+
+      <Form.Item
+        name="order"
+        label="排序"
+        rules={[{ required: true, message: '请输入排序' }]}
+      >
+        <Input type="number" placeholder="请输入排序" />
+      </Form.Item>
+    </>
+  );
 
   return (
     <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
@@ -1024,7 +1206,7 @@ const CourseManager = ({ showToast }) => {
         onCancel={() => {
           setShowAddSectionModal(false);
           sectionForm.resetFields();
-          setSectionType('article');
+          setSectionType('conversation');
         }}
         okText={isLoading ? '保存中...' : '保存'}
         cancelText="取消"
@@ -1032,57 +1214,7 @@ const CourseManager = ({ showToast }) => {
         okButtonProps={{ loading: isLoading, disabled: isLoading }}
       >
         <Form form={sectionForm} layout="vertical" onFinish={handleAddSection}>
-          <Form.Item
-            name="name"
-            label="小节名称"
-            rules={[{ required: true, message: '请输入小节名称' }]}
-          >
-            <Input placeholder="请输入小节名称" />
-          </Form.Item>
-          <Form.Item label="小节类型">
-            <Radio.Group
-              value={sectionType}
-              onChange={(e) => setSectionType(e.target.value)}
-            >
-              <Radio value="article">文章</Radio>
-              <Radio value="video">视频</Radio>
-            </Radio.Group>
-          </Form.Item>
-          {sectionType === 'article' && (
-            <Form.Item
-              name="content"
-              label="文章内容"
-              rules={[{ required: true, message: '请输入文章内容' }]}
-            >
-              <div>
-                <WangEditor
-                  key={`add-section-${showAddSectionModal}`}
-                  placeholder="请输入文章内容"
-                  style={{ height: '300px' }}
-                  value={sectionForm.getFieldValue('content') || ''}
-                  onChange={(value) =>
-                    sectionForm.setFieldsValue({ content: value })
-                  }
-                />
-              </div>
-            </Form.Item>
-          )}
-          {sectionType === 'video' && (
-            <Form.Item
-              name="videoUrl"
-              label="视频链接"
-              rules={[{ required: true, message: '请输入视频链接' }]}
-            >
-              <Input placeholder="请输入视频链接" />
-            </Form.Item>
-          )}
-          <Form.Item
-            name="order"
-            label="排序"
-            rules={[{ required: true, message: '请输入排序' }]}
-          >
-            <Input type="number" placeholder="请输入排序" />
-          </Form.Item>
+          {renderSectionFormFields(`add-section-${showAddSectionModal}`)}
         </Form>
       </Modal>
 
@@ -1095,7 +1227,7 @@ const CourseManager = ({ showToast }) => {
           setShowEditSectionModal(false);
           sectionForm.resetFields();
           setEditingSection(null);
-          setSectionType('article');
+          setSectionType('conversation');
         }}
         okText={isLoading ? '保存中...' : '保存'}
         cancelText="取消"
@@ -1103,56 +1235,7 @@ const CourseManager = ({ showToast }) => {
         okButtonProps={{ loading: isLoading, disabled: isLoading }}
       >
         <Form form={sectionForm} layout="vertical" onFinish={handleEditSection}>
-          <Form.Item
-            name="name"
-            label="小节名称"
-            rules={[{ required: true, message: '请输入小节名称' }]}
-          >
-            <Input placeholder="请输入小节名称" />
-          </Form.Item>
-          <Form.Item label="小节类型">
-            <Radio.Group
-              value={sectionType}
-              onChange={(e) => setSectionType(e.target.value)}
-            >
-              <Radio value="article">文章</Radio>
-              <Radio value="video">视频</Radio>
-            </Radio.Group>
-          </Form.Item>
-          {sectionType === 'article' && (
-            <Form.Item
-              name="content"
-              label="文章内容"
-              rules={[{ required: true, message: '请输入文章内容' }]}
-            >
-              <div>
-                <WangEditor
-                  placeholder="请输入文章内容"
-                  style={{ height: '300px' }}
-                  value={sectionForm.getFieldValue('content') || ''}
-                  onChange={(value) =>
-                    sectionForm.setFieldsValue({ content: value })
-                  }
-                />
-              </div>
-            </Form.Item>
-          )}
-          {sectionType === 'video' && (
-            <Form.Item
-              name="videoUrl"
-              label="视频链接"
-              rules={[{ required: true, message: '请输入视频链接' }]}
-            >
-              <Input placeholder="请输入视频链接" />
-            </Form.Item>
-          )}
-          <Form.Item
-            name="order"
-            label="排序"
-            rules={[{ required: true, message: '请输入排序' }]}
-          >
-            <Input type="number" placeholder="请输入排序" />
-          </Form.Item>
+          {renderSectionFormFields(`edit-section-${editingSection?.id || 'new'}`)}
         </Form>
       </Modal>
     </div>

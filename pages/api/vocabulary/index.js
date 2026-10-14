@@ -8,6 +8,10 @@ const {
   buildVocabularyFilterCandidates,
   normalizeVocabularyRecord,
 } = require('../../../lib/vocabularyOptions');
+const {
+  resolveTextbookFilterNames,
+  buildVocabularyTextbookFilter,
+} = require('../../../lib/vocabularyTextbookFilter');
 
 const limiter = rateLimit({
   windowMs: 60 * 1000,
@@ -29,6 +33,18 @@ function toArray(value) {
   }
 
   return [value];
+}
+
+function toQueryList(value) {
+  if (Array.isArray(value)) {
+    return value;
+  }
+
+  if (value === undefined || value === null || value === '') {
+    return [];
+  }
+
+  return String(value).split(',').map((item) => item.trim()).filter(Boolean);
 }
 
 async function handler(req, res) {
@@ -103,37 +119,26 @@ async function handler(req, res) {
           }
         }
 
-        if (finalTextbooks && finalTextbooks !== '全部' && finalTextbooks !== '') {
-          const textbookList = Array.isArray(finalTextbooks) ? finalTextbooks : [finalTextbooks];
-          if (textbookList.length > 0 && textbookList[0] !== '全部') {
-            const textbookConditions = textbookList.map(() =>
-              `(textbook = $${paramIndex} OR textbook LIKE $${paramIndex}||',%' OR textbook LIKE '%,'||$${paramIndex} OR textbook LIKE '%,'||$${paramIndex}||',%' OR lesson LIKE $${paramIndex}||':%')`
-            ).join(' OR ');
-            query += ` AND (${textbookConditions})`;
-            params.push(...textbookList);
-            paramIndex += textbookList.length;
-          }
+        const rawTextbookValues = toQueryList(finalTextbooks).filter((item) => item !== '全部');
+        const numericTextbookIds = rawTextbookValues.filter((item) => /^\d+$/.test(item));
+        let textbookRows = [];
+        if (numericTextbookIds.length > 0) {
+          const textbookResult = await pool.query(
+            'SELECT id, name FROM textbooks WHERE id = ANY($1::int[])',
+            [numericTextbookIds.map((item) => Number(item))],
+          );
+          textbookRows = textbookResult.rows;
         }
 
-        if (finalLessons && finalLessons !== '全部' && finalLessons !== '') {
-          const lessonList = Array.isArray(finalLessons) ? finalLessons : [finalLessons];
-          if (lessonList.length > 0 && lessonList[0] !== '全部') {
-            const lessonPatterns = [];
-            lessonList.forEach((lessonItem) => {
-              const parts = String(lessonItem).split(':');
-              const stripped = parts.length > 1 ? parts[1] : lessonItem;
-              lessonPatterns.push({ original: String(lessonItem), stripped });
-            });
-
-            const lessonConditions = lessonPatterns.map(() =>
-              `(lesson = $${paramIndex} OR lesson = $${paramIndex + 1} OR lesson LIKE $${paramIndex}||',%' OR lesson LIKE $${paramIndex + 1}||',%' OR lesson LIKE '%,'||$${paramIndex} OR lesson LIKE '%,'||$${paramIndex + 1} OR lesson LIKE '%,'||$${paramIndex}||',%' OR lesson LIKE '%,'||$${paramIndex + 1}||',%' OR lesson LIKE '%:'||$${paramIndex} OR lesson LIKE '%:'||$${paramIndex + 1} OR lesson LIKE '%:'||$${paramIndex}||',%' OR lesson LIKE '%:'||$${paramIndex + 1}||',%')`
-            ).join(' OR ');
-            query += ` AND (${lessonConditions})`;
-            lessonPatterns.forEach((pattern) => {
-              params.push(pattern.original, pattern.stripped);
-              paramIndex += 2;
-            });
-          }
+        const textbookFilter = buildVocabularyTextbookFilter({
+          textbookValues: resolveTextbookFilterNames(rawTextbookValues, textbookRows),
+          lessonValues: toQueryList(finalLessons).filter((item) => item !== '全部'),
+          startParamIndex: paramIndex,
+        });
+        if (textbookFilter.clauses.length > 0) {
+          query += ` AND ${textbookFilter.clauses.map((clause) => `(${clause})`).join(' AND ')}`;
+          params.push(...textbookFilter.params);
+          paramIndex = textbookFilter.nextParamIndex;
         }
 
         if (search) {
@@ -147,7 +152,7 @@ async function handler(req, res) {
         const total = parseInt(countResult.rows[0].count, 10);
 
         const offset = (parsedPage.value - 1) * parsedLimit.value;
-        query += ' ORDER BY id DESC LIMIT $' + paramIndex + ' OFFSET $' + (paramIndex + 1);
+        query += ' ORDER BY id ASC LIMIT $' + paramIndex + ' OFFSET $' + (paramIndex + 1);
         params.push(parsedLimit.value, offset);
 
         const result = await pool.query(query, params);

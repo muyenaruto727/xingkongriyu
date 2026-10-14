@@ -19,6 +19,7 @@ const TextbookManager = () => {
   });
 
   const [newLessonName, setNewLessonName] = useState('');
+  const [newUnitNames, setNewUnitNames] = useState({});
 
   const levels = ['初级', '中级', '高级'];
 
@@ -54,7 +55,8 @@ const TextbookManager = () => {
     const newLesson = {
       id: Date.now(),
       name: newLessonName.trim(),
-      sort_order: textbookForm.lessons.length
+      sort_order: textbookForm.lessons.length,
+      units: [],
     };
     
     setTextbookForm(prev => ({
@@ -62,6 +64,61 @@ const TextbookManager = () => {
       lessons: [...prev.lessons, newLesson]
     }));
     setNewLessonName('');
+  };
+
+  const setUnitDraft = (lessonId, value) => {
+    setNewUnitNames(prev => ({
+      ...prev,
+      [lessonId]: value
+    }));
+  };
+
+  const addUnit = (lessonId) => {
+    const unitName = String(newUnitNames[lessonId] || '').trim();
+    if (!unitName) {
+      message.error('请输入单元名称');
+      return;
+    }
+
+    setTextbookForm(prev => ({
+      ...prev,
+      lessons: prev.lessons.map((lesson) => {
+        if (lesson.id !== lessonId) return lesson;
+
+        const units = Array.isArray(lesson.units) ? lesson.units : [];
+        return {
+          ...lesson,
+          units: [
+            ...units,
+            {
+              id: `${lessonId}-${Date.now()}`,
+              name: unitName,
+              sort_order: units.length,
+            },
+          ],
+        };
+      }),
+    }));
+    setUnitDraft(lessonId, '');
+  };
+
+  const removeUnit = (lessonId, unitId) => {
+    setTextbookForm(prev => ({
+      ...prev,
+      lessons: prev.lessons.map((lesson) => {
+        if (lesson.id !== lessonId) return lesson;
+
+        return {
+          ...lesson,
+          units: (lesson.units || [])
+            .filter(unit => unit.id !== unitId)
+            .map((unit, index) => ({
+              ...unit,
+              sort_order: index,
+            })),
+        };
+      }),
+    }));
   };
 
   // 删除表单中的课程
@@ -73,6 +130,11 @@ const TextbookManager = () => {
         sort_order: index
       }))
     }));
+    setNewUnitNames(prev => {
+      const next = { ...prev };
+      delete next[lessonId];
+      return next;
+    });
   };
 
   // 重置表单
@@ -87,6 +149,7 @@ const TextbookManager = () => {
     setIsEditMode(false);
     setCurrentTextbook(null);
     setNewLessonName('');
+    setNewUnitNames({});
   };
 
   // 打开添加教材模态框
@@ -102,7 +165,10 @@ const TextbookManager = () => {
       description: textbook.description || '',
       level: textbook.level || '',
       sort_order: textbook.sort_order || 0,
-      lessons: textbook.lessons || []
+      lessons: (textbook.lessons || []).map((lesson) => ({
+        ...lesson,
+        units: Array.isArray(lesson.units) ? lesson.units : [],
+      }))
     });
     setCurrentTextbook(textbook);
     setIsEditMode(true);
@@ -322,20 +388,58 @@ const TextbookManager = () => {
                 {textbookForm.lessons.map((lesson, index) => (
                   <div
                     key={lesson.id}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                    className="p-3 bg-gray-50 rounded-lg"
                   >
-                    <span className="flex items-center gap-3">
-                      <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm">
-                        {index + 1}
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="flex items-center gap-3">
+                        <span className="w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm">
+                          {index + 1}
+                        </span>
+                        <span>{lesson.name}</span>
                       </span>
-                      <span>{lesson.name}</span>
-                    </span>
-                    <button
-                      onClick={() => removeLesson(lesson.id)}
-                      className="text-red-500 hover:text-red-700 text-sm"
-                    >
-                      删除
-                    </button>
+                      <button
+                        onClick={() => removeLesson(lesson.id)}
+                        className="text-red-500 hover:text-red-700 text-sm"
+                      >
+                        删除课程
+                      </button>
+                    </div>
+
+                    <div className="mt-3 ml-9">
+                      <div className="flex gap-2">
+                        <Input
+                          type="text"
+                          value={newUnitNames[lesson.id] || ''}
+                          onChange={(e) => setUnitDraft(lesson.id, e.target.value)}
+                          placeholder="单元名称，如：第1单元（可选）"
+                          style={{ flex: 1 }}
+                          onPressEnter={() => addUnit(lesson.id)}
+                        />
+                        <Button onClick={() => addUnit(lesson.id)}>
+                          添加单元
+                        </Button>
+                      </div>
+
+                      {Array.isArray(lesson.units) && lesson.units.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {lesson.units.map((unit, unitIndex) => (
+                            <span
+                              key={unit.id}
+                              className="inline-flex items-center gap-2 px-2 py-1 bg-white border border-gray-200 rounded text-sm text-gray-700"
+                            >
+                              {unitIndex + 1}. {unit.name}
+                              <button
+                                type="button"
+                                onClick={() => removeUnit(lesson.id, unit.id)}
+                                className="text-red-500 hover:text-red-700"
+                              >
+                                删除
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
