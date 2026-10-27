@@ -27,13 +27,13 @@ async function handler(req, res) {
   try {
     const { EdgeTTS, Constants } = await import('@andresaya/edge-tts');
     const tts = new EdgeTTS();
-    await tts.synthesize(text, DEFAULT_VOICE, {
+    const result = await tts.generate(text, DEFAULT_VOICE, {
       outputFormat: Constants.OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3,
       rate: -10,
       pitch: '+0Hz',
       volume: 100,
     });
-    const audioBuffer = tts.toBuffer();
+    const audioBuffer = result.audio;
 
     res.setHeader('Content-Type', 'audio/mpeg');
     res.setHeader('Cache-Control', 'no-store');

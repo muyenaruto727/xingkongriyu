@@ -6,6 +6,7 @@ const { withAdminForMethods } = require('../../../lib/apiAuth');
 const { parseIntegerParam } = require('../../../lib/requestValidation');
 const {
   buildVocabularyFilterCandidates,
+  buildVocabularyDuplicateKey,
   normalizeVocabularyRecord,
 } = require('../../../lib/vocabularyOptions');
 const {
@@ -183,10 +184,15 @@ async function handler(req, res) {
 
         const isDuplicateVocab = async (item) => {
           const duplicateResult = await pool.query(
-            'SELECT id FROM vocabulary WHERE japanese = $1 AND pronunciation = $2 AND level = $3 LIMIT 1',
-            [item.japanese, item.pronunciation, item.level]
+            `SELECT japanese, pronunciation, chinese, tag
+             FROM vocabulary
+             WHERE japanese = $1 AND pronunciation = $2 AND chinese = $3`,
+            [item.japanese, item.pronunciation, item.chinese]
           );
-          return duplicateResult.rows.length > 0;
+          const duplicateKey = buildVocabularyDuplicateKey(item);
+          return duplicateResult.rows.some((existing) => (
+            buildVocabularyDuplicateKey(existing) === duplicateKey
+          ));
         };
 
         if (batch && Array.isArray(batch)) {

@@ -15,6 +15,7 @@ import { InboxOutlined } from '@ant-design/icons';
 import PaginationTable from '../common/PaginationTable';
 import {
   VOCABULARY_FIELD_OPTIONS,
+  buildVocabularyDuplicateKey,
   formatVocabularyField,
   getVocabularyOptionValue,
   normalizeVocabularyField,
@@ -504,12 +505,12 @@ const VocabManager = () => {
             return;
           }
 
-          // 过滤掉重复数据（根据日文和发音的组合判断）
+          // 仅当日文、发音、中文释义和标签均相同时，才视为重复词汇。
           const seen = new Set();
           const duplicateGroups = new Map();
           const validDataCount = filteredData.length;
           filteredData = filteredData.filter((item, index) => {
-            const key = `${item.japanese}-${item.pronunciation}`;
+            const key = buildVocabularyDuplicateKey(item);
             if (seen.has(key)) {
               const group = duplicateGroups.get(key) || [];
               group.push({ item, index: sourceIndices.get(item) });
@@ -538,8 +539,8 @@ const VocabManager = () => {
                 : existingVocab.data || [];
 
               existingRows.forEach((vocab) => {
-                if (vocab.japanese && vocab.pronunciation) {
-                  const key = `${vocab.japanese}-${vocab.pronunciation}`;
+                if (vocab.japanese) {
+                  const key = buildVocabularyDuplicateKey(vocab);
                   existingKeys.add(key);
                 }
               });
@@ -560,13 +561,13 @@ const VocabManager = () => {
             if (dedupeAvailable) {
               // 过滤掉与数据库中重复的词汇
               const uniqueData = filteredData.filter((item) => {
-                const key = `${item.japanese}-${item.pronunciation}`;
+                const key = buildVocabularyDuplicateKey(item);
               return !existingKeys.has(key);
             });
             const duplicateInDatabaseCount =
               filteredData.length - uniqueData.length;
             databaseDuplicates = filteredData
-              .filter((item) => existingKeys.has(`${item.japanese}-${item.pronunciation}`));
+              .filter((item) => existingKeys.has(buildVocabularyDuplicateKey(item)));
 
             if (uniqueData.length === 0) {
               Modal.info({
