@@ -5,6 +5,7 @@ import { message, Modal } from 'antd';
 import dynamic from 'next/dynamic';
 import { api } from '../../lib/api';
 import {
+  VOCABULARY_FIELD_OPTIONS,
   formatVocabularyField,
   getVocabularyOptionValue,
   normalizeVocabularyField,
@@ -44,7 +45,7 @@ const Vocabulary = () => {
 
   const itemsPerPage = 20;
   const levels = ['全部', 'N1', 'N2', 'N3', 'N4', 'N5'];
-  const tags = ['全部', '日常', '商务/职场', 'IT/计算机', '电子/半导体', '制造业', '金融/经济/财务', '旅游/餐饮/交通', '医疗', '其他'];
+  const tags = ['全部', ...VOCABULARY_FIELD_OPTIONS.tag.map((option) => option.label)];
 
   useEffect(() => {
     const user = localStorage.getItem('currentUser');

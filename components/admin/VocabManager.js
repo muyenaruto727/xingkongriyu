@@ -788,7 +788,8 @@ const VocabManager = () => {
 
       // 发送 API 请求获取数据
       const data = await api.exportVocab(params);
-      const vocabData = Array.isArray(data) ? data : data.data || [];
+      const vocabData = (Array.isArray(data) ? data : data.data || [])
+        .map((item) => normalizeVocabularyRecord(item));
 
       // 转换为JSON字符串
       const content = JSON.stringify(vocabData, null, 2);
@@ -859,9 +860,10 @@ const VocabManager = () => {
       // 获取指定页码的数据
       message.info(`开始下载第 ${pageNumber} 页，每页 ${pageSize} 条数据`);
       const pageData = await api.exportVocab(params);
-      const vocabData = Array.isArray(pageData)
+      const vocabData = (Array.isArray(pageData)
         ? pageData
-        : pageData.data || [];
+        : pageData.data || [])
+        .map((item) => normalizeVocabularyRecord(item));
       const totalItems = pageData.total || 0;
       const totalPages = Math.ceil(totalItems / pageSize);
 
@@ -1098,7 +1100,7 @@ const VocabManager = () => {
             key: 'tag',
             render: (row) => (
               <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs">
-                {formatVocabularyField('tag', row.tag) || '日常'}
+                {formatVocabularyField('tag', row.tag) || '通用/日常'}
               </span>
             ),
             cellClassName: 'text-sm',
